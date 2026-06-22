@@ -25,7 +25,7 @@ export const fetchWabaBilling = async (userId) => {
                 companyCode: row?.CompanyCode || '-',
                 mobileNumber: row?.MobileNumber || '-',
                 wabaId: row?.WabaId || '-',
-                wabaPhoneNo: row?.WabaPhoneNo || row?.WanaPhoneNo || '-',
+                wabaPhoneNo: row?.WabaPhoneNo || '-',
                 totalBalance: Number(row?.TotalBalance || row?.BillAmount || 0),
                 debitedBalance: Number(row?.DebitedBalance || 0),
                 refundBalance: Number(row?.RefundBalance || 0),

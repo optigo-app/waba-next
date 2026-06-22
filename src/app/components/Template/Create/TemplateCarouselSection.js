@@ -1,8 +1,9 @@
+'use client';
+
 import React from 'react';
-import { Paper, Typography, Button, TextField } from '@mui/material';
+import { Paper, Button, Box } from '@mui/material';
 import { Plus, Image, Video, Paperclip } from 'lucide-react';
-import { isOwnServerUrl } from '../../utils/mediaUtils';
-import imagePlaceholder from '../../assets/imagePlaceholder.png';
+import { isOwnServerUrl } from '../../../utils/mediaUtils';
 import TemplateButtonSection from './TemplateButtonSection';
 import TemplateBodyInput from './TemplateBodyInput';
 
@@ -31,36 +32,65 @@ const TemplateCarouselSection = ({
     const activeCard = carouselCards[activeCardIndex];
 
     return (
-        <Paper elevation={0} sx={{ p: 3, mb: 3, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-            <div className={styles.sectionHeaderRow}>
-                <Typography className={styles.sectionTitle}>Carousel Cards</Typography>
-                <Typography className={styles.charCounter}>{carouselCards.length}/10 Cards</Typography>
-            </div>
-            <Typography className={styles.sectionSubtitle}>Add 2 to 10 cards. All cards must have the same media format and button structure.</Typography>
+        <Paper elevation={0} sx={{ p: 3, mb: 2, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+            <Box className={styles.sectionHeaderRow}>
+                <h3 className={styles.sectionTitle}>Carousel Cards</h3>
+                <span className={styles.charCounter}>{carouselCards.length}/10 Cards</span>
+            </Box>
+            <p className={styles.sectionSubtitle}>Add 2 to 10 cards. All cards must have the same media format and button structure.</p>
 
-            <div className={styles.carouselCardsSection}>
-                <div className={styles.cardNavWrap}>
+            <Box className={styles.carouselCardsSection}>
+                <Box className={styles.cardNavWrap}>
                     {carouselCards.map((card, idx) => (
-                        <button
+                        <Button
                             key={card.id}
-                            type="button"
                             className={`${styles.cardTab} ${activeCardIndex === idx ? styles.cardTabActive : ''}`}
                             onClick={() => onSetActiveCardIndex(idx)}
+                            sx={{
+                                textTransform: 'none',
+                                minWidth: 'auto',
+                                padding: '0.5rem 0.85rem',
+                                borderRadius: '8px',
+                                border: '1px solid',
+                                borderColor: activeCardIndex === idx ? 'var(--primary-main)' : 'var(--sidebar-borderColor)',
+                                color: activeCardIndex === idx ? 'var(--primary-main)' : 'var(--text2ndColor)',
+                                backgroundColor: activeCardIndex === idx ? 'var(--primary-light-bg)' : '#ffffff',
+                                '&:hover': {
+                                    borderColor: 'var(--primary-main)',
+                                    backgroundColor: activeCardIndex === idx ? 'var(--primary-light-bg)' : 'rgba(29, 170, 97, 0.02)',
+                                }
+                            }}
                         >
                             Card {idx + 1}
-                        </button>
+                        </Button>
                     ))}
                     {carouselCards.length < 10 && (
-                        <button type="button" className={styles.addCardTab} onClick={onAddCarouselCard}>
+                        <Button
+                            className={styles.addCardTab}
+                            onClick={onAddCarouselCard}
+                            sx={{
+                                textTransform: 'none',
+                                minWidth: 'auto',
+                                padding: '0.5rem 0.85rem',
+                                borderRadius: '8px',
+                                border: '1px dashed var(--sidebar-borderColor)',
+                                color: 'var(--primary-main)',
+                                backgroundColor: '#ffffff',
+                                '&:hover': {
+                                    backgroundColor: 'rgba(29, 170, 97, 0.04)',
+                                    borderColor: 'var(--primary-main)',
+                                }
+                            }}
+                        >
                             <Plus size={14} /> Add Card
-                        </button>
+                        </Button>
                     )}
-                </div>
+                </Box>
 
                 {activeCard && (
-                    <div className={styles.cardEditorPanel}>
-                        <div className={styles.cardEditorHeader}>
-                            <Typography className={styles.cardTitle}>Card {activeCardIndex + 1} Settings</Typography>
+                    <Box className={styles.cardEditorPanel}>
+                        <Box className={styles.cardEditorHeader}>
+                            <h4 className={styles.cardTitle}>Card {activeCardIndex + 1} Settings</h4>
                             <Button
                                 size="small"
                                 className={styles.cardDeleteBtn}
@@ -69,39 +99,40 @@ const TemplateCarouselSection = ({
                             >
                                 Delete Card
                             </Button>
-                        </div>
+                        </Box>
 
-                        <div className={styles.mediaPickerWrap}>
-                            <Typography className={styles.fieldLabel}>Card Header Media<span style={{ color: 'red' }}>*</span></Typography>
-                            <div className={styles.mediaIconGrid}>
+                        <Box className={styles.mediaPickerWrap}>
+                            <label className={styles.fieldLabel}>Card Header Media<Box component="span" sx={{ color: 'error.main' }}>*</Box></label>
+                            <Box className={styles.mediaIconGrid}>
                                 {[
                                     { type: 'image', Icon: Image, label: 'Image' },
                                     { type: 'video', Icon: Video, label: 'Video' },
                                 ].map(({ type, Icon, label }) => (
-                                    <button
+                                    <Button
                                         key={type}
-                                        type="button"
                                         className={`${styles.mediaIconCard} ${activeCard.header.mediaType === type ? styles.mediaIconCardActive : ''}`}
                                         onClick={() => onCardHeaderTypeChange(activeCardIndex, type)}
                                     >
                                         <Icon size={24} className={styles.mediaIconSvg} />
                                         <span className={styles.mediaIconLabel}>{label}</span>
-                                    </button>
+                                    </Button>
                                 ))}
-                            </div>
+                            </Box>
 
-                            <div className={styles.mediaSampleBox}>
+                            <Box className={styles.mediaSampleBox}>
                                 {!activeCard.header.file && activeCard.header.mediaUrl && isOwnServerUrl(activeCard.header.mediaUrl) && (
-                                    <div className={styles.existingMediaRow}>
+                                    <Box className={styles.existingMediaRow}>
                                         {activeCard.header.mediaType === 'image' && (
-                                            <img
+                                            <Box
+                                                component="img"
                                                 src={activeCard.header.mediaUrl}
                                                 alt="Current card media"
                                                 className={styles.existingMediaThumb}
                                             />
                                         )}
                                         {activeCard.header.mediaType === 'video' && (
-                                            <video
+                                            <Box
+                                                component="video"
                                                 src={activeCard.header.mediaUrl}
                                                 className={styles.existingMediaThumb}
                                                 controls
@@ -109,12 +140,12 @@ const TemplateCarouselSection = ({
                                                 preload="metadata"
                                             />
                                         )}
-                                        <Typography className={styles.existingMediaLabel}>
+                                        <p className={styles.existingMediaLabel}>
                                             Current media (from saved template)
-                                        </Typography>
-                                    </div>
+                                        </p>
+                                    </Box>
                                 )}
-                                <div className={styles.mediaSampleActions}>
+                                <Box className={styles.mediaSampleActions}>
                                     <Button
                                         component="label"
                                         className={styles.mediaUploadBtn}
@@ -129,16 +160,16 @@ const TemplateCarouselSection = ({
                                         />
                                     </Button>
                                     {activeCard.header.file && (
-                                        <Typography className={styles.mediaFileName}>{activeCard.header.file.name}</Typography>
+                                        <span className={styles.mediaFileName}>{activeCard.header.file.name}</span>
                                     )}
-                                </div>
-                            </div>
-                        </div>
+                                </Box>
+                            </Box>
+                        </Box>
 
-                        <div className={styles.cardBodySection}>
-                            <div className={styles.sectionHeaderRow}>
-                                <Typography className={styles.variableTitle}>Card Body</Typography>
-                            </div>
+                        <Box className={styles.cardBodySection}>
+                            <Box className={styles.sectionHeaderRow}>
+                                <span className={styles.variableTitle}>Card Body</span>
+                            </Box>
                             <TemplateBodyInput
                                 value={activeCard.body}
                                 onChange={(value) => onCardBodyChange(activeCardIndex, value)}
@@ -157,15 +188,15 @@ const TemplateCarouselSection = ({
                                 onEmojiSelect={onCardEmojiSelect}
                                 styles={styles}
                             />
-                        </div>
+                        </Box>
 
-                        <div className={styles.cardButtonsSection}>
-                            <div className={styles.sectionHeaderRow}>
-                                <Typography className={styles.variableTitle}>Card Buttons<span style={{ color: 'red' }}>*</span></Typography>
-                            </div>
-                            <Typography className={styles.sectionSubtitle} sx={{ mb: 1 }}>
+                        <Box className={styles.cardButtonsSection}>
+                            <Box className={styles.sectionHeaderRow}>
+                                <span className={styles.variableTitle}>Card Buttons<Box component="span" sx={{ color: 'error.main' }}>*</Box></span>
+                            </Box>
+                            <p className={styles.sectionSubtitle} style={{ marginBottom: '8px' }}>
                                 Button type/order is synced across all cards. You can edit button text, URL and phone number per card.
-                            </Typography>
+                            </p>
                             <TemplateButtonSection
                                 buttons={activeCard.buttons || []}
                                 styles={styles}
@@ -180,10 +211,10 @@ const TemplateCarouselSection = ({
                                 onUpdateButton={(btn, idx, patch) => onUpdateCardButton(activeCardIndex, btn, idx, patch)}
                                 onRemoveButton={(btn, idx) => onRemoveCardButton(activeCardIndex, btn, idx)}
                             />
-                        </div>
-                    </div>
+                        </Box>
+                    </Box>
                 )}
-            </div>
+            </Box>
         </Paper>
     );
 };

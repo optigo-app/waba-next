@@ -10,6 +10,8 @@ import {
   addSessionLogoutHandler,
 } from '../socket';
 import { useAuth } from '../hooks/useAuth';
+import { getUserData, storage } from '../utils/storage';
+import { savePlayerId } from '../api/chat/conversationApi';
 
 const SocketStatusContext = createContext({ isConnected: false, socketStatus: 'disconnected' });
 
@@ -38,17 +40,10 @@ export default function SocketProvider({ children }) {
       let userId = auth?.userId;
 
       if (!token || !userId) {
-        if (typeof window !== 'undefined') {
-          const userDataRaw = sessionStorage.getItem('userData');
-          if (userDataRaw) {
-            try {
-              const parsed = JSON.parse(userDataRaw);
-              token = parsed.token;
-              userId = parsed.userId;
-            } catch {
-              // ignore
-            }
-          }
+        const userData = getUserData();
+        if (userData) {
+          token = userData.token;
+          userId = userData.userId;
         }
       }
 
@@ -57,10 +52,28 @@ export default function SocketProvider({ children }) {
       const socket = initializeSocket(token);
       if (!socket) return;
 
-      socket.on('connect', () => {
+      socket.on('connect', async () => {
         if (!mounted) return;
         setIsConnected(true);
         setSocketStatus('connected');
+
+        // Register socket ID with backend
+        try {
+          const userData = getUserData();
+          const socketId = socket?.id;
+          const uid = auth?.userId || userData?.userId;
+          const id = auth?.id || userData?.id;
+          if (socketId && uid && id) {
+            const result = await savePlayerId(socketId, uid, id);
+            if (result) {
+              console.log('Socket ID registered successfully:', result);
+            } else {
+              console.warn('Socket ID registration returned empty response');
+            }
+          }
+        } catch (err) {
+          console.error('Failed to register socket ID:', err);
+        }
       });
 
       socket.on('disconnect', (reason) => {
@@ -96,7 +109,7 @@ export default function SocketProvider({ children }) {
 
     const removeHandler = addSessionLogoutHandler(() => {
       disconnectSocket(true);
-      if (typeof window !== 'undefined') sessionStorage.clear();
+      storage.clear();
       router.push('/login');
       toast.error('Your session has been logged out from another device', {
         duration: 3000,

@@ -1,0 +1,116 @@
+/* Chat Theme — matches waba-chat/src/global.scss */
+
+:root {
+  /* Primary */
+  --chat-primary: #25d366;
+  --chat-primary-light: rgba(37, 211, 102, 0.16);
+  --chat-primary-light-bg: rgba(29, 170, 97, 0.16);
+
+  /* Buttons */
+  --chat-btn-bg: #1daa61;
+  --chat-btn-color: #fff;
+  --chat-btn-hover-color: #1daa61;
+  --chat-btn-border: #1daa61;
+  --chat-btn-danger-bg: linear-gradient(270deg, rgba(255, 72, 66, 0.8) 0%, #d90429 100%);
+  --chat-btn-danger-hover: #c20225;
+  --chat-btn-danger-color: #ffffff;
+
+  /* Sidebar */
+  --chat-sidebar-active-bg: #1daa61;
+  --chat-sidebar-bg: #ffffff;
+  --chat-sidebar-border: #5a5a5a0e;
+  --chat-sidebar-shadow: rgba(0, 0, 0, 0.1) 0px 4px 10px;
+
+  /* Header */
+  --chat-header-height: 3.2rem;
+  --chat-header-padding-x: 12px;
+  --chat-header-padding-y: 8px;
+  --chat-header-radius: 14px;
+
+  /* Typography */
+  --chat-font: 'Poppins', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  --chat-title-color: #444050;
+  --chat-secondary-color: #7D7f85;
+  --chat-text2nd-color: #6D6B77;
+  --chat-placeholder-color: #808080;
+  --chat-text-white: #fff;
+  --chat-text-light: #f1f1f1;
+  --chat-bg-light: #ebebeb;
+
+  /* Shadows */
+  --chat-box-shadow: 0 4px 16px rgba(0, 0, 0, 0.05), 0 1px 3px rgba(0, 0, 0, 0.08);
+  --chat-paper-shadow: 0px 5px 5px -3px rgba(0, 0, 0, 0.2), 0px 8px 10px 1px rgba(0, 0, 0, 0.14), 0px 3px 14px 2px rgba(0, 0, 0, 0.12);
+  --chat-transition: 200ms;
+
+  /* Semantic Colors */
+  --chat-success: #28C76F;
+  --chat-success-light: #c8e6c9;
+  --chat-success-light-bg: rgba(40, 199, 111, 0.16);
+
+  --chat-error: #d32f2f;
+  --chat-error-light: #ffcdd2;
+  --chat-error-light-bg: rgba(211, 47, 47, 0.16);
+
+  --chat-warning: #f57c00;
+  --chat-warning-light: #ffe0b2;
+  --chat-warning-light-bg: rgba(245, 124, 0, 0.16);
+
+  --chat-info: #00CFE8;
+  --chat-info-light: #b3e5fc;
+  --chat-info-light-bg: rgba(0, 207, 232, 0.16);
+
+  --chat-new-main: #a6a2d18a;
+  --chat-new-light: #33299f;
+  --chat-support-bg: #e3e3e3;
+  --chat-support-main: var(--chat-title-color);
+  --chat-support-light: #e3e3e3;
+
+  --chat-dark-bg: #6788f394;
+  --chat-dark-main: #fff;
+  --chat-dark-light: #fff;
+}
+
+/* Utility classes from waba-chat global.scss */
+.chat-primary-btn {
+  font-family: var(--chat-font) !important;
+  background: var(--chat-btn-bg) !important;
+  color: var(--chat-btn-color) !important;
+  border-color: var(--chat-btn-border) !important;
+  text-transform: capitalize !important;
+  border-radius: 16px !important;
+}
+.chat-primary-btn:hover {
+  background-color: var(--chat-btn-hover-color) !important;
+  border-color: var(--chat-btn-border) !important;
+}
+
+.chat-secondary-btn {
+  font-family: var(--chat-font) !important;
+  background: #ebebed !important;
+  color: var(--chat-secondary-color) !important;
+  border-color: #ebebed !important;
+  text-transform: capitalize !important;
+  border-radius: 16px !important;
+}
+.chat-secondary-btn:hover {
+  background-color: var(--chat-btn-hover-color) !important;
+  border-color: var(--chat-btn-border) !important;
+}
+
+/* Keyframes */
+@keyframes readingPulse {
+  0% { opacity: 1; transform: scaleY(1); }
+  50% { opacity: 0.7; transform: scaleY(0.95); }
+  100% { opacity: 1; transform: scaleY(1); }
+}
+
+@keyframes addCustomerPulse {
+  0% { box-shadow: 0 0 0 0 rgba(29, 170, 97, 0.45); }
+  70% { box-shadow: 0 0 0 12px rgba(29, 170, 97, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(29, 170, 97, 0); }
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

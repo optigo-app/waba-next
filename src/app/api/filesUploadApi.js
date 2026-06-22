@@ -1,8 +1,9 @@
 import { UPLOADFILE } from './Config';
+import { getToken } from '../utils/storage';
 
 export const filesUploadApi = async ({ attachments, folderName, uniqueNo }) => {
-  const userTokenRaw = sessionStorage.getItem('userToken');
-  const ukey = userTokenRaw ? JSON.parse(userTokenRaw)?.ukey : '';
+  const userToken = getToken();
+  const ukey = userToken?.ukey ?? '';
   const formData = new FormData();
 
   attachments?.forEach((item) => {

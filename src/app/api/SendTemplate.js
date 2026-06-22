@@ -1,23 +1,5 @@
-import { TEMPLATE_TESTSEND, getHeaders } from "./Config";
-
-const postJson = async (url, payload) => {
-    const headers = getHeaders();
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            ...headers,
-        },
-        body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || response.statusText);
-    }
-
-    return response.json();
-};
+import { TEMPLATE_TESTSEND } from "./Config";
+import { postJson } from "./postJson";
 
 export const sendTemplate = async (payload) => {
     try {

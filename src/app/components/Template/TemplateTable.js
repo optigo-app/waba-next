@@ -4,11 +4,11 @@ import { FileText, Eye, Send, Copy, Trash2, BookOpen, CheckCircle2, Clock, XCirc
 import IconButton from '../Common/IconButton';
 
 const STATUS_CONFIG = {
-    APPROVED: { label: 'Approved', icon: CheckCircle2, color: 'var(--success-main)', bg: 'rgba(40, 199, 111, 0.16)' },
-    REJECTED: { label: 'Rejected', icon: XCircle, color: 'var(--error-main)', bg: 'rgba(211, 47, 47, 0.16)' },
-    PENDING: { label: 'Pending', icon: Clock, color: 'var(--warning-main)', bg: 'rgba(245, 124, 0, 0.16)' },
-    IN_APPEAL: { label: 'In Appeal', icon: AlertCircle, color: 'var(--primary-main)', bg: 'rgba(115, 103, 240, 0.16)' },
-    DRAFT: { label: 'Draft', icon: BookOpen, color: 'var(--secondary-color)', bg: 'rgba(125, 127, 133, 0.16)' },
+    APPROVED:   { label: 'Approved',  icon: CheckCircle2, color: '#1daa61', bg: 'rgba(29, 170, 97, 0.10)',  border: '#1daa61' },
+    REJECTED:   { label: 'Rejected',  icon: XCircle,      color: '#d32f2f', bg: 'rgba(211, 47, 47, 0.10)',  border: '#d32f2f' },
+    PENDING:    { label: 'Pending',   icon: Clock,        color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.10)', border: '#f59e0b' },
+    IN_APPEAL:  { label: 'In Appeal', icon: AlertCircle,  color: '#7367f0', bg: 'rgba(115, 103, 240, 0.10)', border: '#7367f0' },
+    DRAFT:      { label: 'Draft',     icon: BookOpen,     color: '#6D6B77', bg: 'rgba(109, 107, 119, 0.10)', border: '#6D6B77' },
 };
 
 const getStatusConfig = (status) =>
@@ -28,11 +28,11 @@ const getHeaderType = (components = []) => {
 };
 
 const HEADER_ICONS = {
-    carousel: { Icon: Image, label: 'Carousel', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.16)' },
-    image: { Icon: Image, label: 'Image', color: 'var(--primary-main)', bg: 'rgba(115, 103, 240, 0.16)' },
-    video: { Icon: Video, label: 'Video', color: 'var(--info-main)', bg: 'rgba(0, 207, 232, 0.16)' },
-    document: { Icon: FileType, label: 'Document', color: 'var(--warning-main)', bg: 'rgba(245, 124, 0, 0.16)' },
-    text: { Icon: FileQuestion, label: 'Text', color: 'var(--title-color)', bg: 'rgba(68, 64, 80, 0.16)' },
+    carousel: { Icon: Image,       label: 'Carousel', color: '#8b5cf6', bg: 'rgba(139, 92, 246, 0.10)', border: '#8b5cf6' },
+    image:    { Icon: Image,       label: 'Image',    color: '#7367f0', bg: 'rgba(115, 103, 240, 0.10)', border: '#7367f0' },
+    video:    { Icon: Video,       label: 'Video',    color: '#03c3ec', bg: 'rgba(3, 195, 236, 0.10)',  border: '#03c3ec' },
+    document: { Icon: FileType,    label: 'Document', color: '#ff9f43', bg: 'rgba(255, 159, 67, 0.10)',  border: '#ff9f43' },
+    text:     { Icon: FileQuestion,label: 'Text',     color: '#6D6B77', bg: 'rgba(109, 107, 119, 0.10)',  border: '#6D6B77' },
 };
 
 const canEditTemplate = (template) => {
@@ -96,8 +96,8 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
             headerAlign: 'start',
             renderCell: (params) => (
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, minWidth: 0 }}>
-                    <FileText size={16} color="#6b7280" />
-                    <Typography variant="body2" sx={{ fontWeight: 600, color: 'var(--title-color)', fontSize: '0.875rem' }} noWrap>
+                    <FileText size={16} color="#94a3b8" />
+                    <Typography variant="body2" sx={{ fontWeight: 600, fontSize: '0.875rem', letterSpacing: '-0.01em' }} noWrap>
                         {params.row.TemplateName}
                     </Typography>
                 </Box>
@@ -114,14 +114,16 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
                 const StatusIcon = params.row.status.icon;
                 return (
                     <Chip
-                        icon={<StatusIcon size={12} color={params.row.status.color} />}
                         label={params.row.status.label}
                         size="small"
                         sx={{
                             backgroundColor: params.row.status.bg,
                             color: params.row.status.color,
-                            fontSize: '0.72rem',
-                            height: '22px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            height: '24px',
+                            borderRadius: '6px',
+                            pl: 0.5,
                             '& .MuiChip-icon': { marginLeft: '4px', color: 'inherit' },
                         }}
                     />
@@ -148,8 +150,11 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
                         sx={{
                             backgroundColor: params.row.headerInfo.bg,
                             color: params.row.headerInfo.color,
-                            fontSize: '0.72rem',
-                            height: '22px',
+                            fontSize: '0.75rem',
+                            fontWeight: 600,
+                            height: '24px',
+                            borderRadius: '6px',
+                            pl: 0.5,
                             '& .MuiChip-icon': { marginLeft: '4px', color: 'inherit' }
                         }}
                     />
@@ -164,7 +169,7 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
             align: 'start',
             headerAlign: 'start',
             renderCell: (params) => (
-                <Chip label={params.row.TemplateType || '—'} size="small" sx={{ fontSize: '0.72rem', height: '22px' }} />
+                <Chip label={params.row.TemplateType || '—'} size="small" sx={{ fontSize: '0.75rem', fontWeight: 500, height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', color: '#475569' }} />
             )
         },
         {
@@ -175,7 +180,7 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
             align: 'start',
             headerAlign: 'start',
             renderCell: (params) => (
-                <Chip label={params.row.Language || '—'} size="small" sx={{ fontSize: '0.72rem', height: '22px' }} />
+                <Chip label={params.row.Language || '—'} size="small" sx={{ fontSize: '0.75rem', fontWeight: 500, height: '24px', borderRadius: '6px', backgroundColor: '#f1f5f9', color: '#475569' }} />
             )
         },
         {
@@ -187,7 +192,7 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
             headerAlign: 'start',
             valueGetter: (_, row) => row.formattedDate,
             renderCell: (params) => (
-                <Typography variant="body2" sx={{ color: 'var(--text-2nd-color)', fontWeight: 500, fontSize: '0.875rem' }}>
+                <Typography variant="body2" sx={{ color: '#94a3b8', fontWeight: 500, fontSize: '0.8rem' }}>
                     {params.row.formattedDate}
                 </Typography>
             )
@@ -254,28 +259,35 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
 
                     '& .MuiDataGrid-columnHeaders': {
                         backgroundColor: '#f8fafc',
-                        color: 'var(--secondary-color)',
+                        color: '#64748b',
                         fontWeight: 600,
-                        fontSize: '0.8rem',
+                        fontSize: '0.75rem',
                         textTransform: 'uppercase',
-                        letterSpacing: '0.5px',
+                        letterSpacing: '0.6px',
+                        minHeight: '48px !important',
                     },
 
                     '& .MuiDataGrid-columnHeaderTitle': {
-                        fontWeight: 700,
+                        fontWeight: 600,
+                    },
+
+                    '& .MuiDataGrid-row': {
+                        transition: 'background-color 0.15s ease',
+                        '&:hover': { backgroundColor: '#f8fafc' },
                     },
 
                     '& .MuiDataGrid-cell': {
                         display: 'flex',
                         alignItems: 'center',
-                        padding: '0 12px',
+                        padding: '0 16px',
                         whiteSpace: 'nowrap',
                         overflow: 'hidden',
                         textOverflow: 'ellipsis',
                     },
 
                     '& .MuiDataGrid-footerContainer': {
-                        borderTop: '1px solid var(--sidebar-borderColor)',
+                        borderTop: '1px solid #e2e8f0',
+                        backgroundColor: '#fff',
                     },
 
                     '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': {
@@ -285,6 +297,7 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
                     '& .MuiDataGrid-columnHeader:focus, & .MuiDataGrid-columnHeader:focus-within': {
                         outline: 'none',
                     },
+                    '& .MuiDataGrid-main': { backgroundColor: '#fff' },
                 }}
             />
         </Paper>

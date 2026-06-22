@@ -66,7 +66,7 @@
     width: 36px;
     height: 36px;
     border-radius: 10px;
-    background: rgba(115, 103, 240, 0.1);
+    background: rgba($primary-main, 0.1);
     color: $primary-main;
     display: flex;
     align-items: center;
@@ -76,7 +76,7 @@
 
 .pageTitle {
     font-size: 1rem;
-    font-weight: 700;
+    font-weight: 600;
     color: $titleColor;
     margin: 0;
     font-family: $font-family;
@@ -131,7 +131,7 @@
     background: #fff;
 
     &:focus {
-        border-color: var(--background-theme, #7367f0);
+        border-color: var(--background-theme, #1daa61);
     }
 }
 
@@ -147,7 +147,7 @@
         cursor: pointer;
 
         &:focus {
-            border-color: var(--background-theme, #7367f0);
+            border-color: var(--background-theme, #1daa61);
         }
     }
 }
@@ -169,14 +169,14 @@
     transition: all 0.15s;
 
     &:hover {
-        border-color: var(--background-theme, #7367f0);
-        color: var(--background-theme, #7367f0);
+        border-color: var(--background-theme, #1daa61);
+        color: var(--background-theme, #1daa61);
     }
 }
 
 .activeFilter {
-    background: var(--background-theme, #7367f0);
-    border-color: var(--background-theme, #7367f0);
+    background: var(--background-theme, #1daa61);
+    border-color: var(--background-theme, #1daa61);
     color: #fff;
 
     &:hover {
@@ -309,7 +309,7 @@
 
 .drawerTitle {
     font-size: 1.1rem;
-    font-weight: 700;
+    font-weight: 600;
     margin: 0;
 }
 

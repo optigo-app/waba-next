@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { disconnectSocket } from '../../socket'
 import {Menu, MenuItem, Tooltip, IconButton, Avatar } from '@mui/material'
-import poweredByImg from '../../assests/poweredBy.png';
+const poweredByImg = '/poweredBy.png';
 import { getWhatsAppAvatarConfig } from '@/app/utils/globalFunc'
 import { useAuth } from '../../hooks/useAuth'
 
@@ -42,8 +42,8 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
 
     const menuItems = [
         { path: "/", icon: <HomeIcon {...ICON_PROPS} />, label: "Dashboard" },
-        { path: "/campaigns", icon: <LayoutGrid {...ICON_PROPS} />, label: "Campaigns" },
-        { path: "/waba-chat", icon: <MessageCircle {...ICON_PROPS} />, label: "Waba Chat" },
+        { path: "/campaign", icon: <LayoutGrid {...ICON_PROPS} />, label: "Campaign" },
+        { path: "/chat", icon: <MessageCircle {...ICON_PROPS} />, label: "Chat", external: true },
     ];
 
     useEffect(() => {
@@ -107,13 +107,24 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
                                             disableFocusListener={!isCollapsed}
                                             disableTouchListener={!isCollapsed}
                                         >
-                                            <Link
-                                                href={item.path}
-                                                onClick={() => setActivePath(item.path)}
-                                                className={`sidebar_main_link ${isActive ? "active" : ""}`}
-                                            >
-                                                {content}
-                                            </Link>
+                                            {item.external ? (
+                                                <a
+                                                    href={item.path}
+                                                    target="_blank"
+                                                    rel="noopener noreferrer"
+                                                    className={`sidebar_main_link ${isActive ? "active" : ""}`}
+                                                >
+                                                    {content}
+                                                </a>
+                                            ) : (
+                                                <Link
+                                                    href={item.path}
+                                                    onClick={() => setActivePath(item.path)}
+                                                    className={`sidebar_main_link ${isActive ? "active" : ""}`}
+                                                >
+                                                    {content}
+                                                </Link>
+                                            )}
                                         </Tooltip>
                                     </li>
                                 );
@@ -166,7 +177,7 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
                 <div className={isCollapsed ? "powered-by collapsed" : "powered-by"}>
                     <span>Powered by </span>
                     <div className="optigo-logo">
-                        <img src={poweredByImg.src} alt="Optigo logo" />
+                        <img src={poweredByImg} alt="Optigo logo" />
                     </div>
                 </div>
             </div>

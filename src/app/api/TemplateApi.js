@@ -3,29 +3,9 @@ import {
     TEMPLATE_DELETE,
     TEMPLATE_EDIT,
     TEMPLATE_PUBLISH,
-    TEMPLATE_TESTSEND,
     TEMPLATE_SYNC,
-    getHeaders,
 } from "./Config";
-
-const postJson = async (url, payload) => {
-    const headers = getHeaders();
-    const response = await fetch(url, {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json",
-            ...headers,
-        },
-        body: JSON.stringify(payload),
-    });
-
-    if (!response.ok) {
-        const text = await response.text();
-        throw new Error(text || response.statusText);
-    }
-
-    return response.json();
-};
+import { postJson } from "./postJson";
 
 export const createTemplate = async (payload) => {
     try {

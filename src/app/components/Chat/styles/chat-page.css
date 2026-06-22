@@ -1,0 +1,101 @@
+/* ChatPage layout — matches waba-chat Customers.scss */
+.chat-page-container {
+  width: 100%;
+  background-color: #fff;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.chat-page-layout {
+  display: flex;
+  height: 100%;
+  width: 100%;
+}
+
+.chat-sidebar-section {
+  width: 440px;
+  min-width: 440px;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  border-right: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.chat-conversation-section {
+  flex: 1;
+  background-color: #fff;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Responsive */
+@media (max-width: 1440px) {
+  .chat-sidebar-section {
+    width: 380px;
+    min-width: 380px;
+  }
+}
+
+@media (max-width: 1000px) {
+  .chat-sidebar-section {
+    width: 350px;
+    min-width: 350px;
+  }
+}
+
+/* Tablet & mobile — WhatsApp-style full-screen toggle */
+@media (max-width: 1000px) {
+  .chat-page-layout {
+    position: relative;
+  }
+
+  .chat-sidebar-section {
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    border-right: none;
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    transition: transform 0.25s ease;
+  }
+
+  .chat-conversation-section {
+    position: absolute;
+    inset: 0;
+    z-index: 2;
+    transform: translateX(100%);
+    transition: transform 0.25s ease;
+  }
+
+  .chat-page-layout.chat-active .chat-sidebar-section {
+    transform: translateX(-30%);
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .chat-page-layout.chat-active .chat-conversation-section {
+    transform: translateX(0);
+  }
+}
+
+/* Mobile-only refinements */
+@media (max-width: 768px) {
+  .chat-page-layout {
+    flex-direction: column;
+  }
+
+  .chat-sidebar-section {
+    width: 100%;
+    min-width: 100%;
+    height: 100%;
+    border-right: none;
+  }
+
+  .chat-conversation-section {
+    width: 100%;
+    height: 100%;
+  }
+}

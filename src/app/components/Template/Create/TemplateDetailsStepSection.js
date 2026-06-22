@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { Box, Typography, TextField, Button } from '@mui/material';
+import { Box, TextField, Button, MenuItem } from '@mui/material';
 
 const TemplateDetailsStepSection = ({
     styles,
@@ -16,8 +18,8 @@ const TemplateDetailsStepSection = ({
 }) => {
     return (
         <Box className={styles.stepPanel}>
-            <div className={styles.inputSection}>
-                <Typography className={styles.fieldLabel}>Template Name</Typography>
+            <Box className={styles.inputSection}>
+                <label className={styles.fieldLabel}>Template Name</label>
                 <TextField
                     fullWidth
                     placeholder="e.g. summer_sale_offer"
@@ -27,103 +29,64 @@ const TemplateDetailsStepSection = ({
                     helperText={templateNameError}
                     disabled={isEditMode}
                 />
-            </div>
+            </Box>
 
-            <div className={styles.inputSection}>
-                <Typography className={styles.fieldLabel}>Template Language</Typography>
+            <Box className={styles.inputSection}>
+                <label className={styles.fieldLabel}>Template Language</label>
                 <TextField
                     select
                     fullWidth
                     value={templateDetails.templateLanguage}
                     onChange={(e) => onTemplateLanguageChange(e.target.value)}
-                    SelectProps={{ native: true }}
                     disabled={isEditMode}
                 >
-                    <option value="en">English</option>
-                    <option value="en_US">English (US)</option>
-                    <option value="en_GB">English (UK)</option>
-                    <option value="hi">Hindi</option>
-                    <option value="ar">Arabic</option>
-                    <option value="es">Spanish</option>
-                    <option value="pt_BR">Portuguese (BR)</option>
+                    <MenuItem value="en">English</MenuItem>
+                    <MenuItem value="en_US">English (US)</MenuItem>
+                    <MenuItem value="en_GB">English (UK)</MenuItem>
+                    <MenuItem value="hi">Hindi</MenuItem>
+                    <MenuItem value="ar">Arabic</MenuItem>
+                    <MenuItem value="es">Spanish</MenuItem>
+                    <MenuItem value="pt_BR">Portuguese (BR)</MenuItem>
                 </TextField>
-            </div>
+            </Box>
 
-            <div className={styles.inputSection}>
-                <Typography className={styles.fieldLabel}>Template Category</Typography>
-                <Typography
-                    sx={{
-                        fontSize: '0.78rem',
-                        color: '#b45309',
-                        backgroundColor: '#fffbeb',
-                        border: '1px solid #fde68a',
-                        borderRadius: '8px',
-                        padding: '8px 10px',
-                        marginBottom: '10px',
-                        lineHeight: 1.45,
-                    }}
-                >
+            <Box className={styles.inputSection}>
+                <label className={styles.fieldLabel}>Template Category</label>
+                <Box className={styles.infoNotification}>
                     Info: Image and Carousel templates should use the Marketing category.
-                </Typography>
-                <div className={styles.categoryList} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                </Box>
+                <Box className={styles.categoryList} sx={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                     {categoryCards.map((card) => {
                         const { Icon } = card;
                         const isSelected = templateDetails.templateCategory === card.key;
                         return (
-                            <button
+                            <Button
                                 key={card.key}
-                                type="button"
                                 className={`${styles.categoryCardFull} ${isSelected ? styles.selectedCategoryFull : ''}`}
                                 disabled={isCategoryLocked}
                                 onClick={() => onTemplateCategoryChange(card.key)}
-                                style={{
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: '16px',
-                                    padding: '16px',
-                                    border: '1px solid #e2e8f0',
-                                    borderRadius: '8px',
-                                    backgroundColor: isSelected ? 'rgba(115, 103, 240, 0.06)' : '#ffffff',
-                                    cursor: isCategoryLocked ? 'not-allowed' : 'pointer',
-                                    opacity: isCategoryLocked ? 0.75 : 1,
-                                    textAlign: 'left',
-                                    transition: 'all 0.2s',
-                                    width: '100%',
-                                    borderColor: isSelected ? '#7367f0' : '#e2e8f0'
-                                }}
                             >
-                                <div
-                                    style={{
-                                        width: '40px',
-                                        height: '40px',
-                                        borderRadius: '50%',
-                                        backgroundColor: isSelected ? 'rgba(115, 103, 240, 0.16)' : '#f1f5f9',
-                                        display: 'flex',
-                                        alignItems: 'center',
-                                        justifyContent: 'center',
-                                        color: isSelected ? '#7367f0' : 'var(--secondary-color)'
-                                    }}
-                                >
+                                <Box className={styles.categoryIconWrap}>
                                     <Icon size={20} />
-                                </div>
-                                <div style={{ flex: 1 }}>
-                                    <Typography sx={{ fontWeight: 600, color: '#1e293b', fontSize: '1rem' }}>{card.key}</Typography>
-                                    <Typography sx={{ color: 'var(--secondary-color)', fontSize: '0.875rem' }}>{card.description}</Typography>
-                                </div>
-                            </button>
+                                </Box>
+                                <Box sx={{ flex: 1, textAlign: 'left' }}>
+                                    <span className={styles.categoryTitle}>{card.key}</span>
+                                    <p className={styles.categoryDesc}>{card.description}</p>
+                                </Box>
+                            </Button>
                         );
                     })}
-                </div>
-            </div>
+                </Box>
+            </Box>
 
-            <div className={styles.stepFooter}>
+            <Box className={styles.stepFooter}>
                 <Button variant="outlined" onClick={onClose} className={styles.cancelBtn}>
                     Cancel
                 </Button>
-                <Button variant="contained" className="buttonClassname" onClick={onNext}>
+                <Button variant="contained" className={styles.primaryBtn} onClick={onNext}>
                     Next
                 </Button>
-            </div>
+            </Box>
         </Box>
     );
 };

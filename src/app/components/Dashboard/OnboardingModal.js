@@ -77,7 +77,7 @@ const OnboardingModal = ({ open, onClose }) => {
                     pt: 3,
                     px: 3,
                     fontFamily: 'Poppins, sans-serif',
-                    fontWeight: 700,
+                    fontWeight: 600,
                     fontSize: '1.25rem',
                     color: '#444050',
                 }}
@@ -201,7 +201,7 @@ const OnboardingModal = ({ open, onClose }) => {
                         <Typography
                             sx={{
                                 fontFamily: 'Poppins, sans-serif',
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 fontSize: '1.1rem',
                                 color: '#166534',
                             }}

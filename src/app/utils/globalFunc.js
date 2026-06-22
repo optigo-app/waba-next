@@ -97,10 +97,11 @@ export const formatDate = (dateString) => {
     });
 };
 
-
 export const previewBg = {
-    backgroundImage: `linear-gradient(rgba(249, 250, 251, 0.30), rgba(249, 250, 251, 0.80)), url(${window.location.origin}/assests/images/bg-3.jpg)`,
+    backgroundImage:
+        'linear-gradient(rgba(249, 250, 251, 0.30), rgba(249, 250, 251, 0.80)), url(/bg-3.jpg)',
 };
+
 
 export function normalizePhoneNumber(input, defaultCountryCode = "91") {
     let phone = input.replace(/[+\-\s()]/g, "");
@@ -131,11 +132,11 @@ export const getMessageStatus = (status) => {
 
 
 export const formatMobileNumber = (mobileNo = "") => {
-  const digits = mobileNo.toString().replace(/\D/g, "");
-  if (digits.length === 10) {
-    return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-  }
-  return digits;
+    const digits = mobileNo.toString().replace(/\D/g, "");
+    if (digits.length === 10) {
+        return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
+    }
+    return digits;
 };
 export const checkImageUrlValid = (url, timeoutMs = 7000) => {
     return new Promise((resolve) => {
@@ -197,4 +198,25 @@ export const getInvalidImageUrls = async (urls = [], timeoutMs = 7000) => {
     );
 
     return results.filter((item) => !item.valid).map((item) => item.url);
+};
+
+
+export const normalizeMobileNumber = (rawMobile = '') => {
+  if (!rawMobile) return '';
+
+  let digits = String(rawMobile).replace(/\D/g, '');
+
+  while (digits.startsWith('0')) {
+    digits = digits.slice(1);
+  }
+
+  if (digits.length === 10) {
+    return '91' + digits;
+  }
+
+  if (digits.length === 12 && digits.startsWith('91')) {
+    return digits;
+  }
+
+  return '';
 };

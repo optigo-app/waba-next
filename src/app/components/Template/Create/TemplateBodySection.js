@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { Paper, Typography, TextField } from '@mui/material';
+import { Paper, TextField, Box } from '@mui/material';
 import TemplateBodyInput from './TemplateBodyInput';
 
 const TemplateBodySection = ({
@@ -18,9 +20,9 @@ const TemplateBodySection = ({
     onVariableValueChange,
 }) => {
     return (
-        <Paper elevation={0} sx={{ p: 3, mb: 3, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-            <Typography className={styles.sectionTitle}>Body <span style={{ color: 'red' }}>*</span></Typography>
-            <Typography className={styles.sectionSubtitle}>Enter the text for your message in the language that you've selected.</Typography>
+        <Paper elevation={0} sx={{ p: 3, mb: 2, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+            <h3 className={styles.sectionTitle}>Body <span style={{ color: 'red' }}>*</span></h3>
+            <p className={styles.sectionSubtitle}>Enter the text for your message in the language that you've selected.</p>
             <TemplateBodyInput
                 value={body}
                 onChange={(value) => onBodyChange(value)}
@@ -41,9 +43,9 @@ const TemplateBodySection = ({
                 styles={styles}
             />
             {variableKeys.length > 0 && (
-                <div className={styles.variableSection}>
-                    <Typography className={styles.variableTitle} style={{ marginBottom: 8 }}>Sample variable values</Typography>
-                    <div className={styles.variableInputList}>
+                <Box className={styles.variableSection}>
+                    <span className={styles.variableTitle} style={{ display: 'block', marginBottom: '8px' }}>Sample variable values</span>
+                    <Box className={styles.variableInputList}>
                         {variableKeys.map((key) => (
                             <TextField
                                 key={key}
@@ -55,8 +57,8 @@ const TemplateBodySection = ({
                                 placeholder="e.g. John"
                             />
                         ))}
-                    </div>
-                </div>
+                    </Box>
+                </Box>
             )}
         </Paper>
     );

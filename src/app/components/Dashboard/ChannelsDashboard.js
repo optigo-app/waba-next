@@ -100,7 +100,7 @@ const ChannelsDashboard = () => {
                         variant="h4"
                         sx={{
                             fontSize: '1.6rem',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             color: '#444050',
                             margin: 0,
                             fontFamily: 'Poppins, sans-serif',
@@ -221,7 +221,7 @@ const ChannelsDashboard = () => {
                             <Typography
                                 sx={{
                                     fontFamily: 'Poppins, sans-serif',
-                                    fontWeight: 700,
+                                    fontWeight: 600,
                                     fontSize: '1.1rem',
                                     color: '#444050',
                                 }}

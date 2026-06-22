@@ -1,0 +1,174 @@
+'use client';
+
+import { useCallback } from 'react';
+import { CircularProgress } from '@mui/material';
+import { Paperclip, ArrowDown } from 'lucide-react';
+import { formatDateHeader } from './utils/dateUtils';
+import MessageBubble from './MessageBubble';
+import MediaPreviewOverlay from './MediaPreviewOverlay';
+
+export default function ChatMessagesArea({
+  messages,
+  loading,
+  isDragOver,
+  containerRef,
+  messagesListRef,
+  messagesEndRef,
+  handleDragEnter,
+  handleDragOver,
+  handleDragLeave,
+  handleDrop,
+  mediaPreview,
+  selectedPreviewIndex,
+  setSelectedPreviewIndex,
+  isSendingMedia,
+  clearMediaPreview,
+  removeMediaPreview,
+  fileInputRef,
+  showScrollToBottom,
+  setShowScrollToBottom,
+  unreadCount,
+  setUnreadCount,
+  scrollToBottom,
+  baseAvatarConfig,
+  messageReactions,
+  loadedMedia,
+  setLoadedMedia,
+  setMediaViewer,
+  reactionPickerMessageId,
+  setReactionPickerMessageId,
+  onContextMenuOpen,
+  onReactionSelect,
+  onExternalLinkClick,
+  blinkMessageId,
+  scrollToMessage,
+  input,
+  setInput,
+  handleSend,
+  sending,
+  emojiPickerOpen,
+  setEmojiPickerOpen,
+}) {
+  const groupMessagesByDate = useCallback(() => {
+    const grouped = {};
+    messages.forEach((msg) => {
+      let date;
+      const rawDate = msg?.DateTime || msg?.sentAt || msg?.sent_at || msg?.createdAt;
+      if (rawDate) {
+        const d = new Date(rawDate);
+        date = d.toISOString().split('T')[0];
+      } else {
+        date = 'Unknown';
+      }
+      if (!grouped[date]) grouped[date] = [];
+      grouped[date].push(msg);
+    });
+    return grouped;
+  }, [messages]);
+
+  return (
+    <div
+      className={`chat-messages-area ${isDragOver ? 'drag-over' : ''} ${mediaPreview.length > 0 ? 'media-preview-open' : ''}`}
+      ref={containerRef}
+      onDragEnter={handleDragEnter}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      {/* Drag overlay */}
+      {isDragOver && (
+        <div className="drag-overlay">
+          <div className="drag-overlay-content">
+            <Paperclip size={40} />
+            <span>Drop files here to send</span>
+          </div>
+        </div>
+      )}
+
+      <div className="chat-messages-list" ref={messagesListRef}>
+        {/* Subtle inline spinner */}
+        {loading && messages.length === 0 && (
+          <div className="chat-messages-loading">
+            <CircularProgress size={20} thickness={4} sx={{ color: '#1daa61' }} />
+          </div>
+        )}
+
+        {!loading && messages.length === 0 && (
+          <div className="chat-empty-center">No messages yet. Start the conversation!</div>
+        )}
+
+        {Object.entries(groupMessagesByDate()).map(([date, dateMessages]) => (
+          <div key={`group-${date}`}>
+            {dateMessages.some((m) => m?.DateTime || m?.sentAt || m?.sent_at) && (
+              <div className="message-date-header" key={`header-${date}`}>
+                <span>{formatDateHeader(date)}</span>
+              </div>
+            )}
+
+            {dateMessages.map((msg) => {
+              const isOutgoing = msg?.direction === 1 || msg?.Direction === 1 || msg?.direction === '1';
+              const messageId = msg?.id || msg?.Id || msg?.autoid || msg?.MessageId;
+              return (
+                <MessageBubble
+                  key={messageId}
+                  msg={msg}
+                  messageId={messageId}
+                  isOutgoing={isOutgoing}
+                  baseAvatarConfig={baseAvatarConfig}
+                  messageReactions={messageReactions}
+                  loadedMedia={loadedMedia}
+                  setLoadedMedia={setLoadedMedia}
+                  setMediaViewer={setMediaViewer}
+                  reactionPickerMessageId={reactionPickerMessageId}
+                  setReactionPickerMessageId={setReactionPickerMessageId}
+                  onContextMenuOpen={onContextMenuOpen}
+                  onReactionSelect={onReactionSelect}
+                  onExternalLinkClick={onExternalLinkClick}
+                  blinkMessageId={blinkMessageId}
+                  scrollToMessage={scrollToMessage}
+                />
+              );
+            })}
+          </div>
+        ))}
+        <div ref={messagesEndRef} />
+      </div>
+
+      {/* Scroll to bottom button */}
+      {showScrollToBottom && messages.length > 0 && (
+        <button
+          className="scroll-to-bottom-btn"
+          onClick={() => {
+            scrollToBottom();
+            setUnreadCount(0);
+          }}
+          aria-label="Scroll to bottom"
+        >
+          <ArrowDown size={20} strokeWidth={2.5} />
+          {unreadCount > 0 && (
+            <span className="scroll-to-bottom-badge">{unreadCount > 99 ? '99+' : unreadCount}</span>
+          )}
+        </button>
+      )}
+
+      {/* WhatsApp-style media preview overlay */}
+      {mediaPreview.length > 0 && (
+        <MediaPreviewOverlay
+          mediaPreview={mediaPreview}
+          selectedPreviewIndex={selectedPreviewIndex}
+          onSelectIndex={setSelectedPreviewIndex}
+          isSendingMedia={isSendingMedia}
+          onClear={clearMediaPreview}
+          onRemove={removeMediaPreview}
+          onAddMore={() => fileInputRef.current?.click()}
+          input={input}
+          setInput={setInput}
+          handleSend={handleSend}
+          sending={sending}
+          emojiPickerOpen={emojiPickerOpen}
+          setEmojiPickerOpen={setEmojiPickerOpen}
+        />
+      )}
+    </div>
+  );
+}

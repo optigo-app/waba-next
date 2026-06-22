@@ -50,7 +50,7 @@ const ChannelCard = ({ channel, onWalletOpen, onTemplatesClick }) => {
                         <Typography
                             sx={{
                                 fontSize: '1rem',
-                                fontWeight: 700,
+                                fontWeight: 600,
                                 color: '#444050',
                                 lineHeight: 1.2,
                                 fontFamily: 'Poppins, sans-serif',
@@ -96,7 +96,7 @@ const ChannelCard = ({ channel, onWalletOpen, onTemplatesClick }) => {
                     <Typography
                         sx={{
                             fontSize: '1.4rem',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             color: '#1daa61',
                             letterSpacing: '-0.02em',
                             fontFamily: 'Poppins, sans-serif',
@@ -108,7 +108,7 @@ const ChannelCard = ({ channel, onWalletOpen, onTemplatesClick }) => {
                         sx={{
                             fontSize: '0.72rem',
                             color: '#0ea5a4',
-                            fontWeight: 700,
+                            fontWeight: 600,
                             fontFamily: 'Poppins, sans-serif',
                         }}
                     >

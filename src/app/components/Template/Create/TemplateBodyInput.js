@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { TextField, Tooltip, IconButton, Typography } from '@mui/material';
+import { TextField, Tooltip, IconButton, Box } from '@mui/material';
 import { Smile, Code, Bold, Italic, Strikethrough, Braces } from 'lucide-react';
 import Picker from '@emoji-mart/react';
 import data from '@emoji-mart/data';
@@ -16,7 +18,7 @@ const iconButtonSx = {
     alignItems: 'center',
     justifyContent: 'center',
     '&:hover': {
-        background: 'rgba(115, 103, 240, 0.15)',
+        background: 'var(--primary-light-bg)',
         color: 'var(--primary-main)',
         borderRadius: '8px'
     }
@@ -95,14 +97,14 @@ const TemplateBodyInput = ({
                 helperText={helperText}
                 inputRef={textareaRef}
             />
-            <div className={`${styles.bodyFooterRow} ${parentStyles?.bodyFooterRow || ''}`}>
+            <Box className={`${styles.bodyFooterRow} ${parentStyles?.bodyFooterRow || ''}`}>
                 {showCharCounter && (
-                    <Typography className={`${styles.charCounter} ${parentStyles?.charCounter || ''}`} sx={{ color: 'var(--secondary-color)', fontSize: '0.75rem' }}>
+                    <span className={`${styles.charCounter} ${parentStyles?.charCounter || ''}`} style={{ color: 'var(--secondary-color)', fontSize: '0.78rem' }}>
                         Characters: {charCount}/{maxLength}
-                    </Typography>
+                    </span>
                 )}
                 {showFormatting && (
-                    <div className={styles.formattingButtons} style={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'center', flexWrap: 'nowrap' }}>
+                    <Box className={styles.formattingButtons} sx={{ display: 'flex', flexDirection: 'row', gap: '8px', alignItems: 'center', flexWrap: 'nowrap' }}>
                         {showEmoji && (
                             <Tooltip title="Add Emoji">
                                 <IconButton size="small" sx={iconButtonSx} onClick={onToggleEmoji}>
@@ -137,14 +139,14 @@ const TemplateBodyInput = ({
                                 </IconButton>
                             </Tooltip>
                         )}
-                    </div>
+                    </Box>
                 )}
                 {emojiPickerOpen && (
-                    <div className={styles.emojiPickerWrapper}>
+                    <Box className={styles.emojiPickerWrapper}>
                         <Picker data={data} onEmojiSelect={onEmojiSelect} theme="light" />
-                    </div>
+                    </Box>
                 )}
-            </div>
+            </Box>
         </>
     );
 };

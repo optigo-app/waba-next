@@ -1,0 +1,221 @@
+'use client';
+
+import { useRef, useEffect } from 'react';
+import { IconButton, CircularProgress } from '@mui/material';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Keyboard, Mousewheel } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/pagination';
+import 'swiper/css/navigation';
+import {
+  X, Plus, Paperclip, Smile, Send, FileText, ChevronLeft, ChevronRight,
+} from 'lucide-react';
+
+export default function MediaPreviewOverlay({
+  mediaPreview,
+  selectedPreviewIndex,
+  onSelectIndex,
+  isSendingMedia,
+  onClear,
+  onRemove,
+  onAddMore,
+  input,
+  setInput,
+  handleSend,
+  sending,
+  emojiPickerOpen,
+  setEmojiPickerOpen,
+}) {
+  const swiperRef = useRef(null);
+  const thumbRowRef = useRef(null);
+
+  // Sync Swiper when thumbnail is clicked externally
+  useEffect(() => {
+    if (swiperRef.current && swiperRef.current.activeIndex !== selectedPreviewIndex) {
+      swiperRef.current.slideTo(selectedPreviewIndex);
+    }
+  }, [selectedPreviewIndex]);
+
+  // Keep selected index in bounds when previews are removed
+  useEffect(() => {
+    if (selectedPreviewIndex >= mediaPreview.length) {
+      onSelectIndex(Math.max(0, mediaPreview.length - 1));
+    }
+  }, [mediaPreview.length, selectedPreviewIndex, onSelectIndex]);
+
+  // Auto-scroll thumbnail row so active thumb stays visible
+  useEffect(() => {
+    const row = thumbRowRef.current;
+    if (!row) return;
+    const activeThumb = row.children[selectedPreviewIndex];
+    if (!activeThumb) return;
+    activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [selectedPreviewIndex]);
+
+  // Escape key closes overlay
+  useEffect(() => {
+    const onKeyDown = (e) => {
+      if (e.key === 'Escape' && !isSendingMedia) {
+        onClear();
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isSendingMedia, onClear]);
+
+  const current = mediaPreview[selectedPreviewIndex];
+
+  const getDocColor = (name = '') => {
+    const lower = name.toLowerCase();
+    if (lower.endsWith('.pdf')) return '#ef4444';
+    if (lower.endsWith('.doc') || lower.endsWith('.docx')) return '#3b82f6';
+    if (lower.endsWith('.xls') || lower.endsWith('.xlsx')) return '#22c55e';
+    if (lower.endsWith('.ppt') || lower.endsWith('.pptx')) return '#f97316';
+    if (lower.endsWith('.txt')) return '#6b7280';
+    return '#9ca3af';
+  };
+
+  const formatSize = (bytes) => {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+  };
+
+  return (
+    <div className="media-preview-overlay">
+      {/* Header */}
+      <div className="media-preview-header">
+        <div className="media-preview-file-info">
+          <span className="media-preview-file-name">{current?.name}</span>
+          <span className="media-preview-file-meta">
+            {mediaPreview.length} file{mediaPreview.length > 1 ? 's' : ''}
+            {current?.size ? ` · ${formatSize(current.size)}` : ''}
+          </span>
+        </div>
+        <button
+          className="media-preview-close"
+          onClick={onClear}
+          disabled={isSendingMedia}
+          aria-label="Close preview"
+        >
+          <X size={20} />
+        </button>
+      </div>
+
+      {/* Main Swiper */}
+      <div className="media-preview-main">
+        <Swiper
+          modules={[Navigation, Keyboard, Mousewheel]}
+          pagination={{ clickable: true }}
+          navigation={{
+            prevEl: '.media-preview-nav-prev',
+            nextEl: '.media-preview-nav-next',
+          }}
+          keyboard={{ enabled: true }}
+          mousewheel={{ forceToAxis: true }}
+          onSwiper={(swiper) => { swiperRef.current = swiper; }}
+          onSlideChange={(swiper) => onSelectIndex(swiper.activeIndex)}
+          initialSlide={selectedPreviewIndex}
+          className="media-preview-swiper"
+        >
+          {mediaPreview.map((preview, i) => (
+            <SwiperSlide key={`${preview.name}-${i}`}>
+              {preview.type === 'image' ? (
+                <img src={preview.previewUrl} alt={preview.name} className="media-preview-slide-img" />
+              ) : preview.type === 'video' ? (
+                <video src={preview.previewUrl} className="media-preview-slide-img" controls />
+              ) : (
+                <div className="media-preview-slide-doc">
+                  <FileText size={48} color={getDocColor(preview.name)} />
+                  <span>{preview.name}</span>
+                </div>
+              )}
+            </SwiperSlide>
+          ))}
+        </Swiper>
+
+        {/* Custom theme nav buttons */}
+        {mediaPreview.length > 1 && (
+          <>
+            <button className="media-preview-nav-prev" aria-label="Previous">
+              <ChevronLeft size={28} />
+            </button>
+            <button className="media-preview-nav-next" aria-label="Next">
+              <ChevronRight size={28} />
+            </button>
+          </>
+        )}
+      </div>
+
+      {/* Thumbnails + caption */}
+      <div className="media-preview-footer">
+        <div className="media-preview-thumb-row" ref={thumbRowRef}>
+          {mediaPreview.map((preview, i) => (
+            <button
+              key={`thumb-${preview.name}-${i}`}
+              className={`media-preview-thumb-item ${i === selectedPreviewIndex ? 'active' : ''}`}
+              onClick={() => onSelectIndex(i)}
+              disabled={isSendingMedia}
+              aria-label={`Select ${preview.name}`}
+            >
+              {preview.type === 'image' ? (
+                <img src={preview.previewUrl} alt="" />
+              ) : preview.type === 'video' ? (
+                <video src={preview.previewUrl} muted />
+              ) : (
+                <FileText size={18} color={getDocColor(preview.name)} />
+              )}
+              <button
+                className="media-preview-thumb-remove"
+                onClick={(e) => { e.stopPropagation(); onRemove(i); }}
+                disabled={isSendingMedia}
+                aria-label={`Remove ${preview.name}`}
+              >
+                <X size={10} />
+              </button>
+            </button>
+          ))}
+          <button
+            className="media-preview-add-thumb"
+            onClick={onAddMore}
+            disabled={isSendingMedia}
+            aria-label="Add more files"
+          >
+            <Plus size={18} />
+          </button>
+        </div>
+
+        <div className="media-preview-caption-row">
+          <IconButton size="small" onClick={onAddMore} disabled={isSendingMedia}>
+            <Paperclip size={18} />
+          </IconButton>
+          <input
+            type="text"
+            className="media-preview-caption-input"
+            placeholder="Add a caption..."
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                handleSend();
+              }
+            }}
+          />
+          <IconButton size="small" onClick={() => setEmojiPickerOpen((prev) => !prev)}>
+            <Smile size={20} />
+          </IconButton>
+          <button
+            className="chat-send-btn"
+            onClick={handleSend}
+            disabled={sending || (!input.trim() && mediaPreview.length === 0)}
+          >
+            {sending ? <CircularProgress size={18} sx={{ color: '#fff' }} /> : <Send size={18} />}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}

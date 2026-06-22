@@ -1,5 +1,7 @@
+'use client';
+
 import React from 'react';
-import { Button, TextField, Typography, InputAdornment, Menu, MenuItem, Divider, ListSubheader, IconButton, Tooltip } from '@mui/material';
+import { Button, TextField, Typography, InputAdornment, Menu, MenuItem, Divider, ListSubheader, IconButton, Tooltip, Box } from '@mui/material';
 import { Plus, X, MousePointerClick, Phone, Globe } from 'lucide-react';
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
@@ -9,25 +11,28 @@ const phoneInputStyles = {
         width: '100%',
         height: '40px',
         fontSize: '0.875rem',
-        borderRadius: '8px',
+        borderRadius: '10px',
         border: '1px solid #e2e8f0',
         backgroundColor: '#fff',
-        color: '#0f172a'
+        color: '#444050',
+        fontFamily: 'Inter, sans-serif',
+        fontWeight: '500'
     },
     button: {
         border: '1px solid #e2e8f0',
-        borderRadius: '8px 0 0 8px',
+        borderRadius: '10px 0 0 10px',
         backgroundColor: '#f8fafc'
     },
     dropdown: {
-        borderRadius: '8px',
+        borderRadius: '10px',
         border: '1px solid #e2e8f0',
-        zIndex: 1
+        zIndex: 1,
+        fontFamily: 'Inter, sans-serif'
     },
     search: {
         margin: '8px',
         padding: '8px 12px',
-        borderRadius: '6px',
+        borderRadius: '8px',
         border: '1px solid #e2e8f0',
         fontSize: '0.875rem'
     },
@@ -81,13 +86,13 @@ const TemplateButtonSection = ({
         <>
             {(title || subtitle) && (
                 <>
-                    {title && <Typography className={styles.sectionTitle}>{title}</Typography>}
-                    {subtitle && <Typography className={styles.sectionSubtitle}>{subtitle}</Typography>}
+                    {title && <h3 className={styles.sectionTitle}>{title}</h3>}
+                    {subtitle && <p className={styles.sectionSubtitle}>{subtitle}</p>}
                 </>
             )}
 
-            <div className={styles.addButtonDropdownWrap}>
-                <div className={styles.quickAddButtons}>
+            <Box className={styles.addButtonDropdownWrap}>
+                <Box className={styles.quickAddButtons}>
                     <Tooltip title={hasQuickReply ? "Quick Reply already added" : "Add Quick Reply Button"} arrow>
                         <Button
                             className={styles.quickAddBtn}
@@ -129,7 +134,7 @@ const TemplateButtonSection = ({
                             More
                         </Button>
                     </Tooltip>
-                </div>
+                </Box>
 
                 <Menu
                     anchorEl={addButtonRef.current}
@@ -148,8 +153,8 @@ const TemplateButtonSection = ({
                     }}
                 >
                     {menuOptions.map((section, sectionIdx) => (
-                        <div key={section.section}>
-                            <ListSubheader sx={{ fontSize: '0.72rem', fontWeight: 700, color: '#64748b', lineHeight: 1.8 }}>
+                        <Box key={section.section}>
+                            <ListSubheader sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', lineHeight: 1.8 }}>
                                 {section.section}
                             </ListSubheader>
                             {section.items.map((item) => {
@@ -173,44 +178,44 @@ const TemplateButtonSection = ({
                                 );
                             })}
                             {sectionIdx < menuOptions.length - 1 && <Divider sx={{ my: 0.5 }} />}
-                        </div>
+                        </Box>
                     ))}
                 </Menu>
-            </div>
+            </Box>
 
-            <div className={styles.buttonList}>
+            <Box className={styles.buttonList}>
                 {quickReplyButtons.length > 0 && (
-                    <div
-                        style={{
+                    <Box
+                        sx={{
                             border: '1px solid #e2e8f0',
-                            borderRadius: 12,
-                            padding: 12,
+                            borderRadius: '12px',
+                            padding: '12px',
                             background: '#ffffff'
                         }}
                     >
-                        <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155', mb: 1 }}>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', mb: 1 }}>
                             Quick Reply
                         </Typography>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {quickReplyButtons.map((btn) => {
                                 const idx = buttons.findIndex((b) => b.id === btn.id);
                                 return (
-                                    <div
+                                    <Box
                                         key={btn.id || idx}
-                                        style={{
+                                        sx={{
                                             position: 'relative',
                                             display: 'flex',
                                             alignItems: 'stretch',
                                             width: '100%'
                                         }}
                                     >
-                                        <div
-                                            style={{
+                                        <Box
+                                            sx={{
                                                 flex: 1,
                                                 background: '#f8fafc',
                                                 border: '1px solid #e2e8f0',
-                                                borderRadius: 10,
+                                                borderRadius: '10px',
                                                 padding: '10px 12px',
                                                 position: 'relative'
                                             }}
@@ -232,7 +237,7 @@ const TemplateButtonSection = ({
                                                 <X size={16} />
                                             </IconButton>
 
-                                            <Typography sx={{ fontSize: '0.76rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
+                                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
                                                 Button Text
                                             </Typography>
 
@@ -249,33 +254,33 @@ const TemplateButtonSection = ({
                                                     )
                                                 }}
                                             />
-                                        </div>
-                                    </div>
+                                        </Box>
+                                    </Box>
                                 );
                             })}
-                        </div>
-                    </div>
+                        </Box>
+                    </Box>
                 )}
 
                 {otherButtons.length > 0 && (
-                    <div
-                        style={{
+                    <Box
+                        sx={{
                             border: '1px solid #e2e8f0',
-                            borderRadius: 12,
-                            padding: 12,
+                            borderRadius: '12px',
+                            padding: '12px',
                             background: '#ffffff'
                         }}
                     >
-                        <Typography sx={{ fontSize: '0.82rem', fontWeight: 700, color: '#334155', mb: 1, display: 'flex', alignItems: 'center', gap: 0.7 }}>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', mb: 1, display: 'flex', alignItems: 'center', gap: 0.7 }}>
                             <MousePointerClick size={14} />
                             Call-to-action Buttons
                         </Typography>
 
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <Box sx={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                             {otherButtons.map((btn) => {
                                 const idx = buttons.findIndex((b) => b.id === btn.id);
                                 return (
-                                    <div className={styles.buttonConfigCard} key={btn.id || idx}>
+                                    <Box className={styles.buttonConfigCard} key={btn.id || idx}>
                                         <IconButton
                                             size="small"
                                             onClick={() => onRemoveButton(btn, idx)}
@@ -293,77 +298,76 @@ const TemplateButtonSection = ({
                                             <X size={16} />
                                         </IconButton>
 
-                                        <div className={styles.buttonConfigRow}>
-                                <div>
-                                    <Typography sx={{ fontSize: '0.76rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
-                                        Button Text
-                                    </Typography>
-                                    <TextField
-                                        fullWidth
-                                        size="small"
-                                        value={btn.text || ''}
-                                        placeholder={btn.type === 'URL' ? 'Visit Website' : btn.type === 'PHONE_NUMBER' ? 'Call Now' : 'Custom'}
-                                        onChange={(e) => onUpdateButton(btn, idx, { text: e.target.value.slice(0, 25) })}
-                                        InputProps={{
-                                            endAdornment: (
-                                                <InputAdornment position="end">
-                                                    <span className={styles.inlineCounter}>{(btn.text || '').length}/25</span>
-                                                </InputAdornment>
-                                            )
-                                        }}
-                                    />
-                                </div>
+                                        <Box className={styles.buttonConfigRow}>
+                                            <Box>
+                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
+                                                    Button Text
+                                                </Typography>
+                                                <TextField
+                                                    fullWidth
+                                                    size="small"
+                                                    value={btn.text || ''}
+                                                    placeholder={btn.type === 'URL' ? 'Visit Website' : btn.type === 'PHONE_NUMBER' ? 'Call Now' : 'Custom'}
+                                                    onChange={(e) => onUpdateButton(btn, idx, { text: e.target.value.slice(0, 25) })}
+                                                    InputProps={{
+                                                        endAdornment: (
+                                                            <InputAdornment position="end">
+                                                                <span className={styles.inlineCounter}>{(btn.text || '').length}/25</span>
+                                                            </InputAdornment>
+                                                        )
+                                                    }}
+                                                />
+                                            </Box>
 
+                                            {btn.type === 'PHONE_NUMBER' && (
+                                                <Box sx={{ minWidth: '70%', flex: isCarouselContext ? 1 : 'unset' }}>
+                                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
+                                                        Phone Number
+                                                    </Typography>
+                                                    <PhoneInput
+                                                        country={'in'}
+                                                        value={btn.phone_number || ''}
+                                                        onChange={(value) => onUpdateButton(btn, idx, { phone_number: value })}
+                                                        enableSearch={true}
+                                                        countryCodeEditable={true}
+                                                        inputStyle={phoneInputStyles.input}
+                                                        buttonStyle={phoneInputStyles.button}
+                                                        dropdownStyle={phoneInputStyles.dropdown}
+                                                        searchStyle={phoneInputStyles.search}
+                                                        containerStyle={phoneInputStyles.container}
+                                                    />
+                                                </Box>
+                                            )}
 
-                                {btn.type === 'PHONE_NUMBER' && (
-                                    <div style={{ minWidth: '70%', flex: isCarouselContext ? 1 : 'unset' }}>
-                                        <Typography sx={{ fontSize: '0.76rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
-                                            Phone Number
-                                        </Typography>
-                                        <PhoneInput
-                                            country={'in'}
-                                            value={btn.phone_number || ''}
-                                            onChange={(value) => onUpdateButton(btn, idx, { phone_number: value })}
-                                            enableSearch={true}
-                                            countryCodeEditable={true}
-                                            inputStyle={phoneInputStyles.input}
-                                            buttonStyle={phoneInputStyles.button}
-                                            dropdownStyle={phoneInputStyles.dropdown}
-                                            searchStyle={phoneInputStyles.search}
-                                            containerStyle={phoneInputStyles.container}
-                                        />
-                                    </div>
-                                )}
-
-                                {btn.type === 'URL' && (
-                                    <div style={{ minWidth: 380, width: '70%' }}>
-                                        <Typography sx={{ fontSize: '0.76rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
-                                            Website URL
-                                        </Typography>
-                                        <TextField
-                                            fullWidth
-                                            size="small"
-                                            value={btn.url || ''}
-                                            onChange={(e) => onUpdateButton(btn, idx, { url: e.target.value.slice(0, 2000) })}
-                                            placeholder="https://example.com"
-                                            InputProps={{
-                                                endAdornment: (
-                                                    <InputAdornment position="end">
-                                                        <span className={styles.inlineCounter}>{(btn.url || '').length}/2000</span>
-                                                    </InputAdornment>
-                                                )
-                                            }}
-                                        />
-                                    </div>
-                                )}
-                                        </div>
-                                    </div>
+                                            {btn.type === 'URL' && (
+                                                <Box sx={{ minWidth: 380, width: '70%' }}>
+                                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
+                                                        Website URL
+                                                    </Typography>
+                                                    <TextField
+                                                        fullWidth
+                                                        size="small"
+                                                        value={btn.url || ''}
+                                                        onChange={(e) => onUpdateButton(btn, idx, { url: e.target.value.slice(0, 2000) })}
+                                                        placeholder="https://example.com"
+                                                        InputProps={{
+                                                            endAdornment: (
+                                                                <InputAdornment position="end">
+                                                                    <span className={styles.inlineCounter}>{(btn.url || '').length}/2000</span>
+                                                                </InputAdornment>
+                                                            )
+                                                        }}
+                                                    />
+                                                </Box>
+                                            )}
+                                        </Box>
+                                    </Box>
                                 );
                             })}
-                        </div>
-                    </div>
+                        </Box>
+                    </Box>
                 )}
-            </div>
+            </Box>
         </>
     );
 };

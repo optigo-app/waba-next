@@ -1,8 +1,9 @@
+'use client';
+
 import React from 'react';
-import { Paper, Typography, TextField, Button, LinearProgress } from '@mui/material';
+import { Paper, Typography, TextField, Button, LinearProgress, Box } from '@mui/material';
 import { Image, Video, FileText, MapPin, Paperclip, X } from 'lucide-react';
-import { isOwnServerUrl } from '../../utils/mediaUtils';
-import imagePlaceholder from '../../assets/imagePlaceholder.png';
+import { isOwnServerUrl } from '../../../utils/mediaUtils';
 
 const TemplateHeaderSection = ({
     styles,
@@ -20,35 +21,54 @@ const TemplateHeaderSection = ({
     onHeaderMediaRemove,
 }) => {
     return (
-        <Paper elevation={0} sx={{ p: 3, mb: 3, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
-            <Typography className={styles.sectionTitle}>Header</Typography>
-            <Typography className={styles.sectionSubtitle}>Add a title or choose which type of media you'll use for this header.</Typography>
+        <Paper elevation={0} sx={{ p: 3, mb: 2, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+            <h3 className={styles.sectionTitle}>Header</h3>
+            <p className={styles.sectionSubtitle}>Add a title or choose which type of media you'll use for this header.</p>
 
-            <div className={styles.chipRow}>
+            <Box className={styles.chipRow}>
                 {headerOptions.map((opt) => {
                     const { icon: Icon, label, key } = opt;
                     const isSelected = builderData.headerType === key;
                     return (
-                        <button
+                        <Button
                             key={key}
-                            type="button"
+                            size="small"
                             className={`${styles.choiceChip} ${isSelected ? styles.activeChip : ''}`}
                             onClick={() => onHeaderTypeChange(key)}
-                            style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
+                            sx={{
+                                display: 'flex',
+                                alignItems: 'center',
+                                gap: '8px',
+                                textTransform: 'none',
+                                borderRadius: '999px',
+                                padding: '0.45rem 1.1rem',
+                                fontSize: '0.82rem',
+                                fontWeight: 600,
+                                backgroundColor: isSelected ? 'var(--primary-light-bg)' : '#ffffff',
+                                color: isSelected ? 'var(--primary-main)' : 'var(--titleColor)',
+                                border: '1px solid',
+                                borderColor: isSelected ? 'var(--primary-main)' : 'var(--sidebar-borderColor)',
+                                '&:hover': {
+                                    borderColor: 'var(--primary-main)',
+                                    backgroundColor: isSelected ? 'var(--primary-light-bg)' : 'rgba(29, 170, 97, 0.04)',
+                                    color: 'var(--primary-main)',
+                                },
+                                minWidth: 'auto',
+                            }}
                         >
                             <Icon size={16} />
                             {label}
-                        </button>
+                        </Button>
                     );
                 })}
-            </div>
+            </Box>
 
             {builderData.headerType === 'Text' && (
-                <div className={styles.headerTextWrap}>
-                    <div className={styles.sectionHeaderRow}>
-                        <Typography className={styles.variableTitle}>Header Text</Typography>
-                        <Typography className={styles.charCounter}>{builderData.headerText.length}/60</Typography>
-                    </div>
+                <Box className={styles.headerTextWrap}>
+                    <Box className={styles.sectionHeaderRow}>
+                        <span className={styles.variableTitle}>Header Text</span>
+                        <span className={styles.charCounter}>{builderData.headerText.length}/60</span>
+                    </Box>
                     <TextField
                         fullWidth
                         size="small"
@@ -64,24 +84,23 @@ const TemplateHeaderSection = ({
                             value={builderData.headerTextExample}
                             onChange={(e) => onHeaderTextExampleChange(e.target.value)}
                             placeholder="e.g. Summer Sale"
-                            style={{ marginTop: 8 }}
+                            sx={{ mt: 1 }}
                         />
                     )}
-                </div>
+                </Box>
             )}
 
             {builderData.headerType === 'Media' && (
-                <div className={styles.mediaPickerWrap}>
-                    <div className={styles.mediaIconGrid}>
+                <Box className={styles.mediaPickerWrap}>
+                    <Box className={styles.mediaIconGrid}>
                         {[
                             { type: 'image', Icon: Image, label: 'Image' },
                             { type: 'video', Icon: Video, label: 'Video' },
                             { type: 'document', Icon: FileText, label: 'Document' },
                             { type: 'location', Icon: MapPin, label: 'Location' },
                         ].map(({ type, Icon, label }) => (
-                            <button
+                            <Button
                                 key={type}
-                                type="button"
                                 className={`${styles.mediaIconCard} ${headerMedia.mediaType === type ? styles.mediaIconCardActive : ''}`}
                                 onClick={() => onHeaderMediaTypeChange(type)}
                             >
@@ -91,46 +110,47 @@ const TemplateHeaderSection = ({
                                 <Icon size={28} className={styles.mediaIconSvg} />
                                 <span className={styles.mediaIconLabel}>{label}</span>
                                 {type === 'location' && <span className={styles.mediaIconSoon}>soon</span>}
-                            </button>
+                            </Button>
                         ))}
-                    </div>
+                    </Box>
 
                     {headerMedia.mediaType !== 'location' && (
-                        <div className={styles.mediaSampleBox}>
-                            <Typography className={styles.mediaSampleTitle}>Sample for header content</Typography>
-                            <Typography className={styles.mediaSampleDesc}>
+                        <Box className={styles.mediaSampleBox}>
+                            <h4 className={styles.mediaSampleTitle}>Sample for header content</h4>
+                            <p className={styles.mediaSampleDesc}>
                                 To help Meta review your content, provide examples of the variables or media in the header.
                                 Do not include any customer information.
-                            </Typography>
+                            </p>
 
                             {!headerMedia.file && headerMedia.existingHandle && isOwnServerUrl(headerMedia.mediaUrl) && (
-                                <div className={styles.existingMediaRow}>
+                                <Box className={styles.existingMediaRow}>
                                     {headerMedia.mediaType === 'image' && (
-                                        <img
+                                        <Box
+                                            component="img"
                                             src={headerMedia.mediaUrl}
                                             alt="Current header"
                                             className={styles.existingMediaThumb}
                                         />
                                     )}
                                     {headerMedia.mediaType === 'video' && (
-                                        <div className={styles.existingMediaVideo}>
+                                        <Box className={styles.existingMediaVideo} sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <Video size={18} />
                                             <span>Current video</span>
-                                        </div>
+                                        </Box>
                                     )}
                                     {headerMedia.mediaType === 'document' && (
-                                        <div className={styles.existingMediaVideo}>
+                                        <Box className={styles.existingMediaVideo} sx={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
                                             <FileText size={18} />
                                             <span>Current document</span>
-                                        </div>
+                                        </Box>
                                     )}
-                                    <Typography className={styles.existingMediaLabel}>
+                                    <p className={styles.existingMediaLabel}>
                                         Current file will be kept. Upload a new file to replace it.
-                                    </Typography>
-                                </div>
+                                    </p>
+                                </Box>
                             )}
 
-                            <div className={styles.mediaSampleActions}>
+                            <Box className={styles.mediaSampleActions}>
                                 <Button
                                     component="label"
                                     className={styles.mediaUploadBtn}
@@ -145,8 +165,8 @@ const TemplateHeaderSection = ({
                                     />
                                 </Button>
                                 {headerMedia.file && (
-                                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                                        <Typography className={styles.mediaFileName}>{headerMedia.file.name}</Typography>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                                        <span className={styles.mediaFileName}>{headerMedia.file.name}</span>
                                         <Button
                                             size="small"
                                             onClick={onHeaderMediaRemove}
@@ -154,43 +174,39 @@ const TemplateHeaderSection = ({
                                         >
                                             <X size={16} />
                                         </Button>
-                                    </div>
+                                    </Box>
                                 )}
-                            </div>
-                            <div className={styles.mediaHint}>
-                                <Typography variant="caption" color="textSecondary">
-                                    Supported: {mediaConfig[headerMedia.mediaType]?.extensions} (Max {mediaConfig[headerMedia.mediaType]?.maxSizeLabel})
-                                </Typography>
+                            </Box>
+                            <Box className={styles.mediaHint}>
+                                <span>Supported: {mediaConfig[headerMedia.mediaType]?.extensions} (Max {mediaConfig[headerMedia.mediaType]?.maxSizeLabel})</span>
                                 {mediaConfig[headerMedia.mediaType]?.extraNote && (
-                                    <Typography variant="caption" color="textSecondary" style={{ display: 'block', fontStyle: 'italic' }}>
-                                        {mediaConfig[headerMedia.mediaType].extraNote}
-                                    </Typography>
+                                    <span style={{ display: 'block', fontStyle: 'italic' }}>{mediaConfig[headerMedia.mediaType].extraNote}</span>
                                 )}
-                            </div>
+                            </Box>
                             {isUploading && (
-                                <div className={styles.uploadProgressBox}>
-                                    <div className={styles.uploadProgressMeta}>
+                                <Box className={styles.uploadProgressBox}>
+                                    <Box className={styles.uploadProgressMeta}>
                                         <span>Uploading to Meta...</span>
                                         <span>{uploadProgress}%</span>
-                                    </div>
+                                    </Box>
                                     <LinearProgress
                                         variant="determinate"
                                         value={uploadProgress}
                                         sx={{
                                             height: 6,
                                             borderRadius: 3,
-                                            backgroundColor: 'rgba(115, 103, 240, 0.1)',
+                                            backgroundColor: 'var(--primary-light-bg)',
                                             '& .MuiLinearProgress-bar': {
                                                 borderRadius: 3,
-                                                backgroundColor: '#7367f0'
+                                                backgroundColor: 'var(--primary-main)'
                                             }
                                         }}
                                     />
-                                </div>
+                                </Box>
                             )}
-                        </div>
+                        </Box>
                     )}
-                </div>
+                </Box>
             )}
         </Paper>
     );

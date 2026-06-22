@@ -1,18 +1,19 @@
 'use client';
 
 import { APIURL, getHeaders } from "./Config";
+import { getClientIp, setClientIp } from "../utils/storage";
 
 // for public ip address
 export const getClientIpAddress = async () => {
     try {
-        const cachedIp = sessionStorage.getItem("clientIpAddress");
+        const cachedIp = getClientIp();
         if (cachedIp) return cachedIp;
 
         const res = await fetch("https://api.ipify.org?format=json");
         const data = await res.json();
         const ip = data?.ip || "";
 
-        sessionStorage.setItem("clientIpAddress", ip);
+        setClientIp(ip);
         return ip;
     } catch (error) {
         console.error("Error fetching IP address:", error);

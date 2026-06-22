@@ -6,6 +6,8 @@ $button-DangerBgcolor: linear-gradient(270deg, rgba(255, 72, 66, 0.8) 0%, #d9042
 $button-DangerBgcolor-hover: #c20225;
 $button-Dangercolor: #ffffff;
 
+$primary-gradient: linear-gradient(270deg, rgba(37, 211, 102, 0.85) 0%, #1daa61 100%);
+$primary-adv :linear-gradient(270deg, rgba(37, 211, 102, 0.85) 0%, #1daa61 100%);
 $sidebar-Activebg: #1daa61 !important;
 $sidebar-Bgcolor: #ffffff;
 $sidebar-borderColor: #5a5a5a0e;
@@ -74,23 +76,28 @@ $dark-bg: #6788f394;
 $dark-main: #fff;
 $dark-light: #fff;
 
+:root {
+  --primary-main: #{$primary-main};
+  --background-theme: var(--primary-main);
+  --primary-light: #{$primary-light};
+  --primary-light-bg: #{$primary-light-bg};
+  --primary-gradient: #{$primary-gradient};
+  --secondary-color: #{$secondaryColor};
+  --titleColor: #{$titleColor};
+  --text2ndColor: #{$text2ndColor};
+  --placeholderColor: #{$placeholderColor};
+  --sidebar-borderColor: #{$sidebar-borderColor};
+  --bg-light: #{$bg-light};
 
-
-.secondaryBtnClassname {
-    font-family: $font-family !important;
-    background: #ebebed !important;
-    color: $secondaryColor !important;
-    border-color: #ebebed !important;
-    text-transform: capitalize !important;
-    border-radius: 16px !important;
-
-    &:hover {
-        background-color: $button-color-hover;
-        border-color: $button-Bordercolor;
-    }
+  --success-main: #{$success-main};
+  --error-main: #{$error-main};
+  --warning-main: #{$warning-main};
+  --info-main: #{$info-main};
 }
 
-.primaryBtnClassname {
+
+
+.buttonClassname {
     font-family: $font-family !important;
     background: $button-Bgcolor !important;
     color: $button-color !important;
@@ -103,3 +110,95 @@ $dark-light: #fff;
         border-color: $button-Bordercolor;
     }
 }
+
+.disablebuttonClassanme {
+    font-family: $font-family !important;
+    background: $button-Bgcolor !important;
+    color: $button-color !important;
+    border-color: $button-Bordercolor !important;
+    text-transform: capitalize !important;
+    border-radius: 16px !important;
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.secondaryBtnClassname {
+    font-family: $font-family !important;
+    background: #ebebed !important;
+    color: $secondaryColor !important;
+    border-color: #ebebed !important;
+    text-transform: capitalize !important;
+    border-radius: 16px !important;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background-color: $button-color-hover !important;
+        border-color: $button-Bordercolor !important;
+        color: $button-color !important;
+    }
+}
+
+.primaryBtnClassname {
+    font-family: $font-family !important;
+    background: $button-Bgcolor !important;
+    color: $button-color !important;
+    border-color: $button-Bordercolor !important;
+    text-transform: capitalize !important;
+    border-radius: 16px !important;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background-color: $button-color-hover;
+        border-color: $button-Bordercolor;
+    }
+}
+
+.dangerbtnClassName {
+    font-family: $font-family !important;
+    background: $button-DangerBgcolor !important;
+    color: $button-Dangercolor !important;
+    border-color: $button-DangerBgcolor !important;
+    text-transform: capitalize !important;
+    border-radius: 16px !important;
+
+    &:hover {
+        background-color: $button-DangerBgcolor-hover;
+        border-color: $button-DangerBgcolor;
+    }
+}
+
+.varientOutlinedBtn {
+    font-family: $font-family !important;
+    background: transparent !important;
+    color: $secondaryColor !important;
+    border: 1px solid $placeholderColor !important;
+    text-transform: capitalize !important;
+    border-radius: 16px !important;
+    transition: all 0.3s ease;
+
+    &:hover {
+        background-color: $button-color-hover !important;
+        border-color: $button-Bordercolor !important;
+        color: $button-color !important;
+    }
+}
+
+
+.varientTextBtn {
+    display: flex;
+    justify-content: start;
+    align-items: end;
+    font-family: $font-family !important;
+    text-transform: capitalize;
+    font-weight: bold;
+    color: $placeholderColor;
+    text-decoration: underline;
+    cursor: pointer;
+
+    &:hover {
+        background: transparent;
+        text-decoration: underline;
+    }
+}
+
+

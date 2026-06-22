@@ -1,0 +1,80 @@
+(() => {
+  const token = {
+    stat: 1,
+    stat_msg: "login successfully",
+    stat_code: 1000,
+    id: 4,
+    customercode: "admin",
+    firstname: "admin",
+    middlename: "",
+    lastname: "orail",
+    designation: "Admin",
+    mobileno: "951-021-3588",
+    email1: "mayur.optigoapps@gmail.com",
+    userid: "admin@orail.co.in",
+    IsChat: 1,
+    ChatRole: 1,
+    RoleName: "Admin ",
+    SocketId: "aJTvh4Jv4-U1mW8sAAA1",
+    token: "9065471700535651",
+    ukey: "orail25TNBVD0LO2UFPRZ4YH",
+    companycode: "orail25",
+    apiurl: "http://newnextjs.web/api/report",
+    UploadLogicalPath: "http://nzen/R50B3/UFS",
+    ImageLogicalPath: "http://nzen/R50B3/UFSImage",
+    jojsPath: "http://nzen/lib/jo/",
+    SMSView_URL: "https://vw.optigoapps.com/",
+    svid: "0",
+    yearcode: "e3tuemVufX17ezIwfX17e29yYWlsMjV9fXt7b3JhaWwyNX19",
+    cuver: "v2",
+    whatsappNumber: "770847852786314",
+    whatsappPhoneNo: "769593252737288",
+    whatsappKey: "HCtiBj7qarnyrvlOuoYXr7PKO3gJQxnyfhVRK7eDpBO8TtRkREFTSAO9gAPv9hwVU5ERVJTQ09SRQPmMREFTSAkte6UKpf2WevLAmrPx2adrrm5ItUu6p81mJWDREFTSAGStaJnceEDVd3kxFiMpVsg",
+    isMeta: 0,
+    userId: "admin@orail.co.in",
+    username: "admin"
+  };
+
+  const userData = {
+    userId: "admin@orail.co.in",
+    username: "admin",
+    ukey: "orail25TNBVD0LO2UFPRZ4YH",
+    token: "9065471700535651",
+    id: 4,
+    whatsappKey: "HCtiBj7qarnyrvlOuoYXr7PKO3gJQxnyfhVRK7eDpBO8TtRkREFTSAO9gAPv9hwVU5ERVJTQ09SRQPmMREFTSAkte6UKpf2WevLAmrPx2adrrm5ItUu6p81mJWDREFTSAGStaJnceEDVd3kxFiMpVsg",
+    whatsappNumber: "770847852786314"
+  };
+
+  const userPermissions = [
+    { Id: 1, Permission: "View All Chats" },
+    { Id: 2, Permission: "View Team Chats" },
+    { Id: 3, Permission: "View Own Chats" },
+    { Id: 4, Permission: "Access Unassigned Chat Pool" },
+    { Id: 5, Permission: "Reassign / Escalate Chat" },
+    { Id: 9, Permission: "Product Sharing" },
+    { Id: 10, Permission: "Export Data" },
+    { Id: 11, Permission: "Delete Chat/Customer Data" },
+    { Id: 15, Permission: "Customers list" },
+    { Id: 16, Permission: "Allow ATM binding customers" },
+    { Id: 6, Permission: "Reply to Customer (Text/Media)" },
+    { Id: 7, Permission: "Archive Chat" },
+    { Id: 8, Permission: "Close Chat (Mark Done)" }
+  ];
+
+  sessionStorage.setItem("isLoggedIn", "true");
+  sessionStorage.setItem("token", JSON.stringify(token));
+  sessionStorage.setItem("userData", JSON.stringify(userData));
+  sessionStorage.setItem("userPermissions", JSON.stringify(userPermissions));
+
+  console.log("✅ Session storage populated");
+
+  console.log({
+    isLoggedIn: sessionStorage.getItem("isLoggedIn"),
+    token: JSON.parse(sessionStorage.getItem("token")),
+    userData: JSON.parse(sessionStorage.getItem("userData")),
+    userPermissions: JSON.parse(sessionStorage.getItem("userPermissions"))
+  });
+
+  // Optional reload so app re-reads sessionStorage
+  // location.reload();
+})();

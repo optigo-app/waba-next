@@ -1,5 +1,7 @@
 'use client';
 
+import { getToken, getUserData } from '../utils/storage';
+
 const getEnvFlags = () => {
     if (typeof window === "undefined") return { isLocal: false, isNxt: false, isLocalWeb: false };
     const hostname = window.location.hostname;
@@ -27,13 +29,21 @@ const Image_upload_url = process.env.NEXT_PUBLIC_IMAGE_UPLOAD;
 
 export const APIURL = () => `${getApiBaseUrl()}/report`;
 export const LOGOUTAPI = () => `${getApiBaseUrl()}/whatsapp/chat/logout`;
+export const MESSAGEAPIURL = () => `${getApiBaseUrl()}/whatsapp/chat/send`;
+export const MESSAGEAPIURLBULK = () => `${getApiBaseUrl()}/whatsapp/chat/send-bulk`;
+export const MEDIARETRIEVED = () => `${getApiBaseUrl()}/whatsapp/media/retrieved`;
 
-export const TEMPLATE_CREATE = () => `${getApiBaseUrl()}/whatsapp/template/manage/create`;
-export const TEMPLATE_DELETE = () => `${getApiBaseUrl()}/whatsapp/template/manage/delete`;
-export const TEMPLATE_EDIT = () => `${getApiBaseUrl()}/whatsapp/template/manage/edit`;
-export const TEMPLATE_PUBLISH = () => `${getApiBaseUrl()}/whatsapp/template/manage/publish`;
-export const TEMPLATE_SYNC = () => `${getApiBaseUrl()}/whatsapp/template/manage/sync`;
-export const TEMPLATE_TESTSEND = () => `${getApiBaseUrl()}/whatsapp/template/manage/testsend`;
+export const TEMPLATE_CREATE = () => `${getApiBaseUrl()}/whatsapp/templates/manage/create`;
+export const TEMPLATE_DELETE = () => `${getApiBaseUrl()}/whatsapp/templates/manage/delete`;
+export const TEMPLATE_EDIT = () => `${getApiBaseUrl()}/whatsapp/templates/manage/edit`;
+export const TEMPLATE_PUBLISH = () => `${getApiBaseUrl()}/whatsapp/templates/manage/publish`;
+export const TEMPLATE_SYNC = () => `${getApiBaseUrl()}/whatsapp/templates/manage/sync`;
+export const TEMPLATE_TESTSEND = () => `${getApiBaseUrl()}/whatsapp/templates/send`;
+
+export const TEMPLATE_MD_UPLOAD = `${getApiBaseUrl()}/whatsapp/media/upload`;
+
+export const EXCELIMPORT = `${getApiBaseUrl()}/whatsapp/brodcast/excel-import`;
+export const SENDBULK = `${getApiBaseUrl()}/whatsapp/brodcast/send-bulk`;
 
 export const UPLOADFILE = () => {
     const { isLocal } = getEnvFlags();
@@ -46,8 +56,7 @@ export const REMOVE_FILE_URL = () => {
 
 const getAuthData = () => {
     try {
-        const authData = sessionStorage.getItem("token");
-        return authData ? JSON.parse(authData) : null;
+        return getToken() || getUserData();
     } catch (error) {
         console.error("Error parsing AuthData:", error);
         return null;
@@ -57,13 +66,32 @@ const getAuthData = () => {
 export const getHeaders = (init = {}) => {
     const { version = 'v2', token = "" } = init;
     const AuthData = getAuthData();
-    
+    const bearerToken = token || AuthData?.token || '';
+
     return {
-        Authorization: `Bearer ${token}` ?? '',
+        Authorization: `Bearer ${bearerToken}`,
         Yearcode: (AuthData?.yc ?? AuthData?.yearcode) ?? "",
         whatsappNumber: AuthData?.whatsappNumber || "",
         Version: (AuthData?.cuver ?? version) ?? 'v2',
         sv: (AuthData?.sv ?? AuthData?.svid) ?? "1",
         sp: "16",
     };
+};
+
+export const getHeaders1 = () => {
+    const userToken = getToken();
+    const version = "v2";
+    return {
+        Yearcode: userToken?.yc || userToken?.yearcode,
+        sv: userToken?.svid || userToken?.sv,
+        Version: version,
+    };
+};
+
+// WhatsApp Graph API template base URLs
+export const META_TEMPLATE_BASE_URL = process.env.NEXT_PUBLIC_META_TEMP_BASE_URL || 'https://graph.facebook.com/v18.0';
+export const MPL_TEMPLATE_BASE_URL  = process.env.NEXT_PUBLIC_MPL_TEMP_BASE_URL  || 'https://graph.facebook.com/v18.0';
+
+export const getTemplateBaseUrl = (isMeta = 0) => {
+  return isMeta == 1 ? META_TEMPLATE_BASE_URL : MPL_TEMPLATE_BASE_URL;
 };

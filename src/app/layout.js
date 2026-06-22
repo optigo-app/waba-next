@@ -5,6 +5,7 @@ import ThemeRegistry from "./providers/ThemeRegistry";
 import SocketProvider from "./providers/SocketProvider";
 import AuthHydrator from "./components/AuthHydrator";
 import AppLayout from "./components/AppLayout";
+import { Toaster } from "react-hot-toast";
 
 const poppins = Poppins({
   variable: "--font-poppins",
@@ -31,6 +32,43 @@ export default function RootLayout({ children }) {
             </AppRouterCacheProvider>
           </SocketProvider>
         </AuthHydrator>
+        <Toaster
+          position="top-center"
+          reverseOrder={false}
+          gutter={8}
+          toastOptions={{
+            duration: 4000,
+            style: {
+              fontFamily: 'var(--font-poppins), sans-serif',
+              fontSize: '0.88rem',
+              fontWeight: 500,
+              borderRadius: '10px',
+              boxShadow: '0 8px 24px rgba(15, 23, 42, 0.12)',
+            },
+            success: {
+              style: {
+                background: '#ecfdf5',
+                color: '#065f46',
+                border: '1px solid #6ee7b7',
+              },
+              iconTheme: {
+                primary: '#10b981',
+                secondary: '#ffffff',
+              },
+            },
+            error: {
+              style: {
+                background: '#fef2f2',
+                color: '#991b1b',
+                border: '1px solid #fca5a5',
+              },
+              iconTheme: {
+                primary: '#ef4444',
+                secondary: '#ffffff',
+              },
+            },
+          }}
+        />
       </body>
     </html>
   );

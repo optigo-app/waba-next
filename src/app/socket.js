@@ -1,4 +1,5 @@
 import { io } from 'socket.io-client';
+import { getSocketState, setSocketState, removeSocketState } from './utils/storage';
 
 const getSocketURL = () => {
     if (typeof window === 'undefined') return '';
@@ -30,16 +31,16 @@ const MAX_RECONNECT_ATTEMPTS = 5;
 // Restore connection state if available
 const restoreConnection = () => {
     if (typeof window === 'undefined') return;
-    const savedState = sessionStorage.getItem('socketState');
+    const savedState = getSocketState();
     if (savedState) {
         try {
-            const { token } = JSON.parse(savedState);
+            const { token } = savedState;
             if (token) {
                 initializeSocket(token);
             }
         } catch (e) {
             console.error('Error restoring socket state:', e);
-            sessionStorage.removeItem('socketState');
+            removeSocketState();
         }
     }
 };
@@ -54,7 +55,7 @@ export const initializeSocket = (token) => {
 
     // Save the token for reconnection
     if (token) {
-        sessionStorage.setItem('socketState', JSON.stringify({ token }));
+        setSocketState({ token });
     }
 
     // If we already have a working connection, return it
@@ -220,13 +221,12 @@ export const isSocketConnected = () => {
 
     // If not connected but we have a token, try to reconnect
     if (!state && !socketInstance && typeof window !== 'undefined') {
-        const savedState = sessionStorage.getItem('socketState');
+        const savedState = getSocketState();
         if (savedState) {
             try {
-                const { token } = JSON.parse(savedState);
+                const { token } = savedState;
                 if (token && reconnectAttempts < MAX_RECONNECT_ATTEMPTS) {
                     reconnectAttempts++;
-                    // console.log(`♻️ Attempting to reconnect (${reconnectAttempts}/${MAX_RECONNECT_ATTEMPTS})`);
                     initializeSocket(token);
                 }
             } catch (e) {
@@ -283,6 +283,15 @@ export const addMessageHandlerFromAssigningUser = (handler) => {
 };
 
 /**
+ * Emit a reaction to the server via socket
+ */
+export const emitReaction = (data) => {
+    if (socketInstance && isAuthenticated) {
+        socketInstance.emit('sendReaction', data);
+    }
+};
+
+/**
  * Add reaction message handler
  */
 export const addMessageReactionHandler = (handler) => {
@@ -322,7 +331,7 @@ export const disconnectSocket = (permanent = false) => {
         statusHandlers.clear();
 
         if (permanent) {
-            sessionStorage.removeItem('socketState');
+            removeSocketState();
             // console.log('✅ Socket permanently disconnected and cleaned up');
         } else {
             // console.log('✅ Socket disconnected but will attempt to reconnect');
@@ -330,7 +339,7 @@ export const disconnectSocket = (permanent = false) => {
     } else {
         // console.log("⚠️ No socket instance found to disconnect");
         if (permanent) {
-            sessionStorage.removeItem('socketState');
+            removeSocketState();
         }
     }
 };

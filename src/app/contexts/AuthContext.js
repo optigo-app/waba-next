@@ -1,6 +1,7 @@
 'use client';
 
 import { createContext, useState, useEffect, useCallback, useMemo } from 'react';
+import { setIsLoggedIn, setUserData, getIsLoggedIn, getUserData, storage } from '../utils/storage';
 
 export const AuthContext = createContext(null);
 
@@ -10,41 +11,22 @@ export function AuthProvider({ children }) {
   const [isAuthChecking, setIsAuthChecking] = useState(true);
 
   const login = useCallback((data) => {
-    const payload = {
-      token: data.token,
-      userId: data.userId,
-      id: data.id,
-      username: data.username,
-      ...data,
-    };
-    setAuth(payload);
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('isLoggedIn', 'true');
-      sessionStorage.setItem('userData', JSON.stringify(payload));
-    }
+    // Store complete raw login response — headers need yearcode, svid, cuver, etc.
+    setAuth(data);
+    setIsLoggedIn('true');
+    setUserData(data);
   }, []);
 
   const logout = useCallback(() => {
     setAuth(null);
-    if (typeof window !== 'undefined') {
-      sessionStorage.clear();
-    }
+    storage.clear();
   }, []);
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      setIsAuthChecking(false);
-      return;
-    }
-    const isLoggedIn = sessionStorage.getItem('isLoggedIn');
-    const userDataRaw = sessionStorage.getItem('userData');
-    if (isLoggedIn && userDataRaw) {
-      try {
-        const parsed = JSON.parse(userDataRaw);
-        setAuth(parsed);
-      } catch {
-        sessionStorage.clear();
-      }
+    const isLoggedIn = getIsLoggedIn();
+    const userData = getUserData();
+    if (isLoggedIn && userData) {
+      setAuth(userData);
     }
     setIsAuthChecking(false);
   }, []);

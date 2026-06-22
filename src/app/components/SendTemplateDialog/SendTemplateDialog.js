@@ -3,12 +3,12 @@ import { Dialog, DialogTitle, DialogContent, DialogActions, Button, Typography, 
 import PhoneInput from 'react-phone-input-2';
 import 'react-phone-input-2/lib/style.css';
 import { RefreshCw, Link, Info, Upload } from 'lucide-react';
-import TemplateVariableInput from '../Template/Create/TemplateVariableInput';
+import TemplateVariableInput from '../Common/TemplateVariableInput';
 import { sendTemplate } from '../../api/SendTemplate';
 import { filesUploadApi } from '../../api/filesUploadApi';
 import toast from 'react-hot-toast';
 import styles from './SendTemplateDialog.module.scss';
-import MessagePreview from '../Common/MessagePreview/MessagePreview';
+import MessagePreview from '../Common/MessagePreview';
 import { extractTemplatePreviewData } from '../../utils/templatePreviewUtils';
 import { isOwnServerUrl } from '../../utils/mediaUtils';
 import { MEDIA_CONFIG, validateMediaFile } from '../../utils/templateBuilderUtils';
@@ -626,6 +626,7 @@ const SendTemplateDialog = ({ open, onClose, template, userToken }) => {
         <Dialog
             open={open}
             onClose={handleClose}
+            maxWidth='md'
             PaperProps={{
                 sx: {
                     borderRadius: '16px',
@@ -636,7 +637,7 @@ const SendTemplateDialog = ({ open, onClose, template, userToken }) => {
                 }
             }}
         >
-            <DialogTitle style={{ fontWeight: 700, color: '#0f172a', paddingBottom: '8px' }}>
+            <DialogTitle style={{ fontWeight: 600, color: '#0f172a', paddingBottom: '8px' }}>
                 Send Template
             </DialogTitle>
             <DialogContent>

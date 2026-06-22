@@ -8,11 +8,11 @@ import IconButton from '../Common/IconButton';
 
 // ── Status Config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
-    APPROVED:   { label: 'Approved',  icon: CheckCircle2, color: '#1daa61', bg: 'rgba(29, 170, 97, 0.10)' },
-    REJECTED:   { label: 'Rejected',  icon: XCircle,      color: '#d32f2f', bg: 'rgba(211, 47, 47, 0.10)' },
-    PENDING:    { label: 'Pending',   icon: Clock,        color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.10)' },
-    IN_APPEAL:  { label: 'In Appeal', icon: AlertCircle,  color: '#7367f0', bg: 'rgba(115, 103, 240, 0.10)' },
-    DRAFT:      { label: 'Draft',     icon: BookOpen,     color: '#6D6B77', bg: 'rgba(109, 107, 119, 0.10)' },
+    APPROVED: { label: 'Approved', icon: CheckCircle2, color: '#1daa61', bg: 'rgba(29, 170, 97, 0.10)' },
+    REJECTED: { label: 'Rejected', icon: XCircle, color: '#d32f2f', bg: 'rgba(211, 47, 47, 0.10)' },
+    PENDING: { label: 'Pending', icon: Clock, color: '#f59e0b', bg: 'rgba(245, 158, 11, 0.10)' },
+    IN_APPEAL: { label: 'In Appeal', icon: AlertCircle, color: '#7367f0', bg: 'rgba(115, 103, 240, 0.10)' },
+    DRAFT: { label: 'Draft', icon: BookOpen, color: '#6D6B77', bg: 'rgba(109, 107, 119, 0.10)' },
 };
 
 const getStatusConfig = (status) =>
@@ -31,11 +31,11 @@ const getHeaderType = (components = []) => {
 };
 
 const HEADER_META = {
-    carousel: { Icon: Image,       label: 'Carousel', color: '#8b5cf6', bg: 'rgba(139,92,246,0.10)' },
-    image:    { Icon: Image,       label: 'Image',    color: '#7367f0', bg: 'rgba(115,103,240,0.10)' },
-    video:    { Icon: Video,       label: 'Video',    color: '#03c3ec', bg: 'rgba(3,195,236,0.10)' },
-    document: { Icon: FileType,    label: 'Document', color: '#ff9f43', bg: 'rgba(255,159,67,0.10)' },
-    text:     { Icon: FileQuestion,label: 'Text',     color: '#6D6B77', bg: 'rgba(109,107,119,0.10)' },
+    carousel: { Icon: Image, label: 'Carousel', color: '#8b5cf6', bg: 'rgba(139,92,246,0.10)' },
+    image: { Icon: Image, label: 'Image', color: '#7367f0', bg: 'rgba(115,103,240,0.10)' },
+    video: { Icon: Video, label: 'Video', color: '#03c3ec', bg: 'rgba(3,195,236,0.10)' },
+    document: { Icon: FileType, label: 'Document', color: '#ff9f43', bg: 'rgba(255,159,67,0.10)' },
+    text: { Icon: FileQuestion, label: 'Text', color: '#6D6B77', bg: 'rgba(109,107,119,0.10)' },
 };
 
 // ── Edit Permission ───────────────────────────────────────────────────────────
@@ -97,7 +97,7 @@ const TemplateCard = ({ template, onView, onSend, onClone, onEdit, onDelete, onP
                     <Typography
                         sx={{
                             fontFamily: 'Poppins, sans-serif',
-                            fontWeight: 800,
+                            fontWeight: 600,
                             fontSize: '1rem',
                             lineHeight: 1.35,
                             wordBreak: 'break-word',
@@ -129,8 +129,7 @@ const TemplateCard = ({ template, onView, onSend, onClone, onEdit, onDelete, onP
                         />
                         <Typography
                             sx={{
-                                fontFamily: 'Poppins, sans-serif',
-                                fontWeight: 700,
+                                fontWeight: 500,
                                 fontSize: '0.7rem',
                                 color: status.color,
                                 letterSpacing: '0.3px',
@@ -200,8 +199,6 @@ const TemplateCard = ({ template, onView, onSend, onClone, onEdit, onDelete, onP
                                 fontFamily: 'Poppins, sans-serif',
                                 height: 20,
                                 borderRadius: '4px',
-                                backgroundColor: 'rgba(29,170,97,0.08)',
-                                color: '#1daa61',
                                 '& .MuiChip-icon': { ml: '5px', mr: '-2px', color: 'inherit' },
                             }}
                         />
@@ -265,10 +262,7 @@ const TemplateCard = ({ template, onView, onSend, onClone, onEdit, onDelete, onP
                                 sx={{
                                     fontSize: '0.68rem',
                                     height: 20,
-                                    borderRadius: '4px',
-                                    borderColor: '#d1f4e0',
-                                    color: '#1daa61',
-                                    background: '#f4fdf8',
+                                    borderRadius: '12px',
                                     fontWeight: 500,
                                     fontFamily: 'Poppins, sans-serif',
                                 }}
@@ -340,7 +334,7 @@ const TemplateCardGrid = ({ items, onView, onSend, onClone, onEdit, onDelete, on
         <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflowY: 'auto', py: 0.5, px: 0.25 }}>
             <Grid container spacing={2}>
                 {items.map((template) => (
-                    <Grid size={{ xs: 12, sm: 6, lg: 4, xl: 3 }} key={template.Id}>
+                    <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={template.Id}>
                         <TemplateCard
                             template={template}
                             onView={onView}

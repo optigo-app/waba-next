@@ -9,6 +9,7 @@ import { DashboardFiltersProvider, useDashboardFilters } from '../contexts/Dashb
 import { WalletProvider } from '../contexts/WalletContext';
 import Sidebar from './Siderbar/Sidebar';
 import AuthGuard from './AuthGuard';
+import { storage } from '../utils/storage';
 
 function SidebarWrapper({ isCollapsed, onCollapsedChange }) {
   const { selectedStatus, selectedTag, setSelectedStatus, setSelectedTag } = useDashboardFilters();
@@ -32,7 +33,7 @@ export default function AppLayout({ children }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(() => {
     if (typeof window === 'undefined') return false;
     try {
-      const stored = localStorage.getItem(SIDEBAR_COLLAPSED_STORAGE_KEY);
+      const stored = storage.getLocal(SIDEBAR_COLLAPSED_STORAGE_KEY);
       return stored === 'true';
     } catch {
       return false;
@@ -50,13 +51,14 @@ export default function AppLayout({ children }) {
 
   useEffect(() => {
     try {
-      localStorage.setItem(SIDEBAR_COLLAPSED_STORAGE_KEY, String(isSidebarCollapsed));
+      storage.setLocal(SIDEBAR_COLLAPSED_STORAGE_KEY, String(isSidebarCollapsed));
     } catch {
       // ignore
     }
   }, [isSidebarCollapsed]);
 
   const isPublicRoute = pathname === '/login' || pathname === '/session-check' || pathname === '/test';
+  const isChatRoute = pathname === '/chat' || pathname?.startsWith('/chat/');
 
   if (isPublicRoute) {
     return <>{children}</>;
@@ -65,31 +67,37 @@ export default function AppLayout({ children }) {
   const isSidebarCollapsedEffective = isSidebarCollapsed || isBreakpointSidebarCollapsed;
   const sidebarWidth = isSidebarCollapsedEffective ? '76px' : '260px';
 
+  const content = isChatRoute ? (
+    <>{children}</>
+  ) : (
+    <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
+      <SidebarWrapper
+        isCollapsed={isSidebarCollapsedEffective}
+        onCollapsedChange={setIsSidebarCollapsed}
+      />
+      <Box
+        component="main"
+        sx={{
+          flexGrow: 1,
+          marginLeft: sidebarWidth,
+          width: `calc(100% - ${sidebarWidth})`,
+          minHeight: '100vh',
+          transition: 'margin-left 0.2s ease, width 0.2s ease',
+          backgroundColor: '#f8f9fa',
+        }}
+      >
+        {children}
+      </Box>
+    </Box>
+  );
+
   return (
     <TagsProvider>
       <ArchieveProvider>
         <DashboardFiltersProvider>
           <WalletProvider>
             <AuthGuard>
-              <Box sx={{ display: 'flex', minHeight: '100vh', width: '100%' }}>
-                <SidebarWrapper
-                  isCollapsed={isSidebarCollapsedEffective}
-                  onCollapsedChange={setIsSidebarCollapsed}
-                />
-                <Box
-                  component="main"
-                  sx={{
-                    flexGrow: 1,
-                    marginLeft: sidebarWidth,
-                    width: `calc(100% - ${sidebarWidth})`,
-                    minHeight: '100vh',
-                    transition: 'margin-left 0.2s ease, width 0.2s ease',
-                    backgroundColor: '#f8f9fa',
-                  }}
-                >
-                  {children}
-                </Box>
-              </Box>
+              {content}
             </AuthGuard>
           </WalletProvider>
         </DashboardFiltersProvider>

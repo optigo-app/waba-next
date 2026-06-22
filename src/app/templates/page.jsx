@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Box,
@@ -9,25 +9,25 @@ import {
     ToggleButtonGroup,
     ToggleButton,
     Tooltip,
-    IconButton,
     Drawer,
+    CircularProgress,
 } from '@mui/material';
 import {
     Plus, RefreshCw, FileText, LayoutGrid, List, ArrowLeft,
-    X, AlertTriangle,
+    X, AlertTriangle, Hash,
 } from 'lucide-react';
 import { useTemplates } from '../hooks/useTemplates';
 import { useAuth } from '../hooks/useAuth';
 import { useWallet } from '../contexts/WalletContext';
-import TemplateGrid from '../components/Template/TemplateGrid';
-import TemplateCardGrid from '../components/Template/TemplateCardGrid'; // NEW modern card UI
+// import TemplateGrid from '../components/Template/TemplateGrid';
+import TemplateCardGrid from '../components/Template/TemplateCardGrid';
 import TemplateTable from '../components/Template/TemplateTable';
 import TemplateSkelton from '../components/Template/TemplateSkelton';
 import FilterBar from '../components/Common/FilterBar/FilterBar';
 import ConfirmationModal from '../components/ConfirmationModal/ConfirmationModal';
 import styles from '../components/Template/Templates.module.scss';
 import SendTemplateDialog from '../components/SendTemplateDialog/SendTemplateDialog';
-import MessagePreview from '../components/Common/MessagePreview/MessagePreview';
+import MessagePreview from '../components/Common/MessagePreview';
 import { extractTemplatePreviewData } from '../utils/templatePreviewUtils';
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
@@ -37,6 +37,76 @@ const getSortTime = (item) => {
     const entryDateMs = new Date(item?.EntryDate).getTime();
     if (Number.isFinite(entryDateMs)) return entryDateMs;
     return 0;
+};
+
+// ── Module-level sx constants (avoid inline object churn) ──────────────────────
+const SX_WABA_CHIP = {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    px: '8px',
+    py: '2px',
+    borderRadius: '6px',
+    backgroundColor: 'rgba(29, 170, 97, 0.08)',
+    border: '1px solid rgba(29, 170, 97, 0.2)',
+    color: '#1daa61',
+    fontSize: '0.72rem',
+    fontWeight: 600,
+    fontFamily: 'Poppins, sans-serif',
+};
+
+const SX_EMPTY_OUTER = {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    py: '6rem',
+    gap: '1.5rem',
+};
+
+const SX_EMPTY_ICON = {
+    width: 64,
+    height: 64,
+    borderRadius: '18px',
+    background: 'linear-gradient(135deg, rgba(29,170,97,0.08), rgba(37,211,102,0.05))',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    border: '1px solid rgba(29,170,97,0.12)',
+};
+
+const SX_TEXT_TITLE = {
+    fontFamily: 'Poppins, sans-serif',
+    fontWeight: 600,
+    fontSize: '1.1rem',
+    color: '#444050',
+};
+
+const SX_TEXT_SUBTITLE = {
+    fontFamily: 'Poppins, sans-serif',
+    fontSize: '0.875rem',
+    color: '#6D6B77',
+    mt: '0.25rem',
+};
+
+const SX_BTN_OUTLINE = {
+    textTransform: 'none',
+    borderRadius: '10px',
+    fontFamily: 'Poppins, sans-serif',
+    fontWeight: 600,
+    fontSize: '0.8rem',
+};
+
+const SX_BTN_CONTAINED = {
+    textTransform: 'none',
+    borderRadius: '10px',
+    fontFamily: 'Poppins, sans-serif',
+    fontWeight: 600,
+    fontSize: '0.8rem',
+    background: '#1daa61',
+    color: '#fff',
+    boxShadow: 'none',
+    '&:hover': { background: '#1a9a57', boxShadow: 'none' },
 };
 
 // ── Page ──────────────────────────────────────────────────────────────────────
@@ -53,6 +123,8 @@ const TemplatesPage = () => {
     const [sortBy, setSortBy] = useState('newest');
     const [currentPage, setCurrentPage] = useState(1);
     const [itemsPerPage, setItemsPerPage] = useState(100);
+    const [pageChangeLoading, setPageChangeLoading] = useState(false);
+    const pageChangeTimeoutRef = useRef(null);
 
     // Dialog State
     const [previewTemplate, setPreviewTemplate] = useState(null);
@@ -63,6 +135,13 @@ const TemplatesPage = () => {
     const [openSendDialog, setOpenSendDialog] = useState(false);
     const [selectedTemplateForSend, setSelectedTemplateForSend] = useState(null);
     const [showInsufficientBalanceDialog, setShowInsufficientBalanceDialog] = useState(false);
+
+    useEffect(() => () => {
+        if (pageChangeTimeoutRef.current) {
+            clearTimeout(pageChangeTimeoutRef.current);
+            pageChangeTimeoutRef.current = null;
+        }
+    }, []);
 
     const userToken = auth;
 
@@ -111,7 +190,10 @@ const TemplatesPage = () => {
         }, {});
 
         const start = (currentPage - 1) * itemsPerPage;
-        const pageItems = sorted.slice(start, start + itemsPerPage);
+        const pageItems = sorted.slice(start, start + itemsPerPage).map((t) => ({
+            ...t,
+            wabaId: t.WabaId || walletInfo?.wabaId || '-',
+        }));
 
         return { filtered: sorted, paginated: pageItems, statusCounts: counts };
     }, [templates, search, filterStatus, sortBy, currentPage, itemsPerPage]);
@@ -199,11 +281,19 @@ const TemplatesPage = () => {
                         <FileText size={18} />
                     </div>
                     <div>
-                        <h2 className={styles.pageTitle}>Templates</h2>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                            <h2 className={styles.pageTitle}>Templates</h2>
+                        </Box>
                         <p className={styles.pageSubtitle}>
                             {templates.length} template{templates.length !== 1 ? 's' : ''} total
                         </p>
                     </div>
+                    {walletInfo?.wabaId && (
+                        <Box sx={SX_WABA_CHIP}>
+                            <Hash size={10} />
+                            {walletInfo.wabaId}
+                        </Box>
+                    )}
                 </div>
                 <div className={styles.topActions}>
                     <ToggleButtonGroup
@@ -222,19 +312,19 @@ const TemplatesPage = () => {
 
                     <Button
                         variant="outlined"
-                        startIcon={<RefreshCw size={15} />}
+                        startIcon={loading ? <CircularProgress size={15} thickness={5} /> : <RefreshCw size={15} />}
                         onClick={() => refresh()}
                         disabled={loading || syncLoading}
-                        sx={{ textTransform: 'none', borderRadius: '10px', fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '0.8rem' }}
+                        sx={SX_BTN_OUTLINE}
                     >
                         Refresh
                     </Button>
                     <Button
                         variant="outlined"
-                        startIcon={<RefreshCw size={15} />}
+                        startIcon={syncLoading ? <CircularProgress size={15} thickness={5} /> : <RefreshCw size={15} />}
                         onClick={sync}
                         disabled={loading || syncLoading}
-                        sx={{ textTransform: 'none', borderRadius: '10px', fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '0.8rem' }}
+                        sx={SX_BTN_OUTLINE}
                     >
                         Sync
                     </Button>
@@ -242,17 +332,7 @@ const TemplatesPage = () => {
                         variant="contained"
                         startIcon={<Plus size={16} />}
                         onClick={() => router.push('/templates/create')}
-                        sx={{
-                            textTransform: 'none',
-                            borderRadius: '10px',
-                            fontFamily: 'Poppins, sans-serif',
-                            fontWeight: 600,
-                            fontSize: '0.8rem',
-                            background: '#1daa61',
-                            color: '#fff',
-                            boxShadow: 'none',
-                            '&:hover': { background: '#1a9a57', boxShadow: 'none' },
-                        }}
+                        sx={SX_BTN_CONTAINED}
                     >
                         Create Template
                     </Button>
@@ -273,23 +353,18 @@ const TemplatesPage = () => {
 
             {/* Content */}
             <div className={styles.contentArea}>
-                {loading ? (
+                {loading || pageChangeLoading ? (
                     <TemplateSkelton count={8} />
                 ) : filtered.length === 0 ? (
-                    <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', py: '6rem', gap: '1.5rem' }}>
-                        <Box sx={{
-                            width: 64, height: 64, borderRadius: '18px',
-                            background: 'linear-gradient(135deg, rgba(29,170,97,0.08), rgba(37,211,102,0.05))',
-                            display: 'flex', alignItems: 'center', justifyContent: 'center',
-                            border: '1px solid rgba(29,170,97,0.12)',
-                        }}>
+                    <Box sx={SX_EMPTY_OUTER}>
+                        <Box sx={SX_EMPTY_ICON}>
                             <FileText size={28} color="#1daa61" />
                         </Box>
                         <Box sx={{ textAlign: 'center' }}>
-                            <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 700, fontSize: '1.1rem', color: '#444050' }}>
+                            <Typography sx={SX_TEXT_TITLE}>
                                 {search ? 'No templates found' : 'No templates yet'}
                             </Typography>
-                            <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.875rem', color: '#6D6B77', mt: '0.25rem' }}>
+                            <Typography sx={SX_TEXT_SUBTITLE}>
                                 {search ? 'Try adjusting your search query' : 'Create your first WhatsApp message template to get started.'}
                             </Typography>
                         </Box>
@@ -301,8 +376,21 @@ const TemplatesPage = () => {
                         count={filtered.length}
                         page={currentPage - 1}
                         rowsPerPage={itemsPerPage}
-                        onPageChange={(_, p) => setCurrentPage(p + 1)}
-                        onRowsPerPageChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                        onPageChange={(_, p) => {
+                            setPageChangeLoading(true);
+                            setCurrentPage(p + 1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            if (pageChangeTimeoutRef.current) clearTimeout(pageChangeTimeoutRef.current);
+                            pageChangeTimeoutRef.current = setTimeout(() => setPageChangeLoading(false), 400);
+                        }}
+                        onRowsPerPageChange={(e) => {
+                            setPageChangeLoading(true);
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            if (pageChangeTimeoutRef.current) clearTimeout(pageChangeTimeoutRef.current);
+                            pageChangeTimeoutRef.current = setTimeout(() => setPageChangeLoading(false), 400);
+                        }}
                     />
                 ) : (
                     <TemplateTable
@@ -311,8 +399,21 @@ const TemplatesPage = () => {
                         count={filtered.length}
                         page={currentPage - 1}
                         rowsPerPage={itemsPerPage}
-                        onPageChange={(_, p) => setCurrentPage(p + 1)}
-                        onRowsPerPageChange={(e) => { setItemsPerPage(Number(e.target.value)); setCurrentPage(1); }}
+                        onPageChange={(_, p) => {
+                            setPageChangeLoading(true);
+                            setCurrentPage(p + 1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            if (pageChangeTimeoutRef.current) clearTimeout(pageChangeTimeoutRef.current);
+                            pageChangeTimeoutRef.current = setTimeout(() => setPageChangeLoading(false), 400);
+                        }}
+                        onRowsPerPageChange={(e) => {
+                            setPageChangeLoading(true);
+                            setItemsPerPage(Number(e.target.value));
+                            setCurrentPage(1);
+                            window.scrollTo({ top: 0, behavior: 'smooth' });
+                            if (pageChangeTimeoutRef.current) clearTimeout(pageChangeTimeoutRef.current);
+                            pageChangeTimeoutRef.current = setTimeout(() => setPageChangeLoading(false), 400);
+                        }}
                     />
                 )}
             </div>
