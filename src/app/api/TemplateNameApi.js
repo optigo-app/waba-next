@@ -1,11 +1,10 @@
 import { callCommonApi } from "./CommonApi";
 
-export const fetchBranchListsApi = async (userId) => {
+export const fetchTemplateNameApi = async (userId) => {
     try {
-
         const response = await callCommonApi({
-            mode: "getHoBranchlist",
-            f: "Broadcast ( broadcast_branch_list )",
+            mode: "broadcast_template_list",
+            f: "Broadcast ( broadcast_template_list )",
             p: "",
             userId,
         });

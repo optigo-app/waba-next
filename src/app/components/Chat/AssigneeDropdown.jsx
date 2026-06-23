@@ -7,7 +7,7 @@ import {
 } from '@mui/material';
 import { alpha, useTheme } from '@mui/material/styles';
 import { useMediaQuery } from '@mui/material';
-import { Check, Plus, X } from 'lucide-react';
+import { Check, Plus, UserPlus, X } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { addAssignUser, removeAssignUser } from '../../api/chat/conversationApi';
 import { getWhatsAppAvatarConfig } from './utils/chatUtils';
@@ -108,19 +108,21 @@ export default function AssigneeDropdown({
             </Tooltip>
           )}
           {isMobile && assignedUsers.length === 0 && (
-            <Avatar
-              onClick={(e) => {
-                e.stopPropagation();
-                setDialogOpen(true);
-              }}
-              sx={{
-                width: 26, height: 26, cursor: 'pointer',
-                bgcolor: alpha(theme.palette.primary.main, 0.1),
-                color: theme.palette.primary.main,
-              }}
-            >
-              <Plus size={14} />
-            </Avatar>
+            <Tooltip title="Assign member" arrow>
+              <Avatar
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setDialogOpen(true);
+                }}
+                sx={{
+                  width: 26, height: 26, cursor: 'pointer',
+                  bgcolor: alpha(theme.palette.primary.main, 0.1),
+                  color: theme.palette.primary.main,
+                }}
+              >
+                <UserPlus size={14} />
+              </Avatar>
+            </Tooltip>
           )}
         </AvatarGroup>
       </Box>

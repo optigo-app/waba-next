@@ -1,14 +1,13 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const fetchFilterMasterList = async (userId) => {
     try {
-        const body = {
-            "con": `{\"id\":\"\",\"mode\":\"broadcast_camp_masters\",\"appuserid\":\"${userId}\"}`,
-            "p": "",
-            "f": "Broadcast ( Masters )"
-        }
-
-        const response = await CommonAPI(body);
+        const response = await callCommonApi({
+            mode: "broadcast_camp_masters",
+            f: "Broadcast ( Masters )",
+            p: "",
+            userId,
+        });
         if (response?.Data) {
             return {
                 data: response?.Data,

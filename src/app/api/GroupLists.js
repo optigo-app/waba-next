@@ -1,14 +1,13 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const fetchGroupList = async (userId) => {
     try {
-        const body = {
-            "con": `{\"id\":\"\",\"mode\":\"broadcast_cust_group_list\",\"appuserid\":\"${userId}\"}`,
-            "p": "",
-            "f": "Broadcast ( Customer Group List )"
-        }
-
-        const response = await CommonAPI(body);
+        const response = await callCommonApi({
+            mode: "broadcast_cust_group_list",
+            f: "Broadcast ( Customer Group List )",
+            p: "",
+            userId,
+        });
         if (response?.Data) {
             return {
                 data: response?.Data?.rd,

@@ -1,24 +1,18 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const fetchQuickReport = async (userId, campaignId) => {
     try {
-        const con = {
-            id: "",
-            mode: "broadcast_camp_dashboard",
-            appuserid: `${userId}`
-        };
 
         const p = {
             CampaignId: campaignId
         };
 
-        const body = {
-            con: JSON.stringify(con),
+        const response = await callCommonApi({
+            mode: "broadcast_camp_dashboard",
+            f: "Broadcast ( broadcast_camp_dashboard )",
             p: JSON.stringify(p),
-            f: "Broadcast ( broadcast_camp_dashboard )"
-        };
-
-        const response = await CommonAPI(body);
+            userId,
+        });
         const data = response?.rd?.[0] || response?.Data || response;
 
         if (data) {

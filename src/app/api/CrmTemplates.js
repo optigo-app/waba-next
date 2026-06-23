@@ -1,14 +1,15 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const fetchCrmTemplates = async (userId, signal) => {
     try {
-        const body = {
-            "con": `{"id":"","mode":"broadcast_crm_temp_list","appuserid":"${userId}"}`,
-            "p": "",
-            "f": "Broadcast ( Template List )"
-        };
 
-        const response = await CommonAPI(body, signal);
+        const response = await callCommonApi({
+            mode: "broadcast_crm_temp_list",
+            f: "Broadcast ( Template List )",
+            p: "",
+            userId,
+            signal,
+        });
         if (response?.Data) {
             return {
                 data: response?.Data?.rd || [],

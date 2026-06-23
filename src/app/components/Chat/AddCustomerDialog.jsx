@@ -94,11 +94,7 @@ export default function AddCustomerDialog({ open, onClose, selectedMember, onSuc
             variant="outlined"
             color="secondary"
             disabled={loading}
-            sx={{
-              textTransform: 'none',
-              borderRadius: 2,
-              px: 3,
-            }}
+            className='secondaryBtnClassname'
           >
             Cancel
           </Button>
@@ -107,11 +103,7 @@ export default function AddCustomerDialog({ open, onClose, selectedMember, onSuc
             variant="contained"
             disableElevation
             disabled={!debouncedFirstName.trim() || !debouncedLastName.trim() || loading}
-            sx={{
-              textTransform: 'none',
-              borderRadius: 2,
-              px: 3,
-            }}
+            className='buttonClassname'
           >
             {loading ? 'Saving...' : 'Save'}
           </Button>
@@ -139,7 +131,6 @@ export default function AddCustomerDialog({ open, onClose, selectedMember, onSuc
           onKeyDown={handleKeyDown}
           placeholder="Enter first name"
           disabled={loading}
-          autoFocus
           margin="normal"
         />
 

@@ -2,20 +2,19 @@
 
 import { getToken, getUserData } from '../utils/storage';
 
-const getEnvFlags = () => {
+export const getEnvFlags = () => {
     if (typeof window === "undefined") return { isLocal: false, isNxt: false, isLocalWeb: false };
     const hostname = window.location.hostname;
     return {
-        isLocal: ["localhost", '5dmjw0dg-2000.inc1.devtunnels.ms'].includes(hostname),
+        isLocal: ['localhost', '5dmjw0dg-2000.inc1.devtunnels.ms'].includes(hostname),
         isNxt: ['nxt21.optigoapps.com'].includes(hostname),
-        isLocalWeb: ["wabachat.web"].includes(hostname),
+        isLocalWeb: ["waba.web"].includes(hostname),
     };
 };
 
-const getApiBaseUrl = () => {
+export const getApiBaseUrl = () => {
     const { isLocal, isNxt, isLocalWeb } = getEnvFlags();
-    console.log("hostname", process.env.NEXT_PUBLIC_API_DEVELOPMENT_URL);
-
+    
     return isLocal
         ? process.env.NEXT_PUBLIC_API_DEVELOPMENT_URL
         : isLocalWeb
@@ -23,6 +22,17 @@ const getApiBaseUrl = () => {
             : isNxt
                 ? process.env.NEXT_PUBLIC_API_NXT_PRODUCTION_URL
                 : process.env.NEXT_PUBLIC_API_PRODUCTION_URL;
+};
+
+export const getSocketURL = () => {
+    const { isLocal, isNxt, isLocalWeb } = getEnvFlags();
+    return isLocal
+        ? process.env.NEXT_PUBLIC_SOCKET_DEVELOPMENT_URL
+        : isLocalWeb
+            ? process.env.NEXT_PUBLIC_SOCKET_WEB_DEVELOPMENT_URL
+            : isNxt
+                ? process.env.NEXT_PUBLIC_SOCKET_NXT_PRODUCTION_URL
+                : process.env.NEXT_PUBLIC_SOCKET_PRODUCTION_URL;
 };
 
 const Image_upload_url = process.env.NEXT_PUBLIC_IMAGE_UPLOAD;

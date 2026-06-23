@@ -31,16 +31,17 @@ const FilterBar = ({
         <Box
             sx={{
                 display: 'flex',
-                alignItems: 'center',
+                alignItems: { xs: 'flex-start', sm: 'center' },
                 justifyContent: 'space-between',
                 gap: 1.5,
                 flexWrap: 'wrap',
-                px: 1.5,
+                px: { xs: 1, sm: 1.5 },
                 py: 1,
                 background: '#fff',
                 borderRadius: '12px',
                 border: '1px solid var(--sidebar-borderColor)',
                 flexShrink: 0,
+                flexDirection: { xs: 'column', sm: 'row' },
             }}
         >
             <Paper
@@ -53,8 +54,8 @@ const FilterBar = ({
                     px: '0.875rem',
                     py: '5px',
                     flex: 1,
-                    minWidth: 200,
-                    maxWidth: 320,
+                    minWidth: { xs: '100%', sm: 200 },
+                    maxWidth: { xs: '100%', sm: 320 },
                     background: '#fff',
                     transition: 'border-color 0.2s',
                     '&:focus-within': {
@@ -81,8 +82,8 @@ const FilterBar = ({
 
             {
                 filterChips.length > 0 && (
-                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, alignItems: 'center' }}>
-                        <FormControl size="small" sx={{ minWidth: 140, mr: 1 }}>
+                    <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 0.6, alignItems: 'center', width: { xs: '100%', sm: 'auto' } }}>
+                        <FormControl size="small" sx={{ minWidth: { xs: 120, sm: 140 }, mr: 1 }}>
                             <Select
                                 value={sortBy}
                                 onChange={(e) => onSortChange(e.target.value)}

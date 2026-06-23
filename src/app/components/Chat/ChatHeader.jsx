@@ -8,6 +8,7 @@ import { getCustomerDisplayName, getCustomerAvatarSeed, getWhatsAppAvatarConfig 
 import AssigneeDropdown from './AssigneeDropdown';
 import EscalatedDropdown from './EscalatedDropdown';
 import { fetchAgentLists } from '../../api/chat/conversationApi';
+import { useAuthStore } from '../../store/authStore';
 
 export default function ChatHeader({
   selectedCustomer,
@@ -29,6 +30,7 @@ export default function ChatHeader({
   auth,
   setDetailsOpen,
 }) {
+  const can = useAuthStore((s) => s.can);
   const baseAvatarConfig = selectedCustomer?.avatarConfig
     || getWhatsAppAvatarConfig(getCustomerAvatarSeed(selectedCustomer), 38);
 
@@ -65,6 +67,9 @@ export default function ChatHeader({
         />
         <div className="chat-conv-header-info">
           <p className="chat-conv-header-name">{getCustomerDisplayName(selectedCustomer)}</p>
+          {selectedCustomer?.CustomerPhone && (
+            <p className="chat-conv-header-phone">{selectedCustomer.CustomerPhone}</p>
+          )}
         </div>
         {!!selectedCustomer?.CustomerId && (
           <div className="customer-tags-wrapper">
@@ -192,14 +197,14 @@ export default function ChatHeader({
         )}
       </div>
       <div className="chat-conv-header-right">
-        {assigneeList.length > 0 && (
+        {can(5) && assigneeList.length > 0 && (
           <AssigneeDropdown
             options={assigneeList}
             selectedCustomer={selectedCustomer}
             onRefresh={refreshAgents}
           />
         )}
-        {escalatedList.length > 0 && (
+        {can(5) && escalatedList.length > 0 && (
           <EscalatedDropdown
             options={escalatedList}
             selectedCustomer={selectedCustomer}

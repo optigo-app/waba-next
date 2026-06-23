@@ -255,7 +255,7 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
                 hideFooterSelectedRowCount
                 sx={{
                     border: 'none',
-                    minHeight: 520,
+                    minHeight: { xs: 300, sm: 400, md: 520 },
 
                     '& .MuiDataGrid-columnHeaders': {
                         backgroundColor: '#f8fafc',

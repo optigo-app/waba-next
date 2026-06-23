@@ -1,18 +1,17 @@
 'use client';
 
-import { CommonAPI } from '../CommonApi';
+import { callCommonApi } from '../CommonApi';
 import { MESSAGEAPIURL, MESSAGEAPIURLBULK, getHeaders } from '../Config';
 import { getUserData } from '../../utils/storage';
 
 export const fetchConversationLists = async (page = 1, pageSize = 20, userId, search = '') => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_list_conv","appuserid":"${userId || ''}"}`,
-      p: `{"Page":${page},"PageSize":${pageSize},"SearchTerm": "${search}"}`,
+    const response = await callCommonApi({
+      mode: 'wa_list_conv',
       f: 'Chat ( List Conversation )',
-    };
-
-    const response = await CommonAPI(body);
+      p: `{"Page":${page},"PageSize":${pageSize},"SearchTerm": "${search}"}`,
+      userId,
+    });
     if (response?.Data?.rd || response?.Data?.rd[0]?.stat == 1) {
       const resultsArray = Array.isArray(response.Data)
         ? response.Data
@@ -33,13 +32,13 @@ export const fetchConversationLists = async (page = 1, pageSize = 20, userId, se
 
 export const fetchConversationView = async (conversationId, page = 1, pageSize = 10, userId, signal) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_list_chat","appuserid":"${userId || ''}"}`,
-      p: `{"ConversationId": ${conversationId}, "Page": ${page}, "PageSize": ${pageSize} }`,
+    const response = await callCommonApi({
+      mode: 'wa_list_chat',
       f: 'Chat ( list )',
-    };
-
-    const response = await CommonAPI(body, signal);
+      p: `{"ConversationId": ${conversationId}, "Page": ${page}, "PageSize": ${pageSize} }`,
+      userId,
+      signal,
+    });
     if (response?.Data) {
       return {
         data: response?.Data || [],
@@ -125,17 +124,12 @@ export const sendChatMedia = async ({ phoneNo, mediaUrl, type, caption, userId, 
 
 export const fetchTags = async () => {
   const userData = getUserData() || {};
-  const body = {
-    con: JSON.stringify({
-      id: '',
-      mode: 'tagslist',
-      appuserid: String(userData?.userId || ''),
-    }),
+  const response = await callCommonApi({
+    mode: 'tagslist',
     f: 'Chat module (tags list)',
     p: JSON.stringify({}),
-  };
-
-  const response = await CommonAPI(body);
+    userId: String(userData?.userId || ''),
+  });
   if (response?.Data?.rd) {
     return response.Data.rd;
   }
@@ -144,16 +138,13 @@ export const fetchTags = async () => {
 
 export const fetchCustomerTags = async (customerId, userId, signal) => {
   try {
-    const body = {
-      con: JSON.stringify({
-        id: '',
-        mode: 'wa_list_tags',
-        appuserid: String(userId || ''),
-      }),
-      p: JSON.stringify({ CustomerId: Number(customerId) }),
+    const response = await callCommonApi({
+      mode: 'wa_list_tags',
       f: 'WhatsApp Chat ( List Tags )',
-    };
-    const response = await CommonAPI(body, signal);
+      p: JSON.stringify({ CustomerId: Number(customerId) }),
+      userId,
+      signal,
+    });
     if (response?.Data) {
       return response.Data;
     }
@@ -167,34 +158,23 @@ export const fetchCustomerTags = async (customerId, userId, signal) => {
 
 export const assignTag = async (conversationId, tagId) => {
   const userData = getUserData() || {};
-  const body = {
-    con: JSON.stringify({
-      id: '',
-      mode: 'assigntag',
-      appuserid: String(userData?.userId || ''),
-      conversationId: String(conversationId),
-      tagId: String(tagId),
-    }),
+  return callCommonApi({
+    mode: 'assigntag',
     f: 'Chat module (assign tag)',
     p: JSON.stringify({}),
-  };
-
-  return CommonAPI(body);
+    userId: String(userData?.userId || ''),
+    extraCon: { conversationId: String(conversationId), tagId: String(tagId) },
+  });
 };
 
 export const addTagsApi = async (customerId, tagName, userId) => {
-  const body = {
-    con: JSON.stringify({
-      id: '',
-      mode: 'wa_add_tags',
-      appuserid: String(userId || ''),
-    }),
-    p: JSON.stringify({ CustomerId: Number(customerId), TagName: tagName }),
-    f: 'WhatsApp Chat (Add Tags)',
-  };
-
   try {
-    const response = await CommonAPI(body);
+    const response = await callCommonApi({
+      mode: 'wa_add_tags',
+      f: 'WhatsApp Chat (Add Tags)',
+      p: JSON.stringify({ CustomerId: Number(customerId), TagName: tagName }),
+      userId,
+    });
     if (response?.Data) {
       return response.Data;
     }
@@ -207,12 +187,12 @@ export const addTagsApi = async (customerId, tagName, userId) => {
 
 export const pinConversationApi = async (conversationId, userId, email) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_bind_user_conv","appuserid":"${email || ''}"}`,
-      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsPin", "UserBindConvValue": 1}`,
+    return await callCommonApi({
+      mode: 'wa_bind_user_conv',
       f: 'Conversation pin ( Pin )',
-    };
-    return await CommonAPI(body);
+      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsPin", "UserBindConvValue": 1}`,
+      userId: email,
+    });
   } catch (error) {
     console.error('Error pinning conversation:', error);
     return null;
@@ -221,12 +201,12 @@ export const pinConversationApi = async (conversationId, userId, email) => {
 
 export const unPinConversationApi = async (conversationId, userId, email) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_bind_user_conv","appuserid":"${email || ''}"}`,
-      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsPin", "UserBindConvValue": 0}`,
+    return await callCommonApi({
+      mode: 'wa_bind_user_conv',
       f: 'Conversation pin ( Pin )',
-    };
-    return await CommonAPI(body);
+      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsPin", "UserBindConvValue": 0}`,
+      userId: email,
+    });
   } catch (error) {
     console.error('Error unpinning conversation:', error);
     return null;
@@ -235,12 +215,12 @@ export const unPinConversationApi = async (conversationId, userId, email) => {
 
 export const favoriteApi = async (conversationId, userId, email) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_bind_user_conv","appuserid":"${email || ''}"}`,
-      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsStar", "UserBindConvValue": 1}`,
+    return await callCommonApi({
+      mode: 'wa_bind_user_conv',
       f: 'Conversation Star ( star )',
-    };
-    return await CommonAPI(body);
+      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsStar", "UserBindConvValue": 1}`,
+      userId: email,
+    });
   } catch (error) {
     console.error('Error favoriting conversation:', error);
     return null;
@@ -249,12 +229,12 @@ export const favoriteApi = async (conversationId, userId, email) => {
 
 export const unFavoriteApi = async (conversationId, userId, email) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_bind_user_conv","appuserid":"${email || ''}"}`,
-      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsStar", "UserBindConvValue": 0}`,
+    return await callCommonApi({
+      mode: 'wa_bind_user_conv',
       f: 'Conversation Star ( star )',
-    };
-    return await CommonAPI(body);
+      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsStar", "UserBindConvValue": 0}`,
+      userId: email,
+    });
   } catch (error) {
     console.error('Error unfavoriting conversation:', error);
     return null;
@@ -263,12 +243,12 @@ export const unFavoriteApi = async (conversationId, userId, email) => {
 
 export const archieveApi = async (conversationId, userId, email) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_bind_user_conv","appuserid":"${email || ''}"}`,
-      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsArchived", "UserBindConvValue": 1}`,
+    return await callCommonApi({
+      mode: 'wa_bind_user_conv',
       f: 'Conversation Archived ( Archived )',
-    };
-    return await CommonAPI(body);
+      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsArchived", "UserBindConvValue": 1}`,
+      userId: email,
+    });
   } catch (error) {
     console.error('Error archiving conversation:', error);
     return null;
@@ -277,12 +257,12 @@ export const archieveApi = async (conversationId, userId, email) => {
 
 export const unArchieveApi = async (conversationId, userId, email) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_bind_user_conv","appuserid":"${email || ''}"}`,
-      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsArchived", "UserBindConvValue": 0}`,
+    return await callCommonApi({
+      mode: 'wa_bind_user_conv',
       f: 'Conversation Archived ( Archived )',
-    };
-    return await CommonAPI(body);
+      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "UserBindConvField": "IsArchived", "UserBindConvValue": 0}`,
+      userId: email,
+    });
   } catch (error) {
     console.error('Error unarchiving conversation:', error);
     return null;
@@ -291,12 +271,13 @@ export const unArchieveApi = async (conversationId, userId, email) => {
 
 export const fetchAgentLists = async (userId, signal) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_chat_agent_list","appuserid":"${userId || ''}"}`,
-      p: '',
+    const response = await callCommonApi({
+      mode: 'wa_chat_agent_list',
       f: 'Whatsapp Agent List ( List )',
-    };
-    const response = await CommonAPI(body, signal);
+      p: '',
+      userId,
+      signal,
+    });
     if (response?.Data) {
       return response.Data;
     }
@@ -310,12 +291,12 @@ export const fetchAgentLists = async (userId, signal) => {
 
 export const addAssignUser = async (conversationId, userId, email) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_assign_conv","appuserid":"${email || ''}"}`,
-      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "IsAssign": 1, "AssignBy": 1}`,
+    const response = await callCommonApi({
+      mode: 'wa_assign_conv',
       f: 'Assign Conversation to Agent ( Assign )',
-    };
-    const response = await CommonAPI(body);
+      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "IsAssign": 1, "AssignBy": 1}`,
+      userId: email,
+    });
     if (response?.Data) {
       return response.Data;
     }
@@ -328,12 +309,12 @@ export const addAssignUser = async (conversationId, userId, email) => {
 
 export const removeAssignUser = async (conversationId, userId, email) => {
   try {
-    const body = {
-      con: `{"id":"","mode":"wa_assign_conv","appuserid":"${email || ''}"}`,
-      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "IsAssign": 0, "AssignBy": 1}`,
+    const response = await callCommonApi({
+      mode: 'wa_assign_conv',
       f: 'Assign Conversation to Agent ( Assign )',
-    };
-    const response = await CommonAPI(body);
+      p: `{"ConversationId": ${conversationId},"UserId": ${userId}, "IsAssign": 0, "AssignBy": 1}`,
+      userId: email,
+    });
     if (response) {
       return response;
     }
@@ -418,18 +399,13 @@ export const sendForwardMessage = async ({ userId, contacts, type = 'text', cont
 };
 
 export const savePlayerId = async (socketId, userId, id) => {
-  const body = {
-    con: JSON.stringify({
-      id: '',
-      mode: 'wa_save_device_tok',
-      appuserid: String(userId || ''),
-    }),
-    p: JSON.stringify({ UserId: Number(id), SocketId: String(socketId) }),
-    f: 'Agent Information (Save Device Token)',
-  };
-
   try {
-    const response = await CommonAPI(body);
+    const response = await callCommonApi({
+      mode: 'wa_save_device_tok',
+      f: 'Agent Information (Save Device Token)',
+      p: JSON.stringify({ UserId: Number(id), SocketId: String(socketId) }),
+      userId,
+    });
     if (response?.Data) {
       return response.Data;
     }
@@ -442,22 +418,17 @@ export const savePlayerId = async (socketId, userId, id) => {
 
 export const addCustomer = async (userPhone, userId = 1, firstName = '', lastName = '', conversationId = '') => {
   try {
-    const body = {
-      con: JSON.stringify({
-        id: '',
-        mode: 'wa_add_customer',
-        appuserid: String(userId || ''),
-      }),
+    const response = await callCommonApi({
+      mode: 'wa_add_customer',
+      f: 'Chat ( Add Customer )',
       p: JSON.stringify({
         UserPhone: String(userPhone || ''),
         FirstName: String(firstName || ''),
         LastName: String(lastName || ''),
         ConversationId: String(conversationId || ''),
       }),
-      f: 'Chat ( Add Customer )',
-    };
-
-    const response = await CommonAPI(body);
+      userId,
+    });
     if (response?.Data) {
       return response.Data;
     }
@@ -467,3 +438,157 @@ export const addCustomer = async (userPhone, userId = 1, firstName = '', lastNam
     return null;
   }
 };
+
+export const addConversation = async (userPhone, userId = 1) => {
+  try {
+    const response = await callCommonApi({
+      mode: 'wa_add_conv',
+      f: 'Chat ( Add Conversation )',
+      p: JSON.stringify({ UserPhone: String(userPhone), UserId: String(userId) }),
+      userId,
+    });
+    if (response?.Data) {
+      return response.Data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error adding conversation:', error);
+    return null;
+  }
+};
+
+export const fetchCustomerLists = async (page = 1, pageSize = 20, searchTerm = '', userId) => {
+  try {
+    const response = await callCommonApi({
+      mode: 'wa_customer_list_chat',
+      f: 'WhatsApp Chat ( Customer List )',
+      p: JSON.stringify({ Page: page, PageSize: pageSize, SearchTerm: searchTerm }),
+      userId,
+    });
+    if (response?.Data) {
+      return {
+        data: response.Data.rd || [],
+        total: response.Data.total || response.Data.rd?.length || 0,
+        currentPage: page,
+        hasMore: response.Data.rd?.length === pageSize,
+      };
+    }
+    return { data: [], total: 0, currentPage: page, hasMore: false };
+  } catch (error) {
+    console.error('Error fetching customer lists:', error);
+    return { data: [], total: 0, currentPage: page, hasMore: false };
+  }
+};
+
+export const dataSync = async (userId) => {
+  try {
+    const response = await callCommonApi({
+      mode: 'wa_chat_data_sync',
+      f: 'Whatsapp ( Data sync )',
+      p: '',
+      userId,
+    });
+    if (response?.Data) {
+      return response.Data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error data sync:', error);
+    return null;
+  }
+};
+
+export const deleteAssignedTags = async (customerId, tagId, userId) => {
+  try {
+    const response = await callCommonApi({
+      mode: 'wa_delete_user_tags',
+      f: 'WhatsApp Chat ( Delete Tags )',
+      p: JSON.stringify({ CustomerId: Number(customerId), TagId: Number(tagId) }),
+      userId,
+    });
+    if (response?.Data) {
+      return response.Data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error deleting assigned tag:', error);
+    return null;
+  }
+};
+
+export const readMessage = async (conversationId, userId) => {
+  try {
+    const response = await callCommonApi({
+      mode: 'wa_read_chat',
+      f: 'Chat ( Read Message )',
+      p: JSON.stringify({ ConversationId: Number(conversationId) }),
+      userId,
+    });
+    if (response?.Data) {
+      return response.Data;
+    }
+    return null;
+  } catch (error) {
+    console.error('Error reading message:', error);
+    return null;
+  }
+};
+
+export const sendMessageReaction = async ({ userId, customerId, phoneNo, messageId, emoji }) => {
+  const body = {
+    userId: String(userId),
+    customerId: String(customerId),
+    phoneNo: String(phoneNo),
+    type: 'reaction',
+    reaction: {
+      message_id: String(messageId),
+      emoji: String(emoji),
+    },
+  };
+
+  try {
+    const headers = getHeaders();
+    const response = await fetch(MESSAGEAPIURL(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: JSON.stringify(body),
+    });
+
+    if (!response.ok) {
+      console.error('Reaction API error:', response.statusText);
+      return null;
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Error sending reaction:', error);
+    return null;
+  }
+};
+
+export const fetchMediaLists = async (page = 1, pageSize = 6, conversationId, userId) => {
+  try {
+    const response = await callCommonApi({
+      mode: 'wa_media_list_chat',
+      f: 'Chat ( Media list )',
+      p: JSON.stringify({ ConversationId: Number(conversationId), Page: page, PageSize: pageSize }),
+      userId,
+    });
+    if (response?.Data) {
+      return {
+        data: response.Data.rd || [],
+        total: response.Data.total || response.Data.rd?.length || 0,
+        currentPage: page,
+        hasMore: response.Data.rd?.length === pageSize,
+      };
+    }
+    return { data: [], total: 0, currentPage: page, hasMore: false };
+  } catch (error) {
+    console.error('Error fetching media lists:', error);
+    return { data: [], total: 0, currentPage: page, hasMore: false };
+  }
+};
+

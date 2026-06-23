@@ -1,4 +1,4 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 /**
  * Fetches template messages for a campaign
@@ -21,7 +21,12 @@ export const fetchTemplateMessages = async (userId, campaignId, templateId, chat
             f: "Broadcast ( broadcast_camp_temp )"
         };
 
-        const response = await CommonAPI(body);
+        const response = await callCommonApi({
+            mode: "broadcast_camp_temp",
+            f: "Broadcast ( broadcast_camp_temp )",
+            p: JSON.stringify(p),
+            userId,
+        });
         
         if (response?.Data) {
             return {

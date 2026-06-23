@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { Avatar, Badge, IconButton, Menu, MenuItem, Tooltip } from '@mui/material';
+import { Avatar, Badge, IconButton, Menu, MenuItem, Tooltip, Skeleton, CircularProgress } from '@mui/material';
 import {
   Search, Pin, PinOff, Star, StarOff, Archive, ArchiveRestore,
   ChevronDown, UserPlus, X, User as PersonIcon,
@@ -29,30 +29,35 @@ const TAB_ITEMS = [
   { label: 'favourite', value: 2 },
 ];
 
-const getMenuItems = (member) => [
-  {
-    action: member?.IsPin === 1 ? 'UnPin' : 'Pin',
-    icon: member?.IsPin === 1 ? <PinOff size={18} /> : <Pin size={18} />,
-    label: member?.IsPin === 1 ? 'Unpin' : 'Pin',
-  },
-  {
-    action: member?.IsStar === 1 ? 'UnStar' : 'Star',
-    icon: member?.IsStar === 1 ? <StarOff size={18} /> : <Star size={18} />,
-    label: member?.IsStar === 1 ? 'Unfavourite' : 'favourite',
-  },
-  {
-    action: member?.IsArchived === 1 ? 'UnArchive' : 'Archive',
-    icon: member?.IsArchived === 1 ? <ArchiveRestore size={18} /> : <Archive size={18} />,
-    label: member?.IsArchived === 1 ? 'Unarchive' : 'Archive',
-  },
-  ...(member?.CustomerName === '' ? [
+const getMenuItems = (member, can) => {
+  const items = [
     {
+      action: member?.IsPin === 1 ? 'UnPin' : 'Pin',
+      icon: member?.IsPin === 1 ? <PinOff size={18} /> : <Pin size={18} />,
+      label: member?.IsPin === 1 ? 'Unpin' : 'Pin',
+    },
+    {
+      action: member?.IsStar === 1 ? 'UnStar' : 'Star',
+      icon: member?.IsStar === 1 ? <StarOff size={18} /> : <Star size={18} />,
+      label: member?.IsStar === 1 ? 'Unfavourite' : 'favourite',
+    },
+  ];
+  if (can(7)) {
+    items.push({
+      action: member?.IsArchived === 1 ? 'UnArchive' : 'Archive',
+      icon: member?.IsArchived === 1 ? <ArchiveRestore size={18} /> : <Archive size={18} />,
+      label: member?.IsArchived === 1 ? 'Unarchive' : 'Archive',
+    });
+  }
+  if (can(16) && member?.CustomerName === '') {
+    items.push({
       action: 'AddCustomer',
       icon: <UserPlus size={18} />,
       label: 'Add to Customer',
-    },
-  ] : []),
-];
+    });
+  }
+  return items;
+};
 
 export default function ChatSidebar({
   onCustomerSelect,
@@ -62,8 +67,13 @@ export default function ChatSidebar({
   onConversationList,
 }) {
   const auth = useAuthStore((s) => s.auth);
+  const can = useAuthStore((s) => s.can);
   const [conversations, setConversations] = useState([]);
+  const [allConversationsCache, setAllConversationsCache] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [contextMenu, setContextMenu] = useState(null);
@@ -72,46 +82,239 @@ export default function ChatSidebar({
   const [menuMember, setMenuMember] = useState(null);
   const [addCustomerDialogOpen, setAddCustomerDialogOpen] = useState(false);
   const [addCustomerMember, setAddCustomerMember] = useState(null);
+  const [highlightedIndex, setHighlightedIndex] = useState(-1);
   const listRef = useRef(null);
+  const itemRefs = useRef({});
+  const searchInputRef = useRef(null);
 
-  const loadConversations = useCallback(async () => {
+  // Single ref for all keyboard-handler state to keep listener stable
+  const kbRef = useRef({
+    searchTerm: '',
+    highlightedIndex: -1,
+    filtered: [],
+    anchorEl: null,
+    contextMenu: null,
+    addCustomerDialogOpen: false,
+  });
+
+  const loadConversations = useCallback(async (targetPage = 1, append = false) => {
     if (!auth?.userId) return;
-    setLoading(true);
+    if (targetPage === 1) setLoading(true);
+    else setIsLoadingMore(true);
+
     try {
-      const response = await fetchConversationLists(1, 100, auth?.userId, searchTerm);
-      const rawList = response?.data?.rd || [];
+      const normalizedSearch = searchTerm ? searchTerm.replace(/[+\-\s()]/g, '') : searchTerm;
+      const response = await fetchConversationLists(targetPage, 100, auth?.userId, normalizedSearch);
+      let rawList = response?.data?.rd || [];
+      const rd1List = response?.data?.rd1 || [];
+
+      if (rawList.length === 0 && rd1List.length > 0) {
+        rawList = rd1List.map((c) => ({
+          Id: c.CustomerId,
+          ConversationId: c.CustomerId,
+          CustomerId: c.CustomerId,
+          CustomerPhone: c.CustomerPhone,
+          CustomerName: c.CustomerName,
+          WhatsappCustName: null,
+          IsPin: 0,
+          IsStar: 0,
+          IsArchived: 0,
+          UnReadMsgCount: 0,
+          LastMessage: null,
+          TagList: null,
+          BindId: null,
+          UserId: null,
+          IsAssign: null,
+          ...c,
+        }));
+      }
+
       const list = processApiResponse(rawList);
-      setConversations(list);
-      onConversationList?.(list);
+
+      if (append) {
+        setConversations((prev) => {
+          const existingIds = new Set(prev.map((c) => c.Id));
+          const newItems = list.filter((c) => !existingIds.has(c.Id));
+          return [...prev, ...newItems];
+        });
+        if (!searchTerm) {
+          setAllConversationsCache((prev) => {
+            const existingIds = new Set(prev.map((c) => c.Id));
+            const newItems = list.filter((c) => !existingIds.has(c.Id));
+            return [...prev, ...newItems];
+          });
+        }
+      } else {
+        setConversations(list);
+        onConversationList?.(list);
+        if (!searchTerm) {
+          setAllConversationsCache(list);
+        }
+      }
+
+      const hasMoreFromRd1 = rawList.length > 0 && rd1List.length === 0 ? (response?.hasMore ?? false) : false;
+      setHasMore(hasMoreFromRd1);
+      setPage(targetPage);
     } catch (err) {
       console.error('Failed to load conversations:', err);
     } finally {
       setLoading(false);
+      setIsLoadingMore(false);
     }
   }, [auth?.userId, onConversationList, searchTerm]);
 
-  // Initial load on mount / auth ready
+  // Handle search term changes: clear search instantly restores cache if available
   useEffect(() => {
-    if (auth?.token && auth?.userId) {
-      loadConversations();
+    if (!auth?.token || !auth?.userId) return;
+
+    if (!searchTerm.trim()) {
+      if (allConversationsCache.length > 0) {
+        // Restore from cache instantly without API call
+        setConversations(allConversationsCache);
+        onConversationList?.(allConversationsCache);
+        setPage(1);
+        setHasMore(true);
+        setLoading(false);
+      } else {
+        // No cache yet (initial load), fetch from API
+        loadConversations(1, false);
+      }
+    } else {
+      // Fetch search results from API
+      loadConversations(1, false);
     }
-  }, [auth?.token, auth?.userId, loadConversations]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [auth?.token, auth?.userId, searchTerm]);
 
   const filtered = useMemo(() => {
-    const term = searchTerm.toLowerCase();
+    const term = searchTerm.toLowerCase().replace(/[+\-\s()]/g, '');
     return conversations.filter((c) => {
-      const haystack = String(getCustomerDisplayName(c) || '').toLowerCase();
-      const matchesSearch = haystack.includes(term);
+      const name = String(getCustomerDisplayName(c) || '').toLowerCase();
+      const phone = String(c.CustomerPhone || '').toLowerCase().replace(/[+\-\s()]/g, '');
+      const matchesSearch = !term || name.includes(term) || phone.includes(term);
       if (!matchesSearch) return false;
 
       const isFavorite = c.IsStar === 1;
       switch (tabValue) {
-        case 1: return c.ticketStatus === 'escalated';
+        case 1: return c.IsAssign == 1;
         case 2: return isFavorite;
         default: return true;
       }
     });
   }, [conversations, searchTerm, tabValue]);
+
+  // Sync all keyboard-relevant state into a single ref (cheap, no re-renders)
+  useEffect(() => {
+    kbRef.current.searchTerm = searchTerm;
+  }, [searchTerm]);
+  useEffect(() => {
+    kbRef.current.highlightedIndex = highlightedIndex;
+  }, [highlightedIndex]);
+  useEffect(() => {
+    kbRef.current.filtered = filtered;
+  }, [filtered]);
+  useEffect(() => {
+    kbRef.current.anchorEl = anchorEl;
+    kbRef.current.contextMenu = contextMenu;
+    kbRef.current.addCustomerDialogOpen = addCustomerDialogOpen;
+  }, [anchorEl, contextMenu, addCustomerDialogOpen]);
+
+  // Reset keyboard highlight when filtered list changes
+  useEffect(() => {
+    setHighlightedIndex(-1);
+    kbRef.current.highlightedIndex = -1;
+  }, [filtered.length, searchTerm, tabValue]);
+
+  // Keyboard navigation: single listener, never re-registers (zero deps)
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      const s = kbRef.current;
+
+      // Block when menus / dialogs are open
+      if (s.anchorEl || s.contextMenu || s.addCustomerDialogOpen) return;
+
+      const activeEl = document.activeElement;
+      const isSearchFocused = activeEl === searchInputRef.current;
+      const isTyping = activeEl && (
+        activeEl.tagName === 'INPUT' ||
+        activeEl.tagName === 'TEXTAREA' ||
+        activeEl.isContentEditable
+      );
+      if (isTyping && !isSearchFocused) return;
+
+      const list = s.filtered;
+      if (list.length === 0) return;
+
+      switch (e.key) {
+        case 'ArrowDown': {
+          e.preventDefault();
+          if (isSearchFocused) {
+            searchInputRef.current?.blur();
+            setHighlightedIndex(0);
+          } else {
+            setHighlightedIndex((prev) => {
+              const next = prev + 1;
+              return next >= list.length ? 0 : next;
+            });
+          }
+          break;
+        }
+        case 'ArrowUp': {
+          e.preventDefault();
+          if (isSearchFocused) {
+            searchInputRef.current?.blur();
+            setHighlightedIndex(list.length - 1);
+          } else {
+            setHighlightedIndex((prev) => {
+              const next = prev - 1;
+              return next < 0 ? list.length - 1 : next;
+            });
+          }
+          break;
+        }
+        case 'Enter': {
+          e.preventDefault();
+          if (isSearchFocused && list.length > 0) {
+            searchInputRef.current?.blur();
+            onCustomerSelect?.(list[0]);
+            setHighlightedIndex(0);
+          } else {
+            const idx = s.highlightedIndex;
+            if (idx >= 0 && idx < list.length) {
+              onCustomerSelect?.(list[idx]);
+            }
+          }
+          break;
+        }
+        case 'Escape': {
+          e.preventDefault();
+          if (s.searchTerm) {
+            setSearchTerm('');
+          }
+          setHighlightedIndex(-1);
+          searchInputRef.current?.focus();
+          break;
+        }
+        default:
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Scroll highlighted item into view instantly (auto) via rAF for rapid keys
+  useEffect(() => {
+    if (highlightedIndex >= 0 && itemRefs.current[highlightedIndex]) {
+      requestAnimationFrame(() => {
+        itemRefs.current[highlightedIndex]?.scrollIntoView({
+          behavior: 'auto',
+          block: 'nearest',
+        });
+      });
+    }
+  }, [highlightedIndex]);
 
   const handleContextMenu = (e, member) => {
     e.preventDefault();
@@ -151,9 +354,33 @@ export default function ChatSidebar({
     // Refresh conversation list after adding customer
     if (!auth?.userId) return;
     try {
-      const res = await fetchConversationLists(1, 100, auth.userId, searchTerm);
-      if (res?.data?.rd) {
-        const processed = processApiResponse(res.data.rd);
+      const normalizedSearch = searchTerm ? searchTerm.replace(/[+\-\s()]/g, '') : searchTerm;
+      const res = await fetchConversationLists(1, 100, auth.userId, normalizedSearch);
+      const rawRd = res?.data?.rd || [];
+      const rawRd1 = res?.data?.rd1 || [];
+      let rawList = rawRd;
+      if (rawList.length === 0 && rawRd1.length > 0) {
+        rawList = rawRd1.map((c) => ({
+          Id: c.CustomerId,
+          ConversationId: c.CustomerId,
+          CustomerId: c.CustomerId,
+          CustomerPhone: c.CustomerPhone,
+          CustomerName: c.CustomerName,
+          WhatsappCustName: null,
+          IsPin: 0,
+          IsStar: 0,
+          IsArchived: 0,
+          UnReadMsgCount: 0,
+          LastMessage: null,
+          TagList: null,
+          BindId: null,
+          UserId: null,
+          IsAssign: null,
+          ...c,
+        }));
+      }
+      if (rawList.length > 0) {
+        const processed = processApiResponse(rawList);
         setConversations(processed);
         onConversationList?.(processed);
       }
@@ -205,8 +432,31 @@ export default function ChatSidebar({
         toast.success(`${action} successful`);
         // Refresh conversation list to reflect change
         const res = await fetchConversationLists(userId);
-        if (res?.rd) {
-          const processed = processApiResponse(res);
+        const rawRd = res?.data?.rd || [];
+        const rawRd1 = res?.data?.rd1 || [];
+        let rawList = rawRd;
+        if (rawList.length === 0 && rawRd1.length > 0) {
+          rawList = rawRd1.map((c) => ({
+            Id: c.CustomerId,
+            ConversationId: c.CustomerId,
+            CustomerId: c.CustomerId,
+            CustomerPhone: c.CustomerPhone,
+            CustomerName: c.CustomerName,
+            WhatsappCustName: null,
+            IsPin: 0,
+            IsStar: 0,
+            IsArchived: 0,
+            UnReadMsgCount: 0,
+            LastMessage: null,
+            TagList: null,
+            BindId: null,
+            UserId: null,
+            IsAssign: null,
+            ...c,
+          }));
+        }
+        if (rawList.length > 0) {
+          const processed = processApiResponse(rawList);
           setConversations(processed);
         }
       } else {
@@ -222,13 +472,14 @@ export default function ChatSidebar({
     <div className="chat-sidebar">
       {/* Header */}
       <div className="chat-sidebar-header">
-        <h3 className="chat-sidebar-title">Chat Members</h3>
+        <h3 className="chat-sidebar-title">Waba Chat</h3>
       </div>
 
       {/* Search */}
       <div className="chat-sidebar-search">
         <Search size={16} className="chat-search-icon" />
         <input
+          ref={searchInputRef}
           type="text"
           placeholder="Search conversations"
           value={searchTerm}
@@ -262,30 +513,68 @@ export default function ChatSidebar({
       </div>
 
       {/* List */}
-      <div className="chat-sidebar-list" ref={listRef}>
+      {!can(15) ? (
+        <div className="chat-sidebar-list">
+          <div className="chat-empty" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%' }}>
+            No access to conversations
+          </div>
+        </div>
+      ) : (
+      <div className="chat-sidebar-list">
         {loading && (
-          <div className="chat-loading">Loading conversations...</div>
+          <ul>
+            {Array.from({ length: 13 }).map((_, i) => (
+              <li key={`skel-${i}`} className="chat-sidebar-skeleton">
+                <div className="member-item">
+                  <div className="member-avatar">
+                    <Skeleton variant="circular" animation="wave" width={40} height={40} sx={{ borderRadius: '50% !important' }} />
+                  </div>
+                  <div className="member-info">
+                    <div className="member-header">
+                      <Skeleton variant="text" animation="wave" width="60%" height={18} />
+                      <Skeleton variant="text" animation="wave" width={40} height={15} />
+                    </div>
+                    <div className="member-message">
+                      <Skeleton variant="text" animation="wave" width="80%" height={15} />
+                    </div>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
         )}
 
         {!loading && filtered.length === 0 && (
           <div className="chat-empty">No conversations found</div>
         )}
 
-        <ul>
-          {filtered.map((member) => {
+        <ul
+          ref={listRef}
+          onScroll={() => {
+            const el = listRef.current;
+            if (!el || isLoadingMore || !hasMore || loading) return;
+            const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 5;
+            if (atBottom) {
+              loadConversations(page + 1, true);
+            }
+          }}
+        >
+          {filtered.map((member, index) => {
             const isSelected = selectedCustomer?.Id === member.Id;
             const isMenuOpen = Boolean(anchorEl) && menuMember?.Id === member.Id;
+            const isKeyboardHighlighted = highlightedIndex === index;
             const shouldShowUnread = member.unreadCount > 0;
             const name = member.name || getCustomerDisplayName(member);
 
             return (
               <li
                 key={member.Id}
-                className={`${isSelected ? 'active' : ''} ${member?.isReading ? 'reading' : ''} ${isMenuOpen ? 'menu-open' : ''}`}
+                ref={(el) => { itemRefs.current[index] = el; }}
+                className={`${isSelected ? 'active' : ''} ${member?.isReading ? 'reading' : ''} ${isMenuOpen ? 'menu-open' : ''} ${isKeyboardHighlighted ? 'keyboard-highlight' : ''}`}
                 onContextMenu={(e) => handleContextMenu(e, member)}
               >
                 <div
-                  className={`member-item ${isSelected ? 'active' : ''} ${member?.isReading ? 'reading' : ''} ${isMenuOpen ? 'menu-open' : ''}`}
+                  className={`member-item ${isSelected ? 'active' : ''} ${member?.isReading ? 'reading' : ''} ${isMenuOpen ? 'menu-open' : ''} ${isKeyboardHighlighted ? 'keyboard-highlight' : ''}`}
                   onClick={() => onCustomerSelect?.(member)}
                 >
                   <div className="member-avatar">
@@ -314,10 +603,14 @@ export default function ChatSidebar({
                             {getMessageStatusIcon(member)}
                           </span>
                           <span className="last-message-text">
-                            {member.lastMessageText !== 'No message' ? (
-                              member.lastMessage
+                            {member.lastMessageText ? (
+                              member.lastMessageText !== 'No message' ? (
+                                member.lastMessage
+                              ) : (
+                                <span className="last-message-attachment">{member.lastMessage}</span>
+                              )
                             ) : (
-                              <span className="last-message-attachment">{member.lastMessage}</span>
+                              member.CustomerPhone || ''
                             )}
                           </span>
                         </span>
@@ -385,8 +678,16 @@ export default function ChatSidebar({
               </li>
             );
           })}
+
+          {isLoadingMore && (
+            <li className="chat-sidebar-loader" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', gap: 8, listStyle: 'none' }}>
+              <CircularProgress size={20} thickness={4} sx={{ color: '#1daa61' }} />
+              <span style={{ fontSize: 12, color: '#888' }}>Loading conversations...</span>
+            </li>
+          )}
         </ul>
       </div>
+      )}
 
       {/* Dropdown Menu */}
       <Menu
@@ -404,7 +705,7 @@ export default function ChatSidebar({
           },
         }}
       >
-        {getMenuItems(menuMember).map((item, index) => (
+        {getMenuItems(menuMember, can).map((item, index) => (
           <MenuItem
             key={item.action || index}
             onClick={() => handleMenuAction(item.action)}
@@ -444,7 +745,7 @@ export default function ChatSidebar({
           },
         }}
       >
-        {getMenuItems(contextMember).map((item, index) => (
+        {getMenuItems(contextMember, can).map((item, index) => (
           <MenuItem
             key={item.action || index}
             onClick={() => handleMenuAction(item.action)}

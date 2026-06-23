@@ -1,14 +1,14 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const deleteCampaign = async (userId, campaignId) => {
     try {
-        const body = {
-            "con": `{"id":"","mode":"broadcast_campaign_delete","appuserid":"${userId}","campaignid":"${campaignId}"}`,
-            "p": ``,
-            "f": "Broadcast ( Campaign Delete )"
-        }
-
-        const response = await CommonAPI(body);
+        const response = await callCommonApi({
+            mode: "broadcast_campaign_delete",
+            f: "Broadcast ( Campaign Delete )",
+            p: "",
+            userId,
+            extraCon: { campaignid: String(campaignId) },
+        });
         if (response?.Data) {
             return {
                 success: true,

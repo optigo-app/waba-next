@@ -3,6 +3,7 @@
 import { Menu, MenuItem, ListItemIcon, ListItemText } from '@mui/material';
 import { Reply, Forward, Copy } from 'lucide-react';
 import toast from 'react-hot-toast';
+import { useAuthStore } from '../../store/authStore';
 
 export default function MessageContextMenu({
   open,
@@ -14,6 +15,7 @@ export default function MessageContextMenu({
   mouseY,
   hideReplyForward = false,
 }) {
+  const can = useAuthStore((s) => s.can);
   const handleReply = () => {
     onReply?.(message);
     onClose?.();
@@ -56,7 +58,7 @@ export default function MessageContextMenu({
         onClose?.();
       }}
     >
-      {!hideReplyForward && (
+      {!hideReplyForward && can(6) && (
         <MenuItem
           onClick={handleReply}
           sx={{ mx: 0.75, my: 0.25, borderRadius: 2, py: 1 }}
@@ -68,7 +70,7 @@ export default function MessageContextMenu({
         </MenuItem>
       )}
 
-      {!hideReplyForward && (
+      {!hideReplyForward && can(6) && (
         <MenuItem
           onClick={handleForward}
           sx={{ mx: 0.75, my: 0.25, borderRadius: 2, py: 1 }}

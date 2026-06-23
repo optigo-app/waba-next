@@ -1,7 +1,7 @@
 'use client';
 
-import { useCallback } from 'react';
-import { CircularProgress } from '@mui/material';
+import { useCallback, useEffect } from 'react';
+import { CircularProgress, Skeleton } from '@mui/material';
 import { Paperclip, ArrowDown } from 'lucide-react';
 import { formatDateHeader } from './utils/dateUtils';
 import MessageBubble from './MessageBubble';
@@ -48,6 +48,9 @@ export default function ChatMessagesArea({
   sending,
   emojiPickerOpen,
   setEmojiPickerOpen,
+  isLoadingMore,
+  hasMore,
+  loadMoreMessages,
 }) {
   const groupMessagesByDate = useCallback(() => {
     const grouped = {};
@@ -85,11 +88,48 @@ export default function ChatMessagesArea({
         </div>
       )}
 
-      <div className="chat-messages-list" ref={messagesListRef}>
-        {/* Subtle inline spinner */}
+      <div
+        className="chat-messages-list"
+        ref={messagesListRef}
+        onScroll={() => {
+          const el = messagesListRef.current;
+          if (!el || isLoadingMore || !hasMore || loading) return;
+          const nearTop = el.scrollTop < 100;
+          if (nearTop) {
+            loadMoreMessages();
+          }
+        }}
+      >
+        {/* Skeleton placeholders at top while loading older messages */}
+        {isLoadingMore && (
+          <div className="chat-messages-loading-more" style={{ padding: '8px 0', display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'center' }}>
+            <CircularProgress size={18} thickness={4} sx={{ color: '#1daa61' }} />
+            <span style={{ fontSize: 12, color: '#888' }}>Loading older messages...</span>
+          </div>
+        )}
+
+        {/* Skeleton message bubbles while loading */}
         {loading && messages.length === 0 && (
-          <div className="chat-messages-loading">
-            <CircularProgress size={20} thickness={4} sx={{ color: '#1daa61' }} />
+          <div className="chat-messages-skeleton">
+            <div className="skeleton-message customer">
+              <Skeleton variant="circular" width={32} height={32} />
+              <div className="skeleton-bubble">
+                <Skeleton variant="rounded" width="85%" height={14} />
+                <Skeleton variant="rounded" width="60%" height={14} sx={{ mt: 0.5 }} />
+              </div>
+            </div>
+            <div className="skeleton-message user">
+              <div className="skeleton-bubble">
+                <Skeleton variant="rounded" width="70%" height={14} />
+              </div>
+            </div>
+            <div className="skeleton-message customer">
+              <Skeleton variant="circular" width={32} height={32} />
+              <div className="skeleton-bubble">
+                <Skeleton variant="rounded" width="75%" height={14} />
+                <Skeleton variant="rounded" width="50%" height={14} sx={{ mt: 0.5 }} />
+              </div>
+            </div>
           </div>
         )}
 

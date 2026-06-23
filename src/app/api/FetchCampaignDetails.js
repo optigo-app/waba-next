@@ -1,13 +1,7 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const fetchCampaignDetails = async (userId, campaignId, chatMsgStatus = null, templateId = null) => {
     try {
-        const con = {
-            id: "",
-            mode: "broadcast_camp_details",
-            appuserid: `${userId}`
-        };
-
         const p = {
             CampaignId: campaignId
         };
@@ -22,13 +16,12 @@ export const fetchCampaignDetails = async (userId, campaignId, chatMsgStatus = n
             p.TemplateId = templateId;
         }
 
-        const body = {
-            con: JSON.stringify(con),
+        const response = await callCommonApi({
+            mode: "broadcast_camp_details",
+            f: "Broadcast ( campaign details )",
             p: JSON.stringify(p),
-            f: "Broadcast ( campaign details )"
-        };
-
-        const response = await CommonAPI(body);
+            userId,
+        });
         if (response?.Data) {
             return {
                 success: true,

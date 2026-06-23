@@ -40,10 +40,13 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
 
     const ICON_PROPS = { size: 20, strokeWidth: 2 };
 
+    const isLocalhost = typeof window !== 'undefined' && window.location.origin.includes('localhost');
+    const chatPath = isLocalhost ? '/chat' : `${auth?.redirect_version || ''}/chat`;
+
     const menuItems = [
         { path: "/", icon: <HomeIcon {...ICON_PROPS} />, label: "Dashboard" },
         { path: "/campaign", icon: <LayoutGrid {...ICON_PROPS} />, label: "Campaign" },
-        { path: "/chat", icon: <MessageCircle {...ICON_PROPS} />, label: "Chat", external: true },
+        { path: chatPath, icon: <MessageCircle {...ICON_PROPS} />, label: "Chat", external: true },
     ];
 
     useEffect(() => {
@@ -113,6 +116,10 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
                                                     target="_blank"
                                                     rel="noopener noreferrer"
                                                     className={`sidebar_main_link ${isActive ? "active" : ""}`}
+                                                    onClick={() => {
+                                                        const perms = sessionStorage.getItem('userPermissions');
+                                                        if (perms) localStorage.setItem('userPermissions', perms);
+                                                    }}
                                                 >
                                                     {content}
                                                 </a>

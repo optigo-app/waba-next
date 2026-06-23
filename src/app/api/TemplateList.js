@@ -1,14 +1,14 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const fetchTemplateLists = async (userId) => {
     try {
-        const body = {
-            "con": `{"id":"","mode":"broadcast_temp_list","appuserid":"${userId}"}`,
-            "p": "",
-            "f": "Broadcast ( Template List )"
-        }
-
-        const response = await CommonAPI(body);
+        
+        const response = await callCommonApi({
+            mode: "broadcast_temp_list",
+            f: "Broadcast ( Template List )",
+            p: "",
+            userId,
+        });
         if (response?.Data) {
             return {
                 data: response?.Data?.rd || [],

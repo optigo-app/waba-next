@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useEffect, useCallback } from 'react';
 import { IconButton, CircularProgress, Tooltip } from '@mui/material';
 import { Paperclip, Smile, Send } from 'lucide-react';
 import EmojiPicker from 'emoji-picker-react';
@@ -21,6 +22,19 @@ export default function ChatInputArea({
   emojiPickerRef,
   addMediaFiles,
 }) {
+  const textareaRef = useRef(null);
+
+  const adjustHeight = useCallback(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = Math.min(el.scrollHeight, 160) + 'px';
+  }, []);
+
+  useEffect(() => {
+    adjustHeight();
+  }, [input, adjustHeight]);
+
   return (
     <div className="chat-input-area">
         {/* Reply-to preview */}
@@ -42,9 +56,10 @@ export default function ChatInputArea({
               {uploading ? <CircularProgress size={18} /> : <Paperclip size={18} />}
             </IconButton>
           </Tooltip>
-          <input
-            type="text"
+          <textarea
+            ref={textareaRef}
             className="chat-text-input"
+            rows={1}
             placeholder={
               replyToMessage
                 ? 'Type a reply...'
@@ -53,7 +68,10 @@ export default function ChatInputArea({
                 : 'Type a message...'
             }
             value={input}
-            onChange={(e) => setInput(e.target.value)}
+            onChange={(e) => {
+              setInput(e.target.value);
+              adjustHeight();
+            }}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && !e.shiftKey) {
                 e.preventDefault();

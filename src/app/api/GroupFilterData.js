@@ -1,16 +1,10 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const fetchGroupFilterList = async (
     userId,
     {
         groupFilter = "",
         branchFilter = "",
-        customerName = "",
-        companyType = "",
-        state = "",
-        city = "",
-        country = "",
-        searchTerm = "",
     } = {}
 ) => {
     try {
@@ -19,13 +13,12 @@ export const fetchGroupFilterList = async (
             Branch: branchFilter,
         };
 
-        const body = {
-            "con": `{"id":"","mode":"broadcast_cust_list","appuserid":"${userId}"}`,
-            "p": JSON.stringify(payload),
-            "f": "Broadcast ( Customer Group List )"
-        }
-
-        const response = await CommonAPI(body);
+        const response = await callCommonApi({
+            mode: "broadcast_cust_list",
+            f: "Broadcast ( Customer Group List )",
+            p: JSON.stringify(payload),
+            userId,
+        });
         if (response?.Data) {
             return {
                 data: response?.Data?.rd,

@@ -1,13 +1,13 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const fetchCampaignStatusListsApi = async (userId) => {
     try {
-        const body = {
-            "con": `{\"id\":\"\",\"mode\":\"broadcast_campaign_list\",\"appuserid\":\"${userId}\"}`,
-            "p": ``,
-            "f": "Broadcast ( Campaign List )"
-        }
-        const response = await CommonAPI(body);
+        const response = await callCommonApi({
+            mode: "broadcast_campaign_list",
+            f: "Broadcast ( Campaign List )",
+            p: "",
+            userId,
+        });
         if (response?.Data) {
             return {
                 data: response?.Data?.rd || [],

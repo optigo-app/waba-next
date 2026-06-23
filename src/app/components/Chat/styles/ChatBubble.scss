@@ -39,7 +39,7 @@
 /* ─── Bubble ─────────────────────────────────────────────────────────────── */
 .message-bubble {
   padding: 8px 12px;
-  max-width: 440px;
+  max-width: min(440px, 70vw);
   position: relative;
   display: inline-block;
   width: auto;
@@ -138,7 +138,7 @@
   border-radius: 8px;
   overflow: hidden;
   width: 100%;
-  min-height: 240px;
+  min-height: clamp(160px, 35vw, 240px);
 }
 
 .message-media img {
@@ -172,8 +172,8 @@
 .message-video-wrapper {
   position: relative;
   width: 100%;
-  max-width: 350px;
-  height: 240px;
+  max-width: min(350px, 65vw);
+  height: clamp(160px, 35vw, 240px);
   border-radius: 8px;
   overflow: hidden;
   background: #000;
@@ -230,7 +230,7 @@
   font-family: var(--chat-font);
   background: #f0f2f5;
   border-radius: 8px;
-  min-width: 220px;
+  min-width: min(220px, 50vw);
   color: #444050;
 }
 
@@ -244,7 +244,7 @@
   align-items: center;
   gap: 12px;
   width: 100%;
-  max-width: 320px;
+  max-width: min(320px, 60vw);
   padding: 10px 12px;
   background: rgba(0, 0, 0, 0.04);
   border-radius: 10px;
@@ -542,7 +542,7 @@
 
 /* ─── WhatsApp Template ──────────────────────────────────────────────────── */
 .whatsapp-template-skeleton {
-  width: 380px;
+  width: min(380px, 72vw);
   margin-bottom: 6px;
   animation: skeletonFadeIn 0.3s ease;
 }
@@ -553,7 +553,7 @@
 }
 
 .whatsapp-template-error {
-  width: 380px;
+  width: min(380px, 72vw);
   padding: 14px;
   font-size: 13px;
   font-style: italic;
@@ -570,7 +570,7 @@
   border-radius: 12px;
   overflow: hidden;
   margin-top: 4px;
-  max-width: 380px;
+  max-width: min(380px, 72vw);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   pointer-events: none;
   animation: templateFadeIn 0.3s ease;
@@ -634,8 +634,8 @@
 }
 
 .whatsapp-template .template-carousel-card {
-  min-width: 200px;
-  max-width: 240px;
+  min-width: min(200px, 55vw);
+  max-width: min(240px, 60vw);
   background: #f9fafb;
   border-radius: 10px;
   border: 1px solid #e5e7eb;
@@ -681,4 +681,52 @@
   font-size: 13px;
   color: #6b7280;
   font-family: var(--chat-font);
+}
+
+/* ─── Mobile responsive adjustments ───────────────────────────────────────── */
+@media (max-width: 768px) {
+  .message-bubble {
+    max-width: min(440px, 78vw);
+    padding: 6px 10px;
+  }
+
+  .message-text {
+    font-size: 13px;
+  }
+
+  .message-media {
+    min-height: 140px;
+  }
+
+  .message-media img {
+    max-height: 180px;
+  }
+
+  .message-video-wrapper {
+    max-width: min(350px, 72vw);
+    height: 180px;
+  }
+
+  .message-document-card {
+    max-width: min(320px, 70vw);
+    padding: 8px 10px;
+  }
+
+  .message-doc {
+    min-width: auto;
+    padding: 8px 10px;
+    font-size: 13px;
+  }
+
+  .whatsapp-template,
+  .whatsapp-template-skeleton,
+  .whatsapp-template-error {
+    max-width: min(380px, 78vw);
+    width: 100%;
+  }
+
+  .whatsapp-template .template-carousel-card {
+    min-width: 160px;
+    max-width: 200px;
+  }
 }

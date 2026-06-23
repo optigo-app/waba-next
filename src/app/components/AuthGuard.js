@@ -62,7 +62,7 @@ export default function AuthGuard({ children }) {
           router.replace('/');
         } else {
           disconnectSocket(true);
-          router.replace('/login');
+          window.location.replace(`${window.location.origin}/`);
         }
       }
       setChecking(false);

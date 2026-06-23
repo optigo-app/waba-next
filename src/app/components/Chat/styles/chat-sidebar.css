@@ -146,6 +146,14 @@
 .chat-sidebar-list li.reading {
   background: var(--chat-primary-light);
 }
+.chat-sidebar-list li.keyboard-highlight {
+  background: rgba(29, 170, 97, 0.10);
+  outline: 2px solid rgba(29, 170, 97, 0.35);
+  outline-offset: -2px;
+}
+.chat-sidebar-list li.keyboard-highlight .member-name {
+  font-weight: 600;
+}
 
 .chat-loading,
 .chat-empty {

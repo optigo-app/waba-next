@@ -14,7 +14,7 @@ const ChannelCard = ({ channel, onWalletOpen, onTemplatesClick }) => {
                 background: '#fff',
                 borderRadius: '16px',
                 border: '1px solid #e4e8ee',
-                padding: '1.5rem',
+                padding: { xs: '1rem', sm: '1.5rem' },
                 boxShadow: '0 2px 8px rgba(0, 0, 0, 0.04)',
                 display: 'flex',
                 flexDirection: 'column',
@@ -29,7 +29,7 @@ const ChannelCard = ({ channel, onWalletOpen, onTemplatesClick }) => {
             }}
         >
             {/* Top Row: Icon + Info | Balance */}
-            <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem' }}>
+            <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', sm: 'center' }, justifyContent: 'space-between', gap: '1rem', flexWrap: { xs: 'wrap', sm: 'nowrap' } }}>
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     <Box
                         sx={{
@@ -185,7 +185,7 @@ const ChannelCard = ({ channel, onWalletOpen, onTemplatesClick }) => {
             </Box>
 
             {/* Actions */}
-            <Box sx={{ display: 'flex', gap: '0.75rem', width: '100%', pt: '0.25rem' }}>
+            <Box sx={{ display: 'flex', gap: '0.75rem', width: '100%', pt: '0.25rem', flexDirection: { xs: 'column', sm: 'row' } }}>
                 <Button
                     variant="contained"
                     disableElevation

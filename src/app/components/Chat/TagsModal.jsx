@@ -74,7 +74,7 @@ export default function TagsModal({
             variant="outlined"
             onClick={handleClose}
             disabled={isSubmitting}
-            sx={{ textTransform: 'none', borderRadius: 2 }}
+            className='secondaryBtnClassname'
           >
             Cancel
           </Button>
@@ -83,12 +83,7 @@ export default function TagsModal({
             disableElevation
             onClick={handleSubmit}
             disabled={!canSubmit}
-            sx={{
-              textTransform: 'none',
-              borderRadius: 2,
-              bgcolor: '#1daa61',
-              '&:hover': { bgcolor: '#128C7E' },
-            }}
+            className='buttonClassname'
           >
             Add
           </Button>

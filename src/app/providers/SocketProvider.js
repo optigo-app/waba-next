@@ -106,11 +106,10 @@ export default function SocketProvider({ children }) {
 
   useEffect(() => {
     if (isPublicRoute) return;
-
     const removeHandler = addSessionLogoutHandler(() => {
       disconnectSocket(true);
       storage.clear();
-      router.push('/login');
+      window.location.replace(`${window.location.origin}/`);
       toast.error('Your session has been logged out from another device', {
         duration: 3000,
       });

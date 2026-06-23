@@ -195,6 +195,7 @@ export const processApiResponse = (apiData) => {
       name: getCustomerDisplayName(conversation),
       avatar: null,
       avatarConfig: getWhatsAppAvatarConfig(getCustomerAvatarSeed(conversation), 38),
+      ticketStatus: conversation.ticketStatus || conversation.TicketStatus || null,
     };
   });
 };

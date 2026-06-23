@@ -10,6 +10,7 @@
     lastname: "orail",
     designation: "Admin",
     mobileno: "951-021-3588",
+    redirect_version: '/V1',
     email1: "mayur.optigoapps@gmail.com",
     userid: "admin@orail.co.in",
     IsChat: 1,
@@ -41,9 +42,95 @@
     ukey: "orail25TNBVD0LO2UFPRZ4YH",
     token: "9065471700535651",
     id: 4,
+    redirect_version: '/V1',
     whatsappKey: "HCtiBj7qarnyrvlOuoYXr7PKO3gJQxnyfhVRK7eDpBO8TtRkREFTSAO9gAPv9hwVU5ERVJTQ09SRQPmMREFTSAkte6UKpf2WevLAmrPx2adrrm5ItUu6p81mJWDREFTSAGStaJnceEDVd3kxFiMpVsg",
     whatsappNumber: "770847852786314"
   };
+
+  const userPermissions = [
+    { Id: 1, Permission: "View All Chats" },
+    { Id: 2, Permission: "View Team Chats" },
+    { Id: 3, Permission: "View Own Chats" },
+    { Id: 4, Permission: "Access Unassigned Chat Pool" },
+    { Id: 5, Permission: "Reassign / Escalate Chat" },
+    { Id: 9, Permission: "Product Sharing" },
+    { Id: 10, Permission: "Export Data" },
+    { Id: 11, Permission: "Delete Chat/Customer Data" },
+    { Id: 15, Permission: "Customers list" },
+    { Id: 16, Permission: "Allow ATM binding customers" },
+    { Id: 6, Permission: "Reply to Customer (Text/Media)" },
+    { Id: 7, Permission: "Archive Chat" },
+    { Id: 8, Permission: "Close Chat (Mark Done)" }
+  ];
+
+  sessionStorage.setItem("isLoggedIn", "true");
+  sessionStorage.setItem("token", JSON.stringify(token));
+  sessionStorage.setItem("userData", JSON.stringify(userData));
+  sessionStorage.setItem("userPermissions", JSON.stringify(userPermissions));
+
+  console.log("✅ Session storage populated");
+
+  console.log({
+    isLoggedIn: sessionStorage.getItem("isLoggedIn"),
+    token: JSON.parse(sessionStorage.getItem("token")),
+    userData: JSON.parse(sessionStorage.getItem("userData")),
+    userPermissions: JSON.parse(sessionStorage.getItem("userPermissions"))
+  });
+
+  // Optional reload so app re-reads sessionStorage
+  // location.reload();
+})();
+
+ `````````````````````````````````````````````````````````````LIVE``````````````````````````````````     
+
+
+(() => {
+  const token = {
+    "stat": 1,
+    "stat_msg": "login successfully",
+    "stat_code": 1000,
+    "id": 6,
+    "customercode": "Jack",
+    "firstname": "Jack ",
+    "middlename": "",
+    "lastname": "Sons",
+    "designation": "Admin",
+    "mobileno": "951-021-3582",
+    "email1": "Jack@eg.com",
+    "userid": "Jack@eg.com",
+    "IsChat": 1,
+    "ChatRole": 1,
+    "RoleName": "Admin",
+    "SocketId": "lAjt6CTIjHVhsgfRAACt",
+    "token": "5461992288068459",
+    "ukey": "demohoWIJN90FK7XM8431YT",
+    "companycode": "demoho",
+    "apiurl": "https://livenx.optigoapps.com/api/report",
+    "UploadLogicalPath": "https://cdnfs.optigoapps.com/content-global3",
+    "ImageLogicalPath": "https://cdnfs.optigoapps.com/content-global4",
+    "jojsPath": "https://cdn22.optigoapps.com/lib/jo/",
+    "SMSView_URL": "https://vw.optigoapps.com/",
+    "svid": "1",
+    "yearcode": "e3tsaXZlLm9wdGlnb2FwcHMuY29tfX17ezIwfX17e2RlbW9ob319e3tkZW1vaG99fQ==",
+    "cuver": "v2",
+    "whatsappNumber": "984390191434475",
+    "whatsappPhoneNo": "1659194372104786",
+    "whatsappKey": "EAAL2Bp5Ib8cBRGZBddwaxQwo36BwrXDAucURc05YkPbZCv9RujJ54CLNi8q85Vc5UJa4O23RvFGybglewMZAdF67ZCrm5RgANdFMNAZAgGCDfakWvo8SGnrgFWW3qNKOmdnYdUyDnDoRqhOK9Q1ygrFZBxu6SAlrdRoMOeuLulTMJ5QYSuiwJ7KtEO6ZAKWfgZDZD",
+    "isMeta": 1,
+    "userId": "Jack@eg.com",
+    "username": "Jack"
+}
+
+  const userData = {
+    "userId": "Jack@eg.com",
+    "username": "Jack",
+    "ukey": "demohoWIJN90FK7XM8431YT",
+    "token": "5461992288068459",
+    "id": 6,
+    "whatsappKey": "EAAL2Bp5Ib8cBRGZBddwaxQwo36BwrXDAucURc05YkPbZCv9RujJ54CLNi8q85Vc5UJa4O23RvFGybglewMZAdF67ZCrm5RgANdFMNAZAgGCDfakWvo8SGnrgFWW3qNKOmdnYdUyDnDoRqhOK9Q1ygrFZBxu6SAlrdRoMOeuLulTMJ5QYSuiwJ7KtEO6ZAKWfgZDZD",
+    "whatsappNumber": "984390191434475",
+    "SocketId": ""
+}
 
   const userPermissions = [
     { Id: 1, Permission: "View All Chats" },

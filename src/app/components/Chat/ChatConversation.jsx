@@ -14,6 +14,7 @@ import ChatInputArea from './ChatInputArea';
 import MessageContextMenu from './MessageContextMenu';
 import ForwardMessageModal from './ForwardMessageModal';
 import { useAuth } from '../../hooks/useAuth';
+import { useAuthStore } from '../../store/authStore';
 import { addMessageHandler, emitReaction, addMessageReactionHandler } from '../../socket';
 import TagsModal from './TagsModal';
 import CustomerDetails from './CustomerDetails';
@@ -62,6 +63,11 @@ export default function ChatConversation({
   const [tagsMenuAnchorEl, setTagsMenuAnchorEl] = useState(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+
+  const can = useAuthStore((s) => s.can);
 
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
@@ -108,6 +114,7 @@ export default function ChatConversation({
   const messagesListRef = useRef(null);
   const tagsScrollRef = useRef(null);
   const dragCounterRef = useRef(0);
+  const isPrependingRef = useRef(false);
   const { auth } = useAuth();
 
   const conversationId = selectedCustomer?.ConversationId ?? selectedCustomer?.Id ?? selectedCustomer?.autoid;
@@ -143,6 +150,9 @@ export default function ChatConversation({
 
       const load = async () => {
         setLoading(true);
+        setIsLoadingMore(false);
+        setPage(1);
+        setHasMore(true);
         setMessages([]);
         setTagsList([]);
         setAssigneeList([]);
@@ -156,7 +166,7 @@ export default function ChatConversation({
         setMessageReactions({});
 
         try {
-          const response = await fetchConversationView(conversationId, 1, 50, auth?.userId, controller.signal);
+          const response = await fetchConversationView(conversationId, 1, 30, auth?.userId, controller.signal);
           if (controller.signal.aborted) return;
 
           let list = response?.data?.rd || [];
@@ -166,6 +176,8 @@ export default function ChatConversation({
           });
           if (requestId === latestRequestRef.current) {
             setMessages(list);
+            setHasMore(response?.hasMore ?? (list.length === 30));
+            setPage(1);
           }
 
           // Fetch customer tags
@@ -219,6 +231,10 @@ export default function ChatConversation({
   }, [conversationId, auth?.userId, selectedCustomer?.autoid]);
 
   useEffect(() => {
+    if (isPrependingRef.current) {
+      isPrependingRef.current = false;
+      return;
+    }
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -594,6 +610,50 @@ export default function ChatConversation({
     }
   }, [messages.length]);
 
+  // Load older messages on scroll-to-top
+  const loadMoreMessages = useCallback(async () => {
+    if (isLoadingMore || !hasMore || !conversationId || !auth?.userId) return;
+    const nextPage = page + 1;
+    setIsLoadingMore(true);
+
+    // Preserve scroll position
+    const listEl = messagesListRef.current;
+    const prevScrollHeight = listEl?.scrollHeight || 0;
+
+    try {
+      const response = await fetchConversationView(conversationId, nextPage, 30, auth?.userId);
+      let list = response?.data?.rd || [];
+      list = [...list].sort((a, b) => {
+        const getTime = (m) => new Date(m?.DateTime || m?.sentAt || m?.sent_at || 0).getTime();
+        return getTime(a) - getTime(b);
+      });
+
+      if (list.length > 0) {
+        isPrependingRef.current = true;
+        setMessages((prev) => {
+          const existingIds = new Set(prev.map((m) => m.id || m.Id || m.autoid));
+          const newItems = list.filter((m) => !existingIds.has(m.id || m.Id || m.autoid));
+          return [...newItems, ...prev];
+        });
+      }
+
+      setHasMore(response?.hasMore ?? (list.length === 30));
+      setPage(nextPage);
+    } catch (err) {
+      console.error('Failed to load older messages:', err);
+    } finally {
+      setIsLoadingMore(false);
+      // Restore scroll position after prepend
+      requestAnimationFrame(() => {
+        const el = messagesListRef.current;
+        if (el) {
+          const newScrollHeight = el.scrollHeight;
+          el.scrollTop = newScrollHeight - prevScrollHeight;
+        }
+      });
+    }
+  }, [isLoadingMore, hasMore, conversationId, auth?.userId, page]);
+
   // Drag & drop handlers (counter-based to avoid child-element flicker)
   const handleDragEnter = useCallback((e) => {
     e.preventDefault();
@@ -746,6 +806,9 @@ export default function ChatConversation({
         sending={sending}
         emojiPickerOpen={emojiPickerOpen}
         setEmojiPickerOpen={setEmojiPickerOpen}
+        isLoadingMore={isLoadingMore}
+        hasMore={hasMore}
+        loadMoreMessages={loadMoreMessages}
       />
 
       {/* Hidden file input — always rendered */}
@@ -758,7 +821,7 @@ export default function ChatConversation({
         multiple
       />
 
-      {mediaPreview.length === 0 && (
+      {can(6) && mediaPreview.length === 0 && (
         <ChatInputArea
           replyToMessage={replyToMessage}
           setReplyToMessage={setReplyToMessage}

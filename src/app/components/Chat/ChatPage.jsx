@@ -2,8 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import { usePathname } from 'next/navigation';
+import { Button, Typography } from '@mui/material';
+import { MessageCircle } from 'lucide-react';
 import ChatSidebar from './ChatSidebar';
 import ChatConversation from './ChatConversation';
+import { useAuthStore } from '../../store/authStore';
 import './styles/global-chat.css';
 import './styles/chat-page.css';
 import './styles/chat-sidebar.css';
@@ -39,7 +42,35 @@ export default function ChatPage() {
     setViewConversationRead(isRead);
   }, []);
 
+  const auth = useAuthStore((s) => s.auth);
   const isAddConversation = pathname === '/chat/add-conversation';
+
+  const hasChannel = !!auth?.whatsappNumber && !!auth?.whatsappKey;
+
+  if (!hasChannel) {
+    return (
+      <div className="chat-page-container">
+        <div style={{
+          display: 'flex',
+          flexDirection: 'column',
+          alignItems: 'center',
+          justifyContent: 'center',
+          height: '100%',
+          width: '100%',
+          background: '#f8f9fa',
+          gap: 16,
+        }}>
+          <MessageCircle size={48} color="#9ca3af" />
+          <Typography variant="h6" color="text.secondary" fontWeight={600}>
+            WhatsApp channel not connected
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            Please complete onboarding to start chatting.
+          </Typography>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="chat-page-container">

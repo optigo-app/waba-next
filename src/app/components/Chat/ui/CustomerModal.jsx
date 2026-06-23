@@ -10,13 +10,11 @@ import {
 } from '@mui/material';
 
 const defaultBackdropSx = {
-  backgroundColor: 'rgba(10, 12, 16, 0.45)',
-  backdropFilter: 'blur(2px)',
+  backgroundColor: 'rgba(10, 12, 16, 0.55)',
 };
 
 const defaultPaperSx = {
-  bgcolor: 'rgba(255, 255, 255, 0.92)',
-  backdropFilter: 'blur(10px)',
+  bgcolor: '#fff',
   boxShadow: '0 16px 40px rgba(0,0,0,0.12)',
   border: '1px solid rgba(0,0,0,0.08)',
   borderRadius: 3,
@@ -43,6 +41,8 @@ export default function CustomerModal({
       onClose={onClose}
       maxWidth={maxWidth}
       fullWidth={fullWidth}
+      disableScrollLock
+      TransitionProps={{ timeout: { enter: 150, exit: 100 } }}
       slotProps={{
         backdrop: {
           sx: { ...defaultBackdropSx, ...(backdropSx || {}) },

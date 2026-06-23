@@ -1,14 +1,14 @@
-import { CommonAPI } from "./CommonApi";
+import { callCommonApi } from "./CommonApi";
 
 export const addCampaign = async (userId, campaignName, templateId) => {
     try {
-        const body = {
-            "con": `{\"id\":\"\",\"mode\":\"broadcast_camp_bind_temp\",\"appuserid\":\"${userId}\"}`,
-            "p": `{\"CampaignName\": \"${campaignName}\", \"TemplateId\": ${templateId}}`,
-            "f": "Broadcast ( Binding Template With Campaign )"
-        }
 
-        const response = await CommonAPI(body);
+        const response = await callCommonApi({
+            mode: "broadcast_camp_bind_temp",
+            f: "Broadcast ( Binding Template With Campaign )",
+            p: `{"CampaignName": "${campaignName}", "TemplateId": ${templateId}}`,
+            userId,
+        });
         if (response?.Data) {
             return {
                 data: response?.Data
@@ -58,7 +58,12 @@ export const createCampaign = async (campaignData) => {
             f: "Broadcast ( campaign create )"
         };
 
-        const response = await CommonAPI(body);
+        const response = await callCommonApi({
+            mode: "broadcast_camp_create",
+            f: "Broadcast ( campaign create )",
+            p: JSON.stringify(p),
+            userId,
+        });
         if (response?.Data) {
             return {
                 success: true,

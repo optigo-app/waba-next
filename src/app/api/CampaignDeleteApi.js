@@ -1,12 +1,11 @@
 import { callCommonApi } from "./CommonApi";
 
-export const fetchBranchListsApi = async (userId) => {
+export const campaignDeleteApi = async (CampaignId, userId) => {
     try {
-
         const response = await callCommonApi({
-            mode: "getHoBranchlist",
-            f: "Broadcast ( broadcast_branch_list )",
-            p: "",
+            mode: "broadcast_camp_delete",
+            f: "Broadcast ( broadcast_camp_delete )",
+            p: JSON.stringify({ "CampaignId": CampaignId }),
             userId,
         });
         if (response?.Data) {

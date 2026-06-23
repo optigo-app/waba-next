@@ -4,6 +4,7 @@
 export const STORAGE_KEYS = {
   TOKEN: 'token',
   USER_DATA: 'userData',
+  USER_PERMISSIONS: 'userPermissions',
   IS_LOGGED_IN: 'isLoggedIn',
   SOCKET_STATE: 'socketState',
   HAS_SOCKET_ID: 'hasSocketId',
@@ -82,6 +83,12 @@ export const removeToken = () => storage.remove(STORAGE_KEYS.TOKEN);
 
 export const getUserData = () => storage.getJSON(STORAGE_KEYS.USER_DATA);
 export const setUserData = (value) => storage.setJSON(STORAGE_KEYS.USER_DATA, value);
+
+export const getUserPermissions = () => storage.getJSON(STORAGE_KEYS.USER_PERMISSIONS);
+export const setUserPermissions = (value) => storage.setJSON(STORAGE_KEYS.USER_PERMISSIONS, value);
+export const getUserPermissionsLocal = () => storage.getLocalJSON(STORAGE_KEYS.USER_PERMISSIONS);
+export const setUserPermissionsLocal = (value) => storage.setLocalJSON(STORAGE_KEYS.USER_PERMISSIONS, value);
+export const removeUserPermissionsLocal = () => storage.removeLocal(STORAGE_KEYS.USER_PERMISSIONS);
 
 export const getIsLoggedIn = () => storage.get(STORAGE_KEYS.IS_LOGGED_IN);
 export const setIsLoggedIn = (value = 'true') => storage.set(STORAGE_KEYS.IS_LOGGED_IN, value);

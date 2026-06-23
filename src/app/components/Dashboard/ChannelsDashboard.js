@@ -82,24 +82,25 @@ const ChannelsDashboard = () => {
     };
 
     return (
-        <Box sx={{ padding: '2rem', background: '#f8f9fa', minHeight: '100vh' }}>
+        <Box sx={{ padding: { xs: '1rem', sm: '1.5rem', md: '2rem' }, background: '#f8f9fa', minHeight: '100vh' }}>
             {/* Header Section */}
             <Box
                 sx={{
                     display: 'flex',
-                    alignItems: 'flex-end',
+                    alignItems: { xs: 'flex-start', sm: 'flex-end' },
                     justifyContent: 'space-between',
                     flexWrap: 'wrap',
                     gap: '1.5rem',
                     pb: '1.5rem',
                     borderBottom: '1px solid #e4e8ee',
+                    flexDirection: { xs: 'column', sm: 'row' },
                 }}
             >
                 <Box>
                     <Typography
                         variant="h4"
                         sx={{
-                            fontSize: '1.6rem',
+                            fontSize: { xs: '1.25rem', sm: '1.4rem', md: '1.6rem' },
                             fontWeight: 600,
                             color: '#444050',
                             margin: 0,
@@ -121,7 +122,7 @@ const ChannelsDashboard = () => {
                     </Typography>
                 </Box>
 
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: '1rem', width: { xs: '100%', sm: 'auto' }, flexDirection: { xs: 'column', sm: 'row' } }}>
                     {/* Search */}
                     <Paper
                         elevation={0}
@@ -132,7 +133,7 @@ const ChannelsDashboard = () => {
                             border: '1px solid #e4e8ee',
                             px: '1rem',
                             py: '6px',
-                            width: '280px',
+                            width: { xs: '100%', sm: '280px' },
                             background: '#fff',
                             transition: 'border-color 0.2s',
                             '&:focus-within': {

@@ -3,18 +3,32 @@
 import { APIURL, getHeaders } from "./Config";
 import { getClientIp, setClientIp } from "../utils/storage";
 
+let ipFetchPromise = null;
+
 // for public ip address
 export const getClientIpAddress = async () => {
     try {
         const cachedIp = getClientIp();
         if (cachedIp) return cachedIp;
 
-        const res = await fetch("https://api.ipify.org?format=json");
-        const data = await res.json();
-        const ip = data?.ip || "";
+        if (ipFetchPromise) return ipFetchPromise;
 
-        setClientIp(ip);
-        return ip;
+        ipFetchPromise = (async () => {
+            try {
+                const res = await fetch("https://api.ipify.org?format=json");
+                const data = await res.json();
+                const ip = data?.ip || "";
+                setClientIp(ip);
+                return ip;
+            } catch (err) {
+                console.error("Error fetching IP address:", err);
+                return "";
+            } finally {
+                ipFetchPromise = null;
+            }
+        })();
+
+        return ipFetchPromise;
     } catch (error) {
         console.error("Error fetching IP address:", error);
         return "";
