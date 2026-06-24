@@ -1,0 +1,150 @@
+@use '../global.scss' as *;
+
+.launch-root {
+  position: relative;
+  width: 100%;
+
+  &--loading {
+    overflow: hidden;
+  }
+}
+
+/* ================= Overlay ================= */
+
+.launch-overlay {
+  position: fixed;
+  inset: 0;
+  background-color: rgba(255, 253, 253, 0.6);
+  backdrop-filter: blur(10px);
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  z-index: 1000;
+  animation: fadeIn 0.25s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.launch-overlay-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 2rem 2.5rem;
+  background: transparent;
+  width: 100%;
+  height: 90vh;
+  animation: scaleIn 0.25s ease;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.launch-overlay-text {
+  margin-top: 1rem;
+  color: $titleColor;
+  font-size: 1.1rem;
+  font-weight: 600;
+  font-family: $font-family;
+}
+
+.launch-overlay-subtext {
+  margin-top: 0.4rem;
+  color: $text2ndColor;
+  font-size: 0.85rem;
+  line-height: 1.5;
+  font-family: $font-family;
+}
+
+/* ================= Main Card ================= */
+
+.launch-card-content {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 2rem;
+
+  padding: 1.75rem 2rem;
+  margin-top: 1rem;
+
+  background: #fff;
+  border-radius: 16px;
+  border: 1px solid $sidebar-borderColor;
+
+  transition: all 0.3s ease;
+
+  &:hover {
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.06);
+    transform: translateY(-2px);
+  }
+
+  @media (max-width: 768px) {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}
+
+.launch-message-box {
+  flex: 1;
+}
+
+.launch-main-text {
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: $titleColor;
+  margin: 0;
+  font-family: $font-family;
+}
+
+.launch-sub-text {
+  margin-top: 0.5rem;
+  font-size: 0.9375rem;
+  color: $text2ndColor;
+  line-height: 1.6;
+  font-family: $font-family;
+  max-width: 520px;
+}
+
+/* ================= Button ================= */
+
+.launch-action-button {
+  padding: 1rem 1.5rem;
+  border-radius: 14px;
+
+  font-weight: 700;
+  font-size: 1rem;
+
+  border: none;
+  cursor: pointer;
+
+  background: $button-Bgcolor;
+  color: #fff;
+
+  box-shadow: 0 6px 18px rgba($primary-main, 0.25);
+  transition: all 0.25s ease;
+
+  &:hover:not(:disabled) {
+    transform: translateY(-1px);
+    box-shadow: 0 10px 28px rgba($primary-main, 0.35);
+  }
+
+  &:disabled {
+    background: #e5e7eb;
+    color: #9ca3af;
+    cursor: not-allowed;
+    box-shadow: none;
+  }
+}

@@ -45,7 +45,14 @@ const IconButton = ({
   );
 
   if (tooltip) {
-    return <Tooltip title={tooltip} arrow>{button}</Tooltip>;
+    // Wrap disabled buttons in a <span> so MUI Tooltip can capture mouse events
+    return (
+      <Tooltip title={tooltip} arrow>
+        <span style={{ display: 'inline-flex', cursor: disabled ? 'not-allowed' : 'pointer' }}>
+          {button}
+        </span>
+      </Tooltip>
+    );
   }
 
   return button;

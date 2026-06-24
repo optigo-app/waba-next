@@ -7,9 +7,26 @@ import { useAuth } from './useAuth';
 import toast from 'react-hot-toast';
 import { getSocket } from '../socket';
 
+const CACHE_KEY = 'templates_cache';
+
+const getCachedTemplates = () => {
+    try {
+        const raw = sessionStorage.getItem(CACHE_KEY);
+        if (raw) return JSON.parse(raw);
+    } catch (_) { /* ignore */ }
+    return null;
+};
+
+const setCachedTemplates = (data) => {
+    try {
+        sessionStorage.setItem(CACHE_KEY, JSON.stringify(data));
+    } catch (_) { /* ignore */ }
+};
+
 export function useTemplates() {
     const { auth } = useAuth();
-    const [templates, setTemplates] = useState([]);
+    const cached = getCachedTemplates();
+    const [templates, setTemplates] = useState(cached || []);
     const [loading, setLoading] = useState(false);
     const [syncLoading, setSyncLoading] = useState(false);
     const hasLoaded = useRef(false);
@@ -29,7 +46,9 @@ export function useTemplates() {
         abortControllerRef.current = controller;
         try {
             const result = await fetchCrmTemplates(userId, controller.signal);
-            setTemplates(result.data || []);
+            const data = result.data || [];
+            setTemplates(data);
+            setCachedTemplates(data);
         } catch (err) {
             if (err.name === 'AbortError') return;
             console.error('Error loading templates:', err);
@@ -42,7 +61,10 @@ export function useTemplates() {
     useEffect(() => {
         if (userId && !hasLoaded.current) {
             hasLoaded.current = true;
-            load();
+            const hasCache = Boolean(getCachedTemplates());
+            // If cache exists, load silently in background (no spinner)
+            // If no cache, show loading spinner
+            load(!hasCache);
         }
     }, [userId, load]);
 

@@ -1,0 +1,272 @@
+@use '../../global.scss' as *;
+
+.message-templates {
+    background: #fff;
+    border-radius: 16px;
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 0.25rem 0;
+
+        .title {
+            font-size: 1rem;
+            font-weight: 600;
+            color: $secondaryColor;
+            font-family: $font-family;
+        }
+
+        .toggle-btn {
+            background: $button-Bgcolor;
+            color: $button-color;
+            padding: 0.6rem 1.2rem;
+            border-radius: 12px;
+            font-family: $font-family;
+            font-weight: 600;
+            text-transform: none;
+            transition: all 0.2s ease;
+            box-shadow: 0 4px 12px rgba(115, 103, 240, 0.2);
+
+            &:hover {
+                background: $button-Bgcolor;
+                opacity: 0.9;
+                transform: translateY(-1px);
+                box-shadow: 0 6px 16px rgba(115, 103, 240, 0.3);
+            }
+
+            &:active {
+                transform: translateY(0);
+            }
+        }
+    }
+
+    .search-bar-container {
+        position: sticky;
+        top: 0;
+        z-index: 2;
+        background: #fff;
+        padding-bottom: 0.35rem;
+
+        .MuiTextField-root {
+            background: #fcfcfd;
+            border-radius: 12px;
+
+            .MuiOutlinedInput-root {
+                border-radius: 12px;
+                font-family: $font-family;
+
+                &.Mui-focused {
+                    .MuiOutlinedInput-notchedOutline {
+                        border-color: $primary-main;
+                        border-width: 2px;
+                    }
+                }
+
+                .MuiOutlinedInput-notchedOutline {
+                    border-color: $sidebar-borderColor;
+                    transition: border-color 0.2s ease;
+                }
+
+                &:hover .MuiOutlinedInput-notchedOutline {
+                    border-color: $sidebar-borderColor;
+                }
+            }
+
+            .MuiInputAdornment-root svg {
+                color: rgba($placeholderColor, 0.6);
+                width: 20px;
+                height: 20px;
+            }
+        }
+    }
+
+    .campaign-table-container {
+        border-radius: 16px;
+        border: 1px solid $sidebar-borderColor;
+        box-shadow: none !important;
+        overflow: hidden;
+        background: #fff;
+    }
+
+    .campaign-list-scroll {
+        max-height: 62vh;
+        overflow: auto;
+        padding: 0.9rem;
+        background: linear-gradient(180deg, #fcfcfd 0%, #ffffff 35%);
+    }
+
+    .campaign-card {
+        border: 1px solid rgba($secondaryColor, 0.12);
+        border-radius: 14px;
+        margin-bottom: 0.9rem;
+        overflow: hidden;
+        background: #fff;
+        box-shadow: 0 6px 16px rgba(17, 24, 39, 0.05);
+        transition: transform 0.18s ease, box-shadow 0.18s ease;
+
+        &:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 10px 20px rgba(17, 24, 39, 0.08);
+        }
+
+        &:last-child {
+            margin-bottom: 0;
+        }
+    }
+
+    .campaign-card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        padding: 0.9rem 1rem;
+        border-bottom: 1px solid rgba($secondaryColor, 0.08);
+        background: linear-gradient(90deg, rgba($secondaryColor, 0.06), rgba($secondaryColor, 0.015));
+        gap: 0.75rem;
+    }
+
+    .campaign-name-cell {
+        font-weight: 600;
+        font-size: 0.95rem;
+        color: $secondaryColor;
+        font-family: $font-family;
+        line-height: 1.3;
+        word-break: break-word;
+
+    }
+
+    .templates-count-cell {
+        color: $secondaryColor;
+        font-size: 0.8rem;
+        text-align: right;
+        white-space: nowrap;
+        font-weight: 600;
+        background: rgba($secondaryColor, 0.09);
+        padding: 0.24rem 0.55rem;
+        border-radius: 999px;
+    }
+
+    .template-list {
+        padding: 0.35rem 0.7rem 0.65rem;
+    }
+
+    .template-row {
+        display: flex;
+        align-items: center;
+        gap: 0.25rem;
+        border-radius: 10px;
+        margin-top: 0.3rem;
+        padding: 0.15rem 0.45rem;
+        transition: all 0.2s ease;
+        position: relative;
+
+        &:hover {
+            background-color: rgba($secondaryColor, 0.05);
+            cursor: pointer;
+        }
+
+        &.selected {
+            background-color: rgba($primary-main, 0.09);
+
+            &::before {
+                content: '';
+                position: absolute;
+                left: 0;
+                top: 6px;
+                bottom: 6px;
+                width: 3px;
+                border-radius: 3px;
+                background-color: $primary-main;
+            }
+        }
+
+        &.disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .template-name {
+            font-weight: 500;
+            font-family: $font-family;
+            font-size: 0.89rem;
+            color: $titleColor;
+        }
+    }
+
+    .template-checkbox-cell {
+        padding-left: 0.1rem;
+        display: flex;
+        align-items: center;
+
+        .MuiCheckbox-root {
+            color: rgba($primary-main, 0.4);
+            padding: 8px;
+
+            &.Mui-checked {
+                color: $primary-main;
+            }
+        }
+    }
+
+    .template-meta {
+        display: flex;
+        flex-direction: column;
+        min-width: 0;
+        gap: 0.1rem;
+        width: 100%;
+    }
+
+    .template-type {
+        font-size: 0.75rem;
+        color: $text2ndColor;
+        font-family: $font-family;
+        text-transform: capitalize;
+    }
+
+    .empty-template-text {
+        font-size: 0.82rem;
+        color: $text2ndColor;
+        font-style: italic;
+        padding: 0.6rem 0.7rem;
+    }
+
+    .empty-campaign-state {
+        min-height: 220px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: $text2ndColor;
+        font-family: $font-family;
+        border: 1px dashed rgba($secondaryColor, 0.24);
+        border-radius: 12px;
+        background: rgba($secondaryColor, 0.02);
+    }
+
+    @media (max-width: 768px) {
+        .campaign-list-scroll {
+            max-height: 58vh;
+            padding: 0.65rem;
+        }
+
+        .campaign-card-header {
+            padding: 0.8rem 0.8rem;
+        }
+
+        .campaign-name-cell {
+            font-size: 0.9rem;
+        }
+
+        .template-row {
+            padding: 0.1rem 0.25rem;
+        }
+    }
+
+    .MuiTablePagination-root {
+        font-family: $font-family;
+        border-top: 1px solid $sidebar-borderColor;
+        color: $text2ndColor;
+    }
+}

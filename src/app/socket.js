@@ -270,6 +270,23 @@ export const addStatusHandler = (handler) => {
     };
 };
 
+const BROADCAST_CHANNEL = 'waba-session-logout';
+
+/**
+ * Broadcast logout event to all browser tabs
+ */
+export const broadcastLogout = () => {
+  try {
+    const bc = new BroadcastChannel(BROADCAST_CHANNEL);
+    bc.postMessage('logout');
+    bc.close();
+  } catch (_) {
+    try {
+      localStorage.setItem('waba-logout', Date.now().toString());
+    } catch (__) { /* ignore */ }
+  }
+};
+
 /**
  * Disconnect socket
  */

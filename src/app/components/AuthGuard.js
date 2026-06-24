@@ -59,7 +59,7 @@ export default function AuthGuard({ children }) {
         if (hasExistingSocket) {
           router.replace('/session-check');
         } else if (userData?.id) {
-          router.replace('/');
+          window.location.replace(`${window.location.origin}/`);
         } else {
           disconnectSocket(true);
           window.location.replace(`${window.location.origin}/`);

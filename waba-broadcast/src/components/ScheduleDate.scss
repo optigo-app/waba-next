@@ -1,0 +1,123 @@
+@use '../global.scss' as *;
+
+.schedule-settings {
+  background: #fff;
+  border-radius: 16px;
+  padding: 1.5rem;
+  border: 1px solid $sidebar-borderColor;
+}
+
+.schedule-option {
+  border: 1px solid $sidebar-borderColor;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s;
+
+  &:hover {
+    border-color: rgba($primary-main, 0.3);
+  }
+
+  &.active {
+    border-color: $primary-main;
+    background: rgba($primary-main, 0.08);
+  }
+}
+
+.schedule-option-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.schedule-option-main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.schedule-radio {
+  width: 22px;
+  height: 22px;
+  border: 2px solid rgba($primary-main, 0.4);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  &.active {
+    background: $primary-main;
+    border-color: $primary-main;
+  }
+}
+
+.schedule-radio-check {
+  color: #fff;
+  width: 14px;
+}
+
+.schedule-details {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px solid $sidebar-borderColor;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+}
+
+.schedule-row {
+  display: flex;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.schedule-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 120px;
+}
+
+.schedule-label {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: $secondaryColor;
+  text-transform: uppercase;
+}
+
+.schedule-input {
+  height: 38px;
+  padding: 0 10px;
+  border-radius: 8px;
+  border: 1px solid $sidebar-borderColor;
+  background: #fcfcfd;
+
+  &:focus {
+    border-color: $primary-main;
+    outline: none;
+  }
+}
+
+.schedule-helper-message {
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: $secondaryColor;
+  background: rgba($primary-main, 0.08);
+  border: 1px solid rgba($primary-main, 0.16);
+  border-radius: 10px;
+  padding: 0.65rem 0.8rem;
+}
+
+.distribute-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.distribute-row select {
+  height: 32px;
+  border-radius: 6px;
+  padding: 0 10px;
+}

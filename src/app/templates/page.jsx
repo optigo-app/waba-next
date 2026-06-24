@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useMemo, useCallback, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useCallback, useRef, useEffect, lazy, Suspense } from 'react';
 import { useRouter } from 'next/navigation';
 import {
     Box,
@@ -19,16 +19,16 @@ import {
 import { useTemplates } from '../hooks/useTemplates';
 import { useAuth } from '../hooks/useAuth';
 import { useWallet } from '../contexts/WalletContext';
-// import TemplateGrid from '../components/Template/TemplateGrid';
 import TemplateCardGrid from '../components/Template/TemplateCardGrid';
 import TemplateTable from '../components/Template/TemplateTable';
 import TemplateSkelton from '../components/Template/TemplateSkelton';
 import FilterBar from '../components/Common/FilterBar/FilterBar';
 import ConfirmationModal from '../components/ConfirmationModal/ConfirmationModal';
 import styles from '../components/Template/Templates.module.scss';
-import SendTemplateDialog from '../components/SendTemplateDialog/SendTemplateDialog';
-import MessagePreview from '../components/Common/MessagePreview';
 import { extractTemplatePreviewData } from '../utils/templatePreviewUtils';
+
+const SendTemplateDialog = lazy(() => import('../components/SendTemplateDialog/SendTemplateDialog'));
+const MessagePreview = lazy(() => import('../components/Common/MessagePreview'));
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const getSortTime = (item) => {
@@ -198,8 +198,8 @@ const TemplatesPage = () => {
         return { filtered: sorted, paginated: pageItems, statusCounts: counts };
     }, [templates, search, filterStatus, sortBy, currentPage, itemsPerPage]);
 
-    // Action Handlers
-    const handlers = {
+    // Action Handlers — all memoized so child list components don't re-render on every parent render
+    const handlers = useMemo(() => ({
         onView: (t) => { setPreviewTemplate(t); setOpenPreview(true); },
         onSend: (t) => {
             if (!hasSufficientBalance) {
@@ -220,7 +220,7 @@ const TemplatesPage = () => {
         },
         onDelete: (t) => setDeleteTemplateData(t),
         onPublish: (t) => setPublishTemplateData(t),
-    };
+    }), [router, hasSufficientBalance]);
 
     const handleConfirmDelete = useCallback(async () => {
         if (!deleteTemplateData) return;
@@ -253,19 +253,21 @@ const TemplatesPage = () => {
         if (!validatedPreviewData) return null;
 
         return (
-            <MessagePreview
-                headerType={validatedPreviewData.headerType}
-                headerText={validatedPreviewData.headerText}
-                headerTextExample={validatedPreviewData.headerTextExample}
-                headerMedia={validatedPreviewData.headerMedia}
-                body={validatedPreviewData.body}
-                footer={validatedPreviewData.footer}
-                buttons={validatedPreviewData.buttons}
-                templateType={validatedPreviewData.templateType}
-                carouselCards={validatedPreviewData.carouselCards}
-                variableValues={validatedPreviewData.variableValues}
-                showEmptyHint={false}
-            />
+            <Suspense fallback={<Box sx={{ display: 'flex', justifyContent: 'center', p: 4 }}><CircularProgress size={24} /></Box>}>
+                <MessagePreview
+                    headerType={validatedPreviewData.headerType}
+                    headerText={validatedPreviewData.headerText}
+                    headerTextExample={validatedPreviewData.headerTextExample}
+                    headerMedia={validatedPreviewData.headerMedia}
+                    body={validatedPreviewData.body}
+                    footer={validatedPreviewData.footer}
+                    buttons={validatedPreviewData.buttons}
+                    templateType={validatedPreviewData.templateType}
+                    carouselCards={validatedPreviewData.carouselCards}
+                    variableValues={validatedPreviewData.variableValues}
+                    showEmptyHint={false}
+                />
+            </Suspense>
         );
     };
 
@@ -440,12 +442,14 @@ const TemplatesPage = () => {
             </Drawer>
 
             {/* Send Dialog */}
-            <SendTemplateDialog
-                open={openSendDialog}
-                onClose={() => setOpenSendDialog(false)}
-                template={selectedTemplateForSend}
-                userToken={userToken}
-            />
+            <Suspense fallback={null}>
+                <SendTemplateDialog
+                    open={openSendDialog}
+                    onClose={() => setOpenSendDialog(false)}
+                    template={selectedTemplateForSend}
+                    userToken={userToken}
+                />
+            </Suspense>
 
             {/* Confirmation Modals */}
             <ConfirmationModal

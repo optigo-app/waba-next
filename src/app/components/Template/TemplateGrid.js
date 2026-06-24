@@ -175,7 +175,7 @@ const TemplateGrid = ({ items, onView, onSend, onClone, onEdit, onDelete, onPubl
                                         <IconButton
                                             icon={Edit2}
                                             color="secondary"
-                                            tooltip={canEdit ? 'Edit' : 'Editable after 24 hours from last update'}
+                                            tooltip={canEdit ? 'Edit' : 'Meta restricts template editing within 24 hours of the last update'}
                                             onClick={canEdit ? () => onEdit(template) : undefined}
                                             disabled={!canEdit}
                                             size={20}

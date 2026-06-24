@@ -1,3 +1,4 @@
+import React from 'react';
 import { Paper, Chip, Box, Typography } from '@mui/material';
 import { DataGrid } from '@mui/x-data-grid';
 import { FileText, Eye, Send, Copy, Trash2, BookOpen, CheckCircle2, Clock, XCircle, AlertCircle, Image, Video, FileType, FileQuestion, Rocket, Edit2 } from 'lucide-react';
@@ -220,7 +221,7 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
                         <IconButton
                             icon={Edit2}
                             color="secondary"
-                            tooltip={params.row.canEdit ? 'Edit' : 'Editable after 24 hours from last update'}
+                            tooltip={params.row.canEdit ? 'Edit' : 'Meta restricts template editing within 24 hours of the last update'}
                             onClick={params.row.canEdit ? () => onEdit(params.row) : undefined}
                             disabled={!params.row.canEdit}
                         />
@@ -304,4 +305,4 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
     );
 };
 
-export default TemplateTable;
+export default React.memo(TemplateTable);

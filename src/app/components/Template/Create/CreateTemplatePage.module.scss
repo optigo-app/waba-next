@@ -1556,12 +1556,14 @@
 }
 
 .mediaSampleTitle {
+    margin: 0;
     font-size: 0.85rem !important;
     font-weight: 600 !important;
     color: $titleColor !important;
 }
 
 .mediaSampleDesc {
+    margin: 0;
     font-size: 0.8rem !important;
     color: $secondaryColor !important;
     line-height: 1.5 !important;

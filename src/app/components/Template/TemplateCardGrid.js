@@ -310,7 +310,7 @@ const TemplateCard = ({ template, onView, onSend, onClone, onEdit, onDelete, onP
                         <IconButton
                             icon={Edit2}
                             color="secondary"
-                            tooltip={canEdit ? 'Edit' : 'Editable after 24h'}
+                            tooltip={canEdit ? 'Edit' : 'Meta restricts template editing within 24 hours of the last update'}
                             onClick={canEdit ? () => onEdit(template) : undefined}
                             disabled={!canEdit}
                             size={18}
@@ -368,4 +368,4 @@ const TemplateCardGrid = ({ items, onView, onSend, onClone, onEdit, onDelete, on
     );
 };
 
-export default TemplateCardGrid;
+export default React.memo(TemplateCardGrid);

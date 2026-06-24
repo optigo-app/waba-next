@@ -8,6 +8,7 @@ import {
   disconnectSocket,
   isSocketConnected,
   addSessionLogoutHandler,
+  broadcastLogout,
 } from '../socket';
 import { useAuth } from '../hooks/useAuth';
 import { getUserData, storage } from '../utils/storage';
@@ -109,6 +110,7 @@ export default function SocketProvider({ children }) {
     const removeHandler = addSessionLogoutHandler(() => {
       disconnectSocket(true);
       storage.clear();
+      broadcastLogout();
       window.location.replace(`${window.location.origin}/`);
       toast.error('Your session has been logged out from another device', {
         duration: 3000,
@@ -117,6 +119,42 @@ export default function SocketProvider({ children }) {
 
     return () => removeHandler();
   }, [isPublicRoute, router]);
+
+  // Listen for logout broadcasts from OTHER tabs
+  useEffect(() => {
+    if (isPublicRoute) return;
+    let bc = null;
+    let bcHandler = null;
+
+    try {
+      bc = new BroadcastChannel('waba-session-logout');
+      bcHandler = (event) => {
+        if (event.data === 'logout') {
+          disconnectSocket(true);
+          storage.clear();
+          window.location.replace(`${window.location.origin}/`);
+        }
+      };
+      bc.addEventListener('message', bcHandler);
+    } catch (_) {
+      // Fallback to localStorage
+    }
+
+    const storageHandler = (e) => {
+      if (e.key === 'waba-logout') {
+        disconnectSocket(true);
+        storage.clear();
+        window.location.replace(`${window.location.origin}/`);
+      }
+    };
+    window.addEventListener('storage', storageHandler);
+
+    return () => {
+      if (bc && bcHandler) bc.removeEventListener('message', bcHandler);
+      if (bc) bc.close();
+      window.removeEventListener('storage', storageHandler);
+    };
+  }, [isPublicRoute]);
 
   return (
     <SocketStatusContext.Provider value={{ isConnected, socketStatus }}>

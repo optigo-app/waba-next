@@ -30,7 +30,7 @@ const CHANNELS = [
 const ChannelsDashboard = () => {
     const router = useRouter();
     const { auth } = useAuth();
-    const { walletInfo, isLoading, loadWalletData } = useWallet();
+    const { walletInfo, isLoading, loadWalletData, refreshWallet } = useWallet();
     const [walletOpen, setWalletOpen] = useState(false);
     const [activeChannel, setActiveChannel] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
@@ -200,31 +200,37 @@ const ChannelsDashboard = () => {
                             flexDirection: 'column',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            py: '6rem',
-                            gap: '1.5rem',
+                            py: { xs: '4rem', sm: '6rem' },
+                            px: { xs: '1rem', sm: '2rem' },
+                            gap: '2rem',
                         }}
                     >
-                        <Box
+                        <Paper
+                            elevation={0}
                             sx={{
-                                width: 80,
-                                height: 80,
-                                borderRadius: '24px',
-                                background: 'linear-gradient(135deg, rgba(29,170,97,0.08), rgba(37,211,102,0.05))',
+                                width: { xs: 100, sm: 120 },
+                                height: { xs: 100, sm: 120 },
+                                borderRadius: '32px',
+                                background: 'linear-gradient(135deg, rgba(29,170,97,0.12), rgba(37,211,102,0.06))',
                                 display: 'flex',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                border: '1px solid rgba(29,170,97,0.12)',
+                                border: '1.5px solid rgba(29,170,97,0.18)',
+                                boxShadow: '0 8px 32px rgba(29,170,97,0.12)',
                             }}
                         >
-                            <MessageCircle size={36} color="#1daa61" />
-                        </Box>
-                        <Box sx={{ textAlign: 'center' }}>
+                            <MessageCircle size={48} color="#1daa61" strokeWidth={1.5} />
+                        </Paper>
+
+                        <Box sx={{ textAlign: 'center', maxWidth: 420 }}>
                             <Typography
                                 sx={{
                                     fontFamily: 'Poppins, sans-serif',
-                                    fontWeight: 600,
-                                    fontSize: '1.1rem',
+                                    fontWeight: 700,
+                                    fontSize: { xs: '1.25rem', sm: '1.5rem' },
                                     color: '#444050',
+                                    mb: 1,
+                                    lineHeight: 1.3,
                                 }}
                             >
                                 {searchQuery ? 'No channels found' : 'No channels yet'}
@@ -232,36 +238,55 @@ const ChannelsDashboard = () => {
                             <Typography
                                 sx={{
                                     fontFamily: 'Poppins, sans-serif',
-                                    fontSize: '0.875rem',
+                                    fontSize: '0.92rem',
                                     color: '#6D6B77',
-                                    mt: '0.25rem',
+                                    lineHeight: 1.7,
+                                    maxWidth: 340,
+                                    mx: 'auto',
                                 }}
                             >
                                 {searchQuery
                                     ? 'Try adjusting your search query'
-                                    : 'Get started by adding your first WhatsApp Business channel'}
+                                    : 'Get started by adding your first WhatsApp Business channel to create templates and send messages.'}
                             </Typography>
                         </Box>
+
                         {!searchQuery && (
-                            <Button
-                                variant="outlined"
-                                onClick={handleAddChannel}
-                                startIcon={<Plus size={16} />}
-                                sx={{
-                                    textTransform: 'none',
-                                    borderRadius: '12px',
-                                    fontFamily: 'Poppins, sans-serif',
-                                    fontWeight: 600,
-                                    color: '#1daa61',
-                                    borderColor: '#1daa61',
-                                    '&:hover': {
-                                        background: 'rgba(29, 170, 97, 0.06)',
-                                        borderColor: '#1daa61',
-                                    },
-                                }}
-                            >
-                                Add New Channel
-                            </Button>
+                            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5, alignItems: 'center' }}>
+                                <Button
+                                    variant="contained"
+                                    disableElevation
+                                    onClick={handleAddChannel}
+                                    startIcon={<Plus size={18} />}
+                                    sx={{
+                                        textTransform: 'none',
+                                        borderRadius: '14px',
+                                        fontFamily: 'Poppins, sans-serif',
+                                        fontWeight: 600,
+                                        fontSize: '0.95rem',
+                                        background: '#1daa61',
+                                        color: '#fff',
+                                        px: '2rem',
+                                        py: '10px',
+                                        boxShadow: '0 4px 16px rgba(29, 170, 97, 0.3)',
+                                        '&:hover': {
+                                            background: '#1a9a57',
+                                            boxShadow: '0 6px 20px rgba(29, 170, 97, 0.4)',
+                                        },
+                                    }}
+                                >
+                                    Add New Channel
+                                </Button>
+                                <Typography
+                                    sx={{
+                                        fontFamily: 'Poppins, sans-serif',
+                                        fontSize: '0.78rem',
+                                        color: '#a0a0a0',
+                                    }}
+                                >
+                                    Connect securely via Facebook Embedded Signup
+                                </Typography>
+                            </Box>
                         )}
                     </Box>
                 ) : (
@@ -301,6 +326,9 @@ const ChannelsDashboard = () => {
             <OnboardingModal
                 open={onboardingOpen}
                 onClose={() => setOnboardingOpen(false)}
+                onChannelAdded={() => {
+                    refreshWallet();
+                }}
             />
         </Box>
     );

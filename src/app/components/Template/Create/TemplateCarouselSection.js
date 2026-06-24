@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Paper, Button, Box } from '@mui/material';
+import { Paper, Button, Box, Tooltip } from '@mui/material';
 import { Plus, Image, Video, Paperclip } from 'lucide-react';
 import { isOwnServerUrl } from '../../../utils/mediaUtils';
 import TemplateButtonSection from './TemplateButtonSection';
@@ -91,14 +91,18 @@ const TemplateCarouselSection = ({
                     <Box className={styles.cardEditorPanel}>
                         <Box className={styles.cardEditorHeader}>
                             <h4 className={styles.cardTitle}>Card {activeCardIndex + 1} Settings</h4>
-                            <Button
-                                size="small"
-                                className={styles.cardDeleteBtn}
-                                onClick={() => onRemoveCarouselCard(activeCardIndex)}
-                                disabled={carouselCards.length <= 2}
-                            >
-                                Delete Card
-                            </Button>
+                            <Tooltip title={carouselCards.length <= 2 ? "Meta requires a minimum of 2 carousel cards" : "Delete this card"} arrow>
+                                <span style={{ display: 'inline-flex' }}>
+                                    <Button
+                                        size="small"
+                                        className={styles.cardDeleteBtn}
+                                        onClick={() => onRemoveCarouselCard(activeCardIndex)}
+                                        disabled={carouselCards.length <= 2}
+                                    >
+                                        Delete Card
+                                    </Button>
+                                </span>
+                            </Tooltip>
                         </Box>
 
                         <Box className={styles.mediaPickerWrap}>

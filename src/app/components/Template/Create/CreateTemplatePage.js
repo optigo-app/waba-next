@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState, useEffect } from 'react';
+import React, { useMemo, useState, useEffect, useRef } from 'react';
 import { getToken } from '../../../utils/storage';
 import {ChevronLeft, Plus, ArrowLeft, FileText,
     Image,
@@ -16,6 +16,7 @@ import { uploadMetaMedia } from '../../../api/uploadMetaMedia';
 import { filesUploadApi } from '../../../api/filesUploadApi';
 import { removeFileApi } from '../../../api/filesRemoveApi';
 import { fetchCrmTemplates } from '../../../api/CrmTemplates';
+import { fetchTemplateNameApi } from '../../../api/TemplateNameApi';
 import { urlToFile, getFilenameFromUrl, isOwnServerUrl } from '../../../utils/mediaUtils';
 import { parseTemplateError, getTemplateErrorMessage, getTemplateErrorToastMessage, getTemplateErrorTitle } from '../../../utils/templateErrorUtils';
 import { normalizeTemplateName, validateMediaFile, MEDIA_CONFIG } from './templateBuilderUtils';
@@ -93,6 +94,7 @@ const CreateTemplatePage = () => {
     const [templateNameError, setTemplateNameError] = useState('');
     const [isMainButtonMenuOpen, setIsMainButtonMenuOpen] = useState(false);
     const [isCardButtonMenuOpen, setIsCardButtonMenuOpen] = useState(false);
+    const templateNameDebounceRef = useRef(null);
 
     // Edit / Clone state from URL
     const editId = searchParams.get('id');
@@ -100,6 +102,31 @@ const CreateTemplatePage = () => {
     const [editTemplateData, setEditTemplateData] = useState(null);
     const [isEditLoading, setIsEditLoading] = useState(false);
     const isEditMode = !!editTemplateData && !isClone;
+
+    // Debounced duplicate template name check
+    useEffect(() => {
+        if (isEditMode || !templateDetails.templateName.trim()) return;
+        const currentName = templateDetails.templateName.trim().toLowerCase();
+        if (editTemplateData && !isClone) return;
+        clearTimeout(templateNameDebounceRef.current);
+        templateNameDebounceRef.current = setTimeout(async () => {
+            const userId = auth?.username || auth?.userid || auth?.userId || '';
+            if (!userId) return;
+            try {
+                const result = await fetchTemplateNameApi(userId);
+                const names = result?.data || [];
+                const exists = names.some(
+                    (t) => String(t?.TemplateName || '').toLowerCase() === currentName
+                );
+                if (exists) {
+                    setTemplateNameError('A template with this name already exists');
+                }
+            } catch (err) {
+                console.log("Error checking template name:", err);
+            }
+        }, 500);
+        return () => clearTimeout(templateNameDebounceRef.current);
+    }, [templateDetails.templateName, isEditMode, isClone, editTemplateData, auth]);
 
     // Fetch template data when editing/cloning
     useEffect(() => {

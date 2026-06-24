@@ -9,6 +9,7 @@ export const fetchTemplateNameApi = async (userId) => {
             userId,
         });
         if (response?.Data) {
+            console.log("temp---",response?.Data?.rd)
             return {
                 data: response?.Data?.rd || [],
             };

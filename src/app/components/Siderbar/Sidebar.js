@@ -3,17 +3,19 @@ import './Sidebar.scss'
 import { HomeIcon, MessageCircle, ChevronLeft, LogOut, RefreshCw, User, LayoutGrid } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
-import { disconnectSocket } from '../../socket'
+import { disconnectSocket, broadcastLogout } from '../../socket'
 import {Menu, MenuItem, Tooltip, IconButton, Avatar } from '@mui/material'
 const poweredByImg = '/poweredBy.png';
 import { getWhatsAppAvatarConfig } from '@/app/utils/globalFunc'
 import { useAuth } from '../../hooks/useAuth'
+import { useWallet } from '../../contexts/WalletContext'
 
 const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
     const pathname = usePathname();
     const [activePath, setActivePath] = useState(pathname);
     const { auth, logout, setIsSyncing } = useAuth();
     const router = useRouter();
+    const { walletInfo } = useWallet();
     const [userMenuAnchorEl, setUserMenuAnchorEl] = useState(null);
     const isUserMenuOpen = Boolean(userMenuAnchorEl);
 
@@ -34,8 +36,9 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
     const handleLogout = () => {
         handleCloseUserMenu();
         disconnectSocket(true);
+        broadcastLogout();
         logout();
-        router.push('/login');
+        window.location.replace(`${window.location.origin}/`);
     };
 
     const ICON_PROPS = { size: 20, strokeWidth: 2 };
@@ -43,10 +46,14 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
     const isLocalhost = typeof window !== 'undefined' && window.location.origin.includes('localhost');
     const chatPath = isLocalhost ? '/chat' : `${auth?.redirect_version || ''}/chat`;
 
+    const hasWabaData = !!walletInfo && !!walletInfo.wabaId && walletInfo.wabaId !== '-';
+
     const menuItems = [
         { path: "/", icon: <HomeIcon {...ICON_PROPS} />, label: "Dashboard" },
-        { path: "/campaign", icon: <LayoutGrid {...ICON_PROPS} />, label: "Campaign" },
-        { path: chatPath, icon: <MessageCircle {...ICON_PROPS} />, label: "Chat", external: true },
+        ...(hasWabaData ? [
+            { path: "/campaign", icon: <LayoutGrid {...ICON_PROPS} />, label: "Campaign" },
+            { path: chatPath, icon: <MessageCircle {...ICON_PROPS} />, label: "Chat", external: true },
+        ] : []),
     ];
 
     useEffect(() => {

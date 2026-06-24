@@ -93,46 +93,54 @@ const TemplateButtonSection = ({
 
             <Box className={styles.addButtonDropdownWrap}>
                 <Box className={styles.quickAddButtons}>
-                    <Tooltip title={hasQuickReply ? "Quick Reply already added" : "Add Quick Reply Button"} arrow>
-                        <Button
-                            className={styles.quickAddBtn}
-                            onClick={() => handleAddButton('QUICK_REPLY')}
-                            disabled={addButtonDisabled || hasQuickReply}
-                            startIcon={<MousePointerClick size={14} />}
-                        >
-                            Quick Reply
-                        </Button>
+                    <Tooltip title={hasQuickReply ? "Meta allows only 1 Quick Reply button" : "Add Quick Reply Button"} arrow>
+                        <span style={{ display: 'inline-flex' }}>
+                            <Button
+                                className={styles.quickAddBtn}
+                                onClick={() => handleAddButton('QUICK_REPLY')}
+                                disabled={addButtonDisabled || hasQuickReply}
+                                startIcon={<MousePointerClick size={14} />}
+                            >
+                                Quick Reply
+                            </Button>
+                        </span>
                     </Tooltip>
-                    <Tooltip title={isCarouselContext && hasUrl ? "Website button already added (only 1 Call-to-action allowed)" : (hasPhone ? "Call button already added" : "Add Call Phone Number Button")} arrow>
-                        <Button
-                            className={styles.quickAddBtn}
-                            onClick={() => handleAddButton('PHONE_NUMBER')}
-                            disabled={addButtonDisabled || hasPhone || (isCarouselContext && hasUrl)}
-                            startIcon={<Phone size={14} />}
-                        >
-                            Call
-                        </Button>
+                    <Tooltip title={isCarouselContext && hasUrl ? "Meta allows only 1 Call-to-action button per carousel card" : (hasPhone ? "Meta allows only 1 Call Phone Number button" : "Add Call Phone Number Button")} arrow>
+                        <span style={{ display: 'inline-flex' }}>
+                            <Button
+                                className={styles.quickAddBtn}
+                                onClick={() => handleAddButton('PHONE_NUMBER')}
+                                disabled={addButtonDisabled || hasPhone || (isCarouselContext && hasUrl)}
+                                startIcon={<Phone size={14} />}
+                            >
+                                Call
+                            </Button>
+                        </span>
                     </Tooltip>
-                    <Tooltip title={isCarouselContext && hasPhone ? "Call button already added (only 1 Call-to-action allowed)" : (hasUrl ? "Website button already added" : "Add Visit Website Button")} arrow>
-                        <Button
-                            className={styles.quickAddBtn}
-                            onClick={() => handleAddButton('URL')}
-                            disabled={addButtonDisabled || hasUrl || (isCarouselContext && hasPhone)}
-                            startIcon={<Globe size={14} />}
-                        >
-                            Website
-                        </Button>
+                    <Tooltip title={isCarouselContext && hasPhone ? "Meta allows only 1 Call-to-action button per carousel card" : (hasUrl ? "Meta allows only 2 Visit Website buttons (1 for carousel)" : "Add Visit Website Button")} arrow>
+                        <span style={{ display: 'inline-flex' }}>
+                            <Button
+                                className={styles.quickAddBtn}
+                                onClick={() => handleAddButton('URL')}
+                                disabled={addButtonDisabled || hasUrl || (isCarouselContext && hasPhone)}
+                                startIcon={<Globe size={14} />}
+                            >
+                                Website
+                            </Button>
+                        </span>
                     </Tooltip>
-                    <Tooltip title="More Button Options" arrow>
-                        <Button
-                            ref={addButtonRef}
-                            className={`${styles.quickAddBtn} ${styles.moreBtn}`}
-                            onClick={onToggleMenu}
-                            disabled={addButtonDisabled}
-                            startIcon={<Plus size={14} />}
-                        >
-                            More
-                        </Button>
+                    <Tooltip title={addButtonDisabled ? "Maximum buttons reached per Meta policy" : "More Button Options"} arrow>
+                        <span style={{ display: 'inline-flex' }}>
+                            <Button
+                                ref={addButtonRef}
+                                className={`${styles.quickAddBtn} ${styles.moreBtn}`}
+                                onClick={onToggleMenu}
+                                disabled={addButtonDisabled}
+                                startIcon={<Plus size={14} />}
+                            >
+                                More
+                            </Button>
+                        </span>
                     </Tooltip>
                 </Box>
 

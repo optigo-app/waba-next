@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import {
     Dialog,
     DialogTitle,
@@ -9,77 +9,214 @@ import {
     Button,
     Box,
     Typography,
-    Stepper,
-    Step,
-    StepLabel,
-    StepContent,
     Paper,
+    Fade,
 } from '@mui/material';
-import { Plus, MessageCircle, ChevronRight, CheckCircle2 } from 'lucide-react';
+import {
+    Plus,
+    MessageCircle,
+    ArrowLeft,
+    X,
+} from 'lucide-react';
+import EmbeddedSignupStep from './EmbeddedSignupStep';
+import ConfettiCanvas from './ConfettiCanvas';
 
-const steps = [
-    {
-        label: 'Create Channel',
-        description: 'Set up a new WhatsApp Business API channel for your organization.',
-    },
-    {
-        label: 'Verify Business',
-        description: 'Complete business verification to unlock messaging capabilities.',
-    },
-    {
-        label: 'Connect Phone Number',
-        description: 'Link your phone number to start sending and receiving messages.',
-    },
-    {
-        label: 'Go Live',
-        description: 'Start messaging your customers at scale.',
-    },
-];
+const OnboardingModal = ({ open, onClose, onChannelAdded }) => {
+    const [activeStep, setActiveStep] = useState(0);
+    const [completedData, setCompletedData] = useState(null);
 
-const OnboardingModal = ({ open, onClose }) => {
-    const [activeStep, setActiveStep] = React.useState(0);
-
-    React.useEffect(() => {
+    useEffect(() => {
         if (open) {
             setActiveStep(0);
+            setCompletedData(null);
         }
     }, [open]);
 
-    const handleNext = () => {
-        setActiveStep((prev) => prev + 1);
-    };
+    const handleSignupSuccess = useCallback((data) => {
+        setCompletedData(data);
+        if (onChannelAdded) {
+            onChannelAdded(data);
+        }
+        setActiveStep(1);
+    }, [onChannelAdded]);
 
     const handleBack = () => {
-        setActiveStep((prev) => prev - 1);
+        if (activeStep > 0) {
+            setActiveStep((prev) => prev - 1);
+        }
     };
 
     const handleFinish = () => {
         onClose();
     };
 
+    const renderStepContent = () => {
+        if (activeStep === 0) {
+            return (
+                <EmbeddedSignupStep
+                    onSuccess={handleSignupSuccess}
+                />
+            );
+        }
+
+        if (activeStep === 1) {
+            return (
+                <Box sx={{ position: 'relative', py: 4, textAlign: 'center' }}>
+                    <ConfettiCanvas active={activeStep === 1} duration={3500} />
+                    <Box
+                        sx={{
+                            width: 72,
+                            height: 72,
+                            borderRadius: '24px',
+                            background: 'linear-gradient(135deg, rgba(29,170,97,0.12), rgba(37,211,102,0.08))',
+                            display: 'flex',
+                            alignItems: 'center',
+                            justifyContent: 'center',
+                            border: '1px solid rgba(29,170,97,0.2)',
+                            mx: 'auto',
+                            mb: 2.5,
+                            position: 'relative',
+                            zIndex: 2,
+                        }}
+                    >
+                        <CheckCircle2 size={36} color="#1daa61" />
+                    </Box>
+                    <Typography
+                        sx={{
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 600,
+                            fontSize: '1.15rem',
+                            color: '#444050',
+                            mb: 1,
+                            position: 'relative',
+                            zIndex: 2,
+                        }}
+                    >
+                        Channel Connected!
+                    </Typography>
+                    <Typography
+                        sx={{
+                            fontFamily: 'Poppins, sans-serif',
+                            fontSize: '0.85rem',
+                            color: '#6D6B77',
+                            mb: 3,
+                            maxWidth: 360,
+                            mx: 'auto',
+                            lineHeight: 1.6,
+                            position: 'relative',
+                            zIndex: 2,
+                        }}
+                    >
+                        Your WhatsApp Business account has been connected successfully.
+                        You can now create templates and send messages.
+                    </Typography>
+
+                    {completedData && (
+                        <Paper
+                            elevation={0}
+                            sx={{
+                                p: 2.5,
+                                borderRadius: '14px',
+                                border: '1px solid #e4e8ee',
+                                background: '#fafafa',
+                                maxWidth: 360,
+                                mx: 'auto',
+                                mb: 3,
+                                textAlign: 'left',
+                                position: 'relative',
+                                zIndex: 2,
+                            }}
+                        >
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mb: 1.5 }}>
+                                <MessageCircle size={16} color="#1daa61" />
+                                <Typography
+                                    sx={{
+                                        fontFamily: 'Poppins, sans-serif',
+                                        fontWeight: 600,
+                                        fontSize: '0.85rem',
+                                        color: '#444050',
+                                    }}
+                                >
+                                    Account Details
+                                </Typography>
+                            </Box>
+                            {completedData.phoneId && (
+                                <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.78rem', color: '#6D6B77', mb: 0.5 }}>
+                                    <strong>Phone ID:</strong> {completedData.phoneId}
+                                </Typography>
+                            )}
+                            {completedData.wabaId && (
+                                <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.78rem', color: '#6D6B77', mb: 0.5 }}>
+                                    <strong>WABA ID:</strong> {completedData.wabaId}
+                                </Typography>
+                            )}
+                            {completedData.name && (
+                                <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.78rem', color: '#6D6B77' }}>
+                                    <strong>Name:</strong> {completedData.name}
+                                </Typography>
+                            )}
+                        </Paper>
+                    )}
+
+                    <Button
+                        variant="contained"
+                        disableElevation
+                        onClick={handleFinish}
+                        sx={{
+                            textTransform: 'none',
+                            borderRadius: '12px',
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 600,
+                            fontSize: '0.9rem',
+                            background: '#1daa61',
+                            px: 4,
+                            py: 1,
+                            boxShadow: 'none',
+                            position: 'relative',
+                            zIndex: 2,
+                            '&:hover': { background: '#1a9a57', boxShadow: 'none' },
+                        }}
+                    >
+                        Get Started
+                    </Button>
+                </Box>
+            );
+        }
+
+        return null;
+    };
+
     return (
         <Dialog
             open={open}
             onClose={onClose}
-            maxWidth="sm"
+            maxWidth="md"
             fullWidth
-            PaperProps={{
-                sx: {
-                    borderRadius: '20px',
-                    boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-                    overflow: 'hidden',
+            slotProps={{
+                paper: {
+                    sx: {
+                        borderRadius: '20px',
+                        boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
+                        overflow: 'hidden',
+                        maxWidth: 720,
+                        minHeight: activeStep === 0 ? 560 : 440,
+                        transition: 'min-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
+                    },
                 },
             }}
         >
             <DialogTitle
                 sx={{
-                    pb: 1,
+                    pb: 1.5,
                     pt: 3,
                     px: 3,
                     fontFamily: 'Poppins, sans-serif',
                     fontWeight: 600,
                     fontSize: '1.25rem',
                     color: '#444050',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'space-between',
                 }}
             >
                 <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
@@ -98,147 +235,6 @@ const OnboardingModal = ({ open, onClose }) => {
                     </Box>
                     Add New Channel
                 </Box>
-            </DialogTitle>
-
-            <DialogContent sx={{ px: 3, pb: 2 }}>
-                <Typography
-                    variant="body2"
-                    sx={{
-                        color: '#6D6B77',
-                        fontFamily: 'Poppins, sans-serif',
-                        mb: 3,
-                        fontSize: '0.875rem',
-                    }}
-                >
-                    Follow these steps to set up your new WhatsApp Business channel.
-                </Typography>
-
-                <Stepper activeStep={activeStep} orientation="vertical">
-                    {steps.map((step, index) => (
-                        <Step key={step.label}>
-                            <StepLabel
-                                StepIconProps={{
-                                    sx: {
-                                        '& .MuiStepIcon-root': {
-                                            color: index < activeStep ? '#1daa61 !important' : undefined,
-                                        },
-                                    },
-                                }}
-                            >
-                                <Typography
-                                    sx={{
-                                        fontFamily: 'Poppins, sans-serif',
-                                        fontWeight: 600,
-                                        fontSize: '0.9rem',
-                                        color: index <= activeStep ? '#444050' : '#6D6B77',
-                                    }}
-                                >
-                                    {step.label}
-                                </Typography>
-                            </StepLabel>
-                            <StepContent>
-                                <Typography
-                                    sx={{
-                                        fontFamily: 'Poppins, sans-serif',
-                                        fontSize: '0.82rem',
-                                        color: '#6D6B77',
-                                        mb: 1,
-                                    }}
-                                >
-                                    {step.description}
-                                </Typography>
-                                <Box sx={{ display: 'flex', gap: 1, mt: 1 }}>
-                                    <Button
-                                        variant="contained"
-                                        size="small"
-                                        onClick={handleNext}
-                                        sx={{
-                                            textTransform: 'none',
-                                            borderRadius: '10px',
-                                            fontFamily: 'Poppins, sans-serif',
-                                            fontWeight: 600,
-                                            background: '#1daa61',
-                                            boxShadow: 'none',
-                                            '&:hover': { background: '#1a9a57', boxShadow: 'none' },
-                                        }}
-                                        endIcon={<ChevronRight size={16} />}
-                                    >
-                                        {index === steps.length - 1 ? 'Finish' : 'Continue'}
-                                    </Button>
-                                    {index > 0 && (
-                                        <Button
-                                            size="small"
-                                            onClick={handleBack}
-                                            sx={{
-                                                textTransform: 'none',
-                                                borderRadius: '10px',
-                                                fontFamily: 'Poppins, sans-serif',
-                                                color: '#6D6B77',
-                                            }}
-                                        >
-                                            Back
-                                        </Button>
-                                    )}
-                                </Box>
-                            </StepContent>
-                        </Step>
-                    ))}
-                </Stepper>
-
-                {activeStep === steps.length && (
-                    <Paper
-                        elevation={0}
-                        sx={{
-                            p: 3,
-                            mt: 2,
-                            borderRadius: '16px',
-                            background: 'linear-gradient(135deg, #f0fdf4, #dcfce7)',
-                            border: '1px solid rgba(29, 170, 97, 0.2)',
-                            textAlign: 'center',
-                        }}
-                    >
-                        <CheckCircle2 size={40} color="#1daa61" style={{ marginBottom: 8 }} />
-                        <Typography
-                            sx={{
-                                fontFamily: 'Poppins, sans-serif',
-                                fontWeight: 600,
-                                fontSize: '1.1rem',
-                                color: '#166534',
-                            }}
-                        >
-                            All steps completed!
-                        </Typography>
-                        <Typography
-                            sx={{
-                                fontFamily: 'Poppins, sans-serif',
-                                fontSize: '0.85rem',
-                                color: '#166534',
-                                mt: 0.5,
-                            }}
-                        >
-                            You&apos;re ready to start using your new channel.
-                        </Typography>
-                        <Button
-                            variant="contained"
-                            onClick={handleFinish}
-                            sx={{
-                                mt: 2,
-                                textTransform: 'none',
-                                borderRadius: '10px',
-                                fontFamily: 'Poppins, sans-serif',
-                                fontWeight: 600,
-                                background: '#1daa61',
-                                boxShadow: 'none',
-                                '&:hover': { background: '#1a9a57', boxShadow: 'none' },
-                            }}
-                        >
-                            Get Started
-                        </Button>
-                    </Paper>
-                )}
-            </DialogContent>
-
-            <DialogActions sx={{ px: 3, pb: 3 }}>
                 <Button
                     onClick={onClose}
                     sx={{
@@ -247,9 +243,55 @@ const OnboardingModal = ({ open, onClose }) => {
                         fontFamily: 'Poppins, sans-serif',
                         fontWeight: 500,
                         color: '#6D6B77',
+                        fontSize: '0.85rem',
+                        minWidth: 'auto',
+                        p: '6px 12px',
                     }}
                 >
-                    Cancel
+                    <X size={16} />
+                </Button>
+            </DialogTitle>
+
+            <DialogContent sx={{ px: 3, pb: 2 }}>
+                <Fade in timeout={350} key={`step-${activeStep}`} unmountOnExit>
+                    <Box>
+                        {renderStepContent()}
+                    </Box>
+                </Fade>
+            </DialogContent>
+
+            <DialogActions sx={{ px: 3, pb: 3, display: 'flex', justifyContent: 'space-between' }}>
+                {activeStep === 1 ? (
+                    <Button
+                        onClick={handleBack}
+                        startIcon={<ArrowLeft size={16} />}
+                        sx={{
+                            textTransform: 'none',
+                            borderRadius: '10px',
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 500,
+                            color: '#6D6B77',
+                            fontSize: '0.85rem',
+                        }}
+                    >
+                        Back
+                    </Button>
+                ) : (
+                    <Box />
+                )}
+                <Button
+                    onClick={onClose}
+                    startIcon={activeStep === 1 ? <X size={16} /> : null}
+                    sx={{
+                        textTransform: 'none',
+                        borderRadius: '10px',
+                        fontFamily: 'Poppins, sans-serif',
+                        fontWeight: 500,
+                        color: '#6D6B77',
+                        fontSize: '0.85rem',
+                    }}
+                >
+                    {activeStep === 1 ? 'Close' : 'Cancel'}
                 </Button>
             </DialogActions>
         </Dialog>
