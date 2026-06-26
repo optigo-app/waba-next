@@ -59,7 +59,6 @@ const CampaignReport = () => {
     const { userToken } = useAuthToken();
     const [loading, setLoading] = useState(true);
     const [quickReportData, setQuickReportData] = useState(null);
-    console.log("quickReportData",quickReportData)
     const [activeTab, setActiveTab] = useState('overview');
     const [statFilter, setStatFilter] = useState('Overall');
     const [showExportModal, setShowExportModal] = useState(false);
@@ -300,7 +299,6 @@ const CampaignReport = () => {
             const quickReportResult = await fetchQuickReport(userToken?.userId, id);
             if (quickReportResult.success && quickReportResult.data) {
                 setQuickReportData(...quickReportResult.data?.rd);
-                console.log('Quick Report Data set:', quickReportResult.data);
             } else {
                 console.log('Quick Report failed or no data');
             }
@@ -340,7 +338,6 @@ const CampaignReport = () => {
                 RetargetSourceCampaignId: id, // Pass original campaign ID for API call
                 RetargetChatMsgStatus: chatMsgStatus, // Pass status for API filtering
             };
-            console.log("campaignData",campaignData)
 
             setCampaignDraft(campaignData);
             router.push('/campaign/create');

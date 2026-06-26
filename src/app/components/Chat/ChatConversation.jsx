@@ -31,10 +31,11 @@ export default function ChatConversation({
   converList,
   isConversationRead,
   setIsConversationRead,
+  onToggleDetailsPanel,
 }) {
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [input, setInput] = useState(''); 
+  const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
   const [tagModalOpen, setTagModalOpen] = useState(false);
   const [detailsOpen, setDetailsOpen] = useState(false);
@@ -47,6 +48,7 @@ export default function ChatConversation({
   const [unreadCount, setUnreadCount] = useState(0);
   const lastMessageCountRef = useRef(0);
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
+  const messagesCacheRef = useRef(new Map());
   const emojiPickerRef = useRef(null);
   const [loadedMedia, setLoadedMedia] = useState({});
   const [mediaCache, setMediaCache] = useState({});
@@ -73,6 +75,15 @@ export default function ChatConversation({
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
   const isTabletOrMobile = useMediaQuery('(max-width:1000px)');
+  const isDesktop = useMediaQuery('(min-width:1001px)');
+
+  const handleDetailsClick = useCallback(() => {
+    if (isDesktop) {
+      onToggleDetailsPanel?.();
+    } else {
+      setDetailsOpen(true);
+    }
+  }, [isDesktop, onToggleDetailsPanel]);
 
   const checkScroll = useCallback(() => {
     const el = tagsScrollRef.current;
@@ -152,12 +163,13 @@ export default function ChatConversation({
       abortControllerRef.current = controller;
       const requestId = ++latestRequestRef.current;
 
+      const cacheKey = String(conversationId);
+      const cached = messagesCacheRef.current.get(cacheKey);
+
       const load = async () => {
-        setLoading(true);
         setIsLoadingMore(false);
         setPage(1);
         setHasMore(true);
-        setMessages([]);
         setTagsList([]);
         setAssigneeList([]);
         setEscalatedList([]);
@@ -178,6 +190,14 @@ export default function ChatConversation({
         setReactionPickerMessageId(null);
         setMessageReactions({});
 
+        if (cached) {
+          setLoading(false);
+          setMessages(cached);
+        } else {
+          setLoading(true);
+          setMessages([]);
+        }
+
         try {
           const response = await fetchConversationView(conversationId, 1, 30, auth?.userId, controller.signal);
           if (controller.signal.aborted) return;
@@ -191,6 +211,12 @@ export default function ChatConversation({
             setMessages(list);
             setHasMore(response?.hasMore ?? (list.length === 30));
             setPage(1);
+            // Cache messages for quick restore on conversation switch
+            messagesCacheRef.current.set(cacheKey, list);
+            if (messagesCacheRef.current.size > 20) {
+              const firstKey = messagesCacheRef.current.keys().next().value;
+              messagesCacheRef.current.delete(firstKey);
+            }
           }
 
           // Fetch customer tags
@@ -319,6 +345,13 @@ export default function ChatConversation({
 
     let validFiles = fileArray.filter(isFileAllowed);
 
+    // Reject WebP images (not supported by the API)
+    const webpFiles = validFiles.filter((f) => f.type === 'image/webp' || f.name.toLowerCase().endsWith('.webp'));
+    if (webpFiles.length > 0) {
+      toast.error(`WebP image uploads are not currently supported: ${webpFiles.map((f) => f.name).join(', ')}`);
+      validFiles = validFiles.filter((f) => !(f.type === 'image/webp' || f.name.toLowerCase().endsWith('.webp')));
+    }
+
     // Check file size
     const oversized = validFiles.filter((f) => f.size > MAX_FILE_SIZE);
     if (oversized.length > 0) {
@@ -368,6 +401,31 @@ export default function ChatConversation({
     setSelectedPreviewIndex(0);
   }, []);
 
+  // Read image/video dimensions from a File object
+  const getMediaDimensions = (file) => {
+    return new Promise((resolve) => {
+      if (file.type.startsWith('image/')) {
+        const img = new Image();
+        img.onload = () => {
+          resolve({ width: img.naturalWidth, height: img.naturalHeight });
+          URL.revokeObjectURL(img.src);
+        };
+        img.onerror = () => resolve(null);
+        img.src = URL.createObjectURL(file);
+      } else if (file.type.startsWith('video/')) {
+        const video = document.createElement('video');
+        video.onloadedmetadata = () => {
+          resolve({ width: video.videoWidth, height: video.videoHeight });
+          URL.revokeObjectURL(video.src);
+        };
+        video.onerror = () => resolve(null);
+        video.src = URL.createObjectURL(file);
+      } else {
+        resolve(null);
+      }
+    });
+  };
+
   const handleSend = useCallback(async () => {
     if ((!input.trim() && mediaPreview.length === 0) || !selectedCustomer || !auth?.userId) return;
     const text = input.trim();
@@ -389,6 +447,7 @@ export default function ChatConversation({
           ...prev,
           {
             id: tempId,
+            tempId: tempId,
             content: preview.name,
             fileName: preview.name,
             Message: text || '',
@@ -435,6 +494,7 @@ export default function ChatConversation({
         }
 
         try {
+          const mediaDimensions = await getMediaDimensions(preview.file);
           const sendResp = await sendChatMedia({
             phoneNo: selectedCustomer?.CustomerPhone || selectedCustomer?.Sender || '',
             mediaId: uploadedId,
@@ -442,6 +502,10 @@ export default function ChatConversation({
             caption: text || '',
             userId: auth.userId,
             customerId: conversationId,
+            mediaName: preview.name,
+            mediaWidth: mediaDimensions?.width,
+            mediaHeight: mediaDimensions?.height,
+            mimeType: preview.file?.type,
           });
 
           if (!sendResp) {
@@ -449,11 +513,10 @@ export default function ChatConversation({
           }
 
           // Mark sent — keep local preview URL visible
-          setLoadedMedia((prev) => ({ ...prev, [tempId]: false }));
           setMessages((prev) =>
             prev.map((msg) =>
               msg.id === tempId
-                ? { ...msg, isUploading: false, status: 'sent', id: sendResp?.Data?.autoid || tempId }
+                ? { ...msg, isUploading: false, status: 'sent', autoid: sendResp?.Data?.autoid }
                 : msg
             )
           );
@@ -467,7 +530,7 @@ export default function ChatConversation({
                 setMediaCache((prev) => ({ ...prev, [uploadedId]: mediaUrl }));
                 setMessages((prev) =>
                   prev.map((msg) =>
-                    msg.id === tempId
+                    (msg.id === tempId || msg.tempId === tempId)
                       ? { ...msg, mediaUrl }
                       : msg
                   )
@@ -910,7 +973,7 @@ export default function ChatConversation({
         escalatedList={escalatedList}
         setEscalatedList={setEscalatedList}
         auth={auth}
-        setDetailsOpen={setDetailsOpen}
+        onToggleDetails={handleDetailsClick}
         onDeleteTag={handleDeleteTag}
       />
 
@@ -1010,11 +1073,13 @@ export default function ChatConversation({
         }}
       />
 
-      <CustomerDetails
-        customer={selectedCustomer}
-        open={detailsOpen}
-        onClose={() => setDetailsOpen(false)}
-      />
+      {!isDesktop && (
+        <CustomerDetails
+          customer={selectedCustomer}
+          open={detailsOpen}
+          onClose={() => setDetailsOpen(false)}
+        />
+      )}
 
       <MediaViewer
         open={mediaViewer.open}

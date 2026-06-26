@@ -91,10 +91,8 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
             try {
                 const data = JSON.parse(event.data);
                 if (data.type === 'WA_EMBEDDED_SIGNUP') {
-                    console.log('[EmbeddedSignup] Received event:', data.event, data.data);
                     if (data.event === 'FINISH') {
                         const { phone_number_id, waba_id } = data.data;
-                        console.log('[EmbeddedSignup] FINISH received — phoneId:', phone_number_id, 'wabaId:', waba_id);
                         setSignupData((prev) => ({
                             ...prev,
                             phoneNumberId: phone_number_id,

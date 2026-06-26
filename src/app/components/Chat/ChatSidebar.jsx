@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo, useDeferredValue } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, useDeferredValue, memo } from 'react';
 import { Avatar, Badge, IconButton, Menu, MenuItem, Tooltip, Skeleton, CircularProgress } from '@mui/material';
 import {
   Search, Pin, PinOff, Star, StarOff, Archive, ArchiveRestore,
@@ -62,7 +62,7 @@ const getMenuItems = (member, can) => {
 
 const getTagId = (tag) => tag?.TagId ?? tag?.Id ?? tag?.id ?? null;
 
-export default function ChatSidebar({
+function ChatSidebar({
   onCustomerSelect,
   selectedCustomer,
   isConversationRead,
@@ -1030,3 +1030,5 @@ export default function ChatSidebar({
     </div>
   );
 }
+
+export default memo(ChatSidebar);

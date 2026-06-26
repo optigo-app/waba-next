@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { Paper, Typography, TextField, Button, LinearProgress, Box } from '@mui/material';
-import { Image, Video, FileText, MapPin, Paperclip, X } from 'lucide-react';
+import { Image, Video, FileText, MapPin, Paperclip, X, Check } from 'lucide-react';
 import { isOwnServerUrl } from '../../../utils/mediaUtils';
 
 const TemplateHeaderSection = ({
@@ -98,17 +98,25 @@ const TemplateHeaderSection = ({
                             { type: 'video', Icon: Video, label: 'Video' },
                             { type: 'document', Icon: FileText, label: 'Document' },
                             { type: 'location', Icon: MapPin, label: 'Location' },
-                        ].map(({ type, Icon, label }) => (
-                            <Button
-                                key={type}
-                                className={`${styles.mediaIconCard} ${headerMedia.mediaType === type ? styles.mediaIconCardActive : ''}`}
-                                onClick={() => onHeaderMediaTypeChange(type)}
-                            >
-                                <Icon size={16} className={styles.mediaIconSvg} />
-                                <span className={styles.mediaIconLabel}>{label}</span>
-                                {type === 'location' && <span className={styles.mediaIconSoon}>soon</span>}
-                            </Button>
-                        ))}
+                        ].map(({ type, Icon, label }) => {
+                            const isActive = headerMedia.mediaType === type;
+                            return (
+                                <Button
+                                    key={type}
+                                    className={`${styles.mediaIconCard} ${isActive ? styles.mediaIconCardActive : ''}`}
+                                    onClick={() => onHeaderMediaTypeChange(type)}
+                                >
+                                    {isActive && (
+                                        <span className={styles.mediaIconCheck}>
+                                            <Check size={10} strokeWidth={3} />
+                                        </span>
+                                    )}
+                                    <Icon size={22} className={styles.mediaIconSvg} />
+                                    <span className={styles.mediaIconLabel}>{label}</span>
+                                    {type === 'location' && <span className={styles.mediaIconSoon}>soon</span>}
+                                </Button>
+                            );
+                        })}
                     </Box>
 
                     {headerMedia.mediaType !== 'location' && (

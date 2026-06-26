@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { CircularProgress, Skeleton } from '@mui/material';
+import { CircularProgress } from '@mui/material';
 import { Paperclip, ArrowDown } from 'lucide-react';
 import { formatDateHeader } from './utils/dateUtils';
 import MessageBubble from './MessageBubble';
@@ -53,7 +53,6 @@ export default function ChatMessagesArea({
   hasMore,
   loadMoreMessages,
 }) {
-  console.log("messages", messages)
   const groupMessagesByDate = useCallback(() => {
     const grouped = {};
     messages.forEach((msg) => {
@@ -133,27 +132,13 @@ export default function ChatMessagesArea({
           </div>
         )}
 
-        {/* Skeleton message bubbles while loading */}
+        {/* Blur overlay + CircularProgress while loading initial conversation */}
         {loading && messages.length === 0 && (
-          <div className="chat-messages-skeleton">
-            <div className="skeleton-message customer">
-              <Skeleton variant="circular" width={32} height={32} />
-              <div className="skeleton-bubble">
-                <Skeleton variant="rounded" width="85%" height={14} />
-                <Skeleton variant="rounded" width="60%" height={14} sx={{ mt: 0.5 }} />
-              </div>
-            </div>
-            <div className="skeleton-message user">
-              <div className="skeleton-bubble">
-                <Skeleton variant="rounded" width="70%" height={14} />
-              </div>
-            </div>
-            <div className="skeleton-message customer">
-              <Skeleton variant="circular" width={32} height={32} />
-              <div className="skeleton-bubble">
-                <Skeleton variant="rounded" width="75%" height={14} />
-                <Skeleton variant="rounded" width="50%" height={14} sx={{ mt: 0.5 }} />
-              </div>
+          <div className="chat-messages-loading-overlay">
+            <div className="chat-messages-loading-blur" />
+            <div className="chat-messages-loading-content">
+              <CircularProgress size={40} thickness={3.5} sx={{ color: '#3b82f6' }} />
+              <span className="chat-messages-loading-text">Loading conversation...</span>
             </div>
           </div>
         )}

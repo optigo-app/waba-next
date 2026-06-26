@@ -14,7 +14,7 @@ export const getEnvFlags = () => {
 
 export const getApiBaseUrl = () => {
     const { isLocal, isNxt, isLocalWeb } = getEnvFlags();
-    
+
     return isLocal
         ? process.env.NEXT_PUBLIC_API_DEVELOPMENT_URL
         : isLocalWeb
@@ -102,8 +102,8 @@ export const getHeaders1 = () => {
 
 // WhatsApp Graph API template base URLs
 export const META_TEMPLATE_BASE_URL = process.env.NEXT_PUBLIC_META_TEMP_BASE_URL || 'https://graph.facebook.com/v18.0';
-export const MPL_TEMPLATE_BASE_URL  = process.env.NEXT_PUBLIC_MPL_TEMP_BASE_URL  || 'https://graph.facebook.com/v18.0';
+export const MPL_TEMPLATE_BASE_URL = process.env.NEXT_PUBLIC_MPL_TEMP_BASE_URL || 'https://graph.facebook.com/v18.0';
 
 export const getTemplateBaseUrl = (isMeta = 0) => {
-  return isMeta == 1 ? META_TEMPLATE_BASE_URL : MPL_TEMPLATE_BASE_URL;
+    return isMeta == 1 ? META_TEMPLATE_BASE_URL : MPL_TEMPLATE_BASE_URL;
 };

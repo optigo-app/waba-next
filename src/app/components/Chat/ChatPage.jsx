@@ -1,11 +1,12 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button, Typography } from '@mui/material';
 import { MessageCircle } from 'lucide-react';
 import ChatSidebar from './ChatSidebar';
 import ChatConversation from './ChatConversation';
+import CustomerDetails from './CustomerDetails';
 import { useAuthStore } from '../../store/authStore';
 import './styles/global-chat.css';
 import './styles/chat-page.css';
@@ -21,6 +22,11 @@ export default function ChatPage() {
   const [isConversationRead, setIsConversationRead] = useState(false);
   const [viewConversationRead, setViewConversationRead] = useState(false);
   const [selectedTag, setSelectedTag] = useState('All');
+  const layoutRef = useRef(null);
+
+  const toggleDetailsPanel = useCallback(() => {
+    layoutRef.current?.classList.toggle('details-open');
+  }, []);
 
   const handleCustomerSelect = useCallback((customer) => {
     setSelectedCustomer(customer);
@@ -94,7 +100,7 @@ export default function ChatPage() {
 
   return (
     <div className="chat-page-container">
-      <div className={`chat-page-layout${selectedCustomer ? ' chat-active' : ''}`}>
+      <div ref={layoutRef} className={`chat-page-layout${selectedCustomer ? ' chat-active' : ''}`}>
         {/* Left sidebar: conversation list */}
         <div className="chat-sidebar-section">
           <ChatSidebar
@@ -109,7 +115,7 @@ export default function ChatPage() {
           />
         </div>
 
-        {/* Right: conversation area */}
+        {/* Middle: conversation area */}
         <div className="chat-conversation-section">
           <ChatConversation
             selectedCustomer={selectedCustomer}
@@ -120,6 +126,17 @@ export default function ChatPage() {
             converList={converList}
             isConversationRead={isConversationRead}
             setIsConversationRead={setIsConversationRead}
+            onToggleDetailsPanel={toggleDetailsPanel}
+          />
+        </div>
+
+        {/* Right: contact info panel (desktop only) */}
+        <div className="chat-details-section">
+          <CustomerDetails
+            customer={selectedCustomer}
+            open={true}
+            onClose={toggleDetailsPanel}
+            variant="panel"
           />
         </div>
       </div>

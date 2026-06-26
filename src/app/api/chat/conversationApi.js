@@ -149,20 +149,16 @@ export const fetchChatMediaBlob = async (mediaId) => {
       body: JSON.stringify({ mediaid: mediaId }),
     });
 
-    console.log('[fetchChatMediaBlob] mediaId:', mediaId, 'status:', response.status, 'ok:', response.ok);
-
     if (!response.ok) {
       console.error('Media fetch API error:', response.statusText);
       return null;
     }
 
     const contentType = response.headers.get('Content-Type') || '';
-    console.log('[fetchChatMediaBlob] content-type:', contentType);
 
     // If API returns JSON with a direct URL, return that URL string
     if (contentType.includes('application/json')) {
       const data = await response.json();
-      console.log('[fetchChatMediaBlob] JSON response:', data);
       if (data?.url || data?.mediaUrl || data?.link) {
         return { url: data.url || data.mediaUrl || data.link };
       }
@@ -172,7 +168,6 @@ export const fetchChatMediaBlob = async (mediaId) => {
 
     // Otherwise return the actual binary blob (images, videos, documents, audio)
     const blob = await response.blob();
-    console.log('[fetchChatMediaBlob] blob type:', blob.type, 'size:', blob.size);
     return { blob };
   } catch (error) {
     console.error('Error fetching media blob:', error);
@@ -180,7 +175,7 @@ export const fetchChatMediaBlob = async (mediaId) => {
   }
 };
 
-export const sendChatMedia = async ({ phoneNo, mediaUrl, mediaId, type, caption, userId, customerId }) => {
+export const sendChatMedia = async ({ phoneNo, mediaUrl, mediaId, type, caption, userId, customerId, mediaName, mediaWidth, mediaHeight, mimeType }) => {
   const mediaPayload = { caption: caption || '' };
   if (mediaId) {
     mediaPayload.id = mediaId;
@@ -194,6 +189,10 @@ export const sendChatMedia = async ({ phoneNo, mediaUrl, mediaId, type, caption,
     phoneNo: String(phoneNo),
     type,
     [type]: mediaPayload,
+    ...(mediaName && { MediaName: mediaName }),
+    ...(typeof mediaWidth === 'number' && { MediaWidth: mediaWidth }),
+    ...(typeof mediaHeight === 'number' && { MediaHeight: mediaHeight }),
+    ...(mimeType && { MimeType: mimeType }),
   };
 
   try {

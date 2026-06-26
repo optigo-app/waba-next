@@ -233,7 +233,6 @@ const AudienceGrid = ({
   onSearchChange: externalOnSearchChange,
   onDelete,
 }) => {
-  console.log('AudienceGrid props:', { rows, onRowSelectionModelChange, rowSelectionModel, onFilterClick, source, loading, pageSizeOptions, searchText: externalSearchText, onSearchChange: externalOnSearchChange });
   const [internalSearch, setInternalSearch] = useState('');
   const searchText = externalSearchText !== undefined ? externalSearchText : internalSearch;
 

@@ -52,7 +52,6 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
                 setRetargetLoading(true);
                 try {
                     toast.loading('Loading audience data...', { id: 'retarget-audience' });
-                    console.log("retargetChatMsgStatus", retargetChatMsgStatus)
                     const detailsResult = await fetchCampaignDetails(userToken?.userId, retargetSourceCampaignId, retargetChatMsgStatus, retemplateData?.TemplateId);
 
                     if (detailsResult.success && detailsResult.data?.rd3) {

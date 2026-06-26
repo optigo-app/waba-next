@@ -58,8 +58,8 @@
   }
 }
 
-.message-bubble:hover {
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+.message-bubble.customer:hover {
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.12);
 }
 
 .message-bubble.user {
@@ -69,16 +69,16 @@
 }
 
 .message-bubble.customer {
-  background-color: white;
-  color: #444050;
+  background-color: #ffffff;
+  color: #111b21;
   border-radius: 16px 16px 16px 4px;
-  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+  box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
 }
 
 .message-text {
-  line-height: 1.2;
-  font-size: 14px;
-  font-weight: 500;
+  line-height: 1.35;
+  font-size: 14.2px;
+  font-weight: 400;
   white-space: pre-wrap;
   word-break: break-word;
 }
@@ -101,7 +101,7 @@
 }
 
 .message-bubble.customer .message-time {
-  color: #a8a8a8;
+  color: #8696a0;
 }
 
 .message-status {
@@ -213,6 +213,7 @@
 .video-play-overlay {
   position: absolute;
   inset: 0;
+  z-index: 9;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -288,6 +289,7 @@
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
+  background: rgba(0, 0, 0, 0.04);
 }
 
 .message-document-info {

@@ -2,7 +2,7 @@
 
 import { useState, useRef, memo } from 'react';
 import { Avatar, Skeleton, Tooltip, Box, Typography } from '@mui/material';
-import { MoreVertical, ChevronDown, Paperclip, FileText, Download, AlertCircle, Clock3, Check, CheckCheck, Play, Pause } from 'lucide-react';
+import { MoreVertical, ChevronDown, Paperclip, Download, AlertCircle, Clock3, Check, CheckCheck, Play, Pause } from 'lucide-react';
 import DynamicTemplate from './DynamicTemplate';
 import QuickReactionMenu from './QuickReactionMenu';
 import { Emoji } from 'emoji-picker-react';
@@ -163,12 +163,25 @@ const MessageBubble = memo(function MessageBubble({
             const isJustFilename = isMediaMsg && captionText === (msg?.fileName || msg?.content || '');
             const hasCaption = !!captionText && !isJustFilename;
 
+            // Pre-compute dims from stored message fields so skeleton matches real media size
+            const storedImgW = msg?.mediaWidth || msg?.MediaWidth || msg?.width || 0;
+            const storedImgH = msg?.mediaHeight || msg?.MediaHeight || msg?.height || 0;
+            const preImageDims = (!imageDims && storedImgW > 0 && storedImgH > 0)
+              ? calculateImageDimensions(storedImgW, storedImgH)
+              : imageDims;
+
+            const storedVidW = msg?.mediaWidth || msg?.MediaWidth || msg?.width || 0;
+            const storedVidH = msg?.mediaHeight || msg?.MediaHeight || msg?.height || 0;
+            const preVideoDims = (!videoDims && storedVidW > 0 && storedVidH > 0)
+              ? calculateImageDimensions(storedVidW, storedVidH)
+              : videoDims;
+
             const captionMediaWidth = (() => {
               if (msgType?.toLowerCase() === 'image' || msg?.imageUrl) {
-                return imageDims ? imageDims.width : 320;
+                return preImageDims ? preImageDims.width : 320;
               }
               if (msgType?.toLowerCase() === 'video' || msg?.videoUrl || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp4|webm|ogg|mov)$/i))) {
-                return videoDims ? videoDims.width : 'min(330px, 70vw)';
+                return preVideoDims ? preVideoDims.width : 'min(330px, 70vw)';
               }
               if (isAudio) {
                 return 'min(280px, 70vw)';
@@ -180,10 +193,10 @@ const MessageBubble = memo(function MessageBubble({
               ? { width: captionMediaWidth, minHeight: 'auto' }
               : (() => {
                 if (msgType?.toLowerCase() === 'image' || msg?.imageUrl) {
-                  return imageDims ? { width: imageDims.width, minHeight: 'auto' } : { width: 260, minHeight: 'auto' };
+                  return preImageDims ? { width: preImageDims.width, minHeight: 'auto' } : { width: 260, minHeight: 'auto' };
                 }
                 if (msgType?.toLowerCase() === 'video' || msg?.videoUrl || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp4|webm|ogg|mov)$/i))) {
-                  return videoDims ? { width: videoDims.width, minHeight: 'auto' } : { minHeight: 'auto' };
+                  return preVideoDims ? { width: preVideoDims.width, minHeight: 'auto' } : { minHeight: 'auto' };
                 }
                 if (isAudio) {
                   return { width: 'min(280px, 70vw)', minHeight: 'auto' };
@@ -200,7 +213,7 @@ const MessageBubble = memo(function MessageBubble({
                   <>
                     <div
                       className="message-image-wrapper"
-                      style={imageDims ? { position: 'relative', width: imageDims.width, height: imageDims.height, maxWidth: '100%' } : { position: 'relative', width: 260, height: 200, maxWidth: '100%' }}
+                      style={preImageDims ? { position: 'relative', width: preImageDims.width, height: preImageDims.height, maxWidth: '100%' } : { position: 'relative', width: 260, height: 200, maxWidth: '100%' }}
                       onClick={() =>
                         setMediaViewer({
                           open: true,
@@ -219,7 +232,6 @@ const MessageBubble = memo(function MessageBubble({
                         />
                       )}
                       <img
-                        key={imageSrc}
                         src={imageSrc}
                         alt="media"
                         style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8, opacity: loadedMedia[messageId] ? 1 : 0, transition: 'opacity 0.3s ease', position: 'relative', zIndex: 2 }}
@@ -243,7 +255,7 @@ const MessageBubble = memo(function MessageBubble({
                 ) : msgType?.toLowerCase() === 'video' || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) ? (
                   <div
                     className="message-video-wrapper"
-                    style={videoDims ? { width: videoDims.width, height: videoDims.height, maxWidth: '100%' } : {}}
+                    style={preVideoDims ? { width: preVideoDims.width, height: preVideoDims.height, maxWidth: '100%' } : {}}
                   >
                     <div
                       className="message-video-inner"
@@ -431,6 +443,17 @@ const MessageBubble = memo(function MessageBubble({
   );
 });
 
+/* Document icon helper */
+const getDocIcon = (name = '') => {
+  const lower = name.toLowerCase();
+  if (lower.endsWith('.pdf')) return '/pdf.png';
+  if (lower.endsWith('.doc') || lower.endsWith('.docx')) return '/word.png';
+  if (lower.endsWith('.txt')) return '/txt.png';
+  if (lower.endsWith('.xls') || lower.endsWith('.xlsx')) return '/excel.png';
+  if (lower.endsWith('.ppt') || lower.endsWith('.pptx')) return '/word.png';
+  return '/pdf.png';
+};
+
 /* Document Card */
 function DocumentCard({ msg, setMediaViewer, mediaCache }) {
   const fileName = msg?.fileName || msg?.content || msg?.Message || 'Document';
@@ -442,12 +465,7 @@ function DocumentCard({ msg, setMediaViewer, mediaCache }) {
   };
   const href = resolveMediaUrl(msg?.documentUrl || msg?.DocumentUrl || msg?.mediaUrl || msg?.MediaUrl);
 
-  const isExcel = ['XLS', 'XLSX', 'CSV'].includes(ext);
-  const isWord = ['DOC', 'DOCX'].includes(ext);
-  const isPdf = ext === 'PDF';
-
-  const Icon = FileText;
-  const iconColor = isExcel ? '#217346' : isWord ? '#2B579A' : isPdf ? '#F40F02' : '#666';
+  const docIcon = getDocIcon(fileName);
 
   return (
     <div
@@ -462,8 +480,8 @@ function DocumentCard({ msg, setMediaViewer, mediaCache }) {
         })
       }
     >
-      <div className="message-document-icon" style={{ backgroundColor: `${iconColor}18`, color: iconColor }}>
-        <Icon size={22} />
+      <div className="message-document-icon">
+        <img src={docIcon} alt="document" style={{ width: 24, height: 24, objectFit: 'contain' }} />
       </div>
       <div className="message-document-info">
         <div className="message-document-name" title={fileName}>

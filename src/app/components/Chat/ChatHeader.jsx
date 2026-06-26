@@ -28,7 +28,7 @@ export default function ChatHeader({
   escalatedList,
   setEscalatedList,
   auth,
-  setDetailsOpen,
+  onToggleDetails,
   onDeleteTag,
 }) {
   const can = useAuthStore((s) => s.can);
@@ -64,9 +64,9 @@ export default function ChatHeader({
         <Avatar
           {...baseAvatarConfig}
           sx={{ ...baseAvatarConfig.sx, width: 40, height: 40, cursor: 'pointer' }}
-          onClick={() => setDetailsOpen(true)}
+          onClick={onToggleDetails}
         />
-        <div className="chat-conv-header-info">
+        <div className="chat-conv-header-info" onClick={onToggleDetails}>
           <p className="chat-conv-header-name">{getCustomerDisplayName(selectedCustomer)}</p>
           {selectedCustomer?.CustomerPhone && (
             <p className="chat-conv-header-phone">{selectedCustomer.CustomerPhone}</p>
