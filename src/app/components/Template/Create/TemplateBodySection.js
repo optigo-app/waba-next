@@ -18,16 +18,17 @@ const TemplateBodySection = ({
     onEmojiSelect,
     onAddVariablePlaceholder,
     onVariableValueChange,
+    textareaRef,
 }) => {
     return (
-        <Paper elevation={0} sx={{ p: 3, mb: 2, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+        <Paper elevation={0} className={styles.sectionCard} sx={{ p: 2.5, mb: 2, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
             <h3 className={styles.sectionTitle}>Body <span style={{ color: 'red' }}>*</span></h3>
             <p className={styles.sectionSubtitle}>Enter the text for your message in the language that you've selected.</p>
             <TemplateBodyInput
                 value={body}
                 onChange={(value) => onBodyChange(value)}
                 placeholder="Enter body text"
-                minRows={6}
+                minRows={1}
                 maxRows={12}
                 maxLength={1024}
                 error={saveError === 'Template body is required.'}
@@ -41,6 +42,7 @@ const TemplateBodySection = ({
                 onEmojiSelect={onEmojiSelect}
                 onAddVariablePlaceholder={onAddVariablePlaceholder}
                 styles={styles}
+                textareaRef={textareaRef}
             />
             {variableKeys.length > 0 && (
                 <Box className={styles.variableSection}>

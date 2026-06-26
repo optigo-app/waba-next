@@ -7,7 +7,7 @@ export const ExcelImport = async (file, userid, CampaignId) => {
     formData.append("userid", userid);
     formData.append("CampaignId", CampaignId);
 
-    const response = await fetch(EXCELIMPORT(), {
+    const response = await fetch(EXCELIMPORT, {
       method: 'POST',
       headers: getHeaders(),
       body: formData,

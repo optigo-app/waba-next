@@ -1,8 +1,9 @@
 'use client';
 
 import { useState, useEffect, useCallback, useRef } from 'react';
-import { Box, IconButton, Dialog, Typography, CircularProgress } from '@mui/material';
-import { X, Download, ChevronLeft, ChevronRight, FileText, FileSpreadsheet, File } from 'lucide-react';
+import { Box, Typography, CircularProgress } from '@mui/material';
+import { X, Download, ChevronLeft, ChevronRight, FileText, FileSpreadsheet, File, ZoomIn, ZoomOut } from 'lucide-react';
+import './styles/MediaViewer.scss';
 
 const getMediaType = (item) => {
   if (item.type) return item.type;
@@ -27,18 +28,20 @@ export default function MediaViewer({
   onClose,
   src,
   filename,
+  type,
   mediaItems: propMediaItems,
   initialIndex = 0,
 }) {
   const [currentIndex, setCurrentIndex] = useState(initialIndex);
   const [loading, setLoading] = useState(true);
+  const [zoomed, setZoomed] = useState(false);
   const containerRef = useRef(null);
 
   // Normalize inputs: support both legacy single-item and new multi-item modes
   const items = propMediaItems && propMediaItems.length > 0
     ? propMediaItems
     : src
-      ? [{ src, name: filename || 'Media', type: getMediaType({ src, name: filename }) }]
+      ? [{ src, name: filename || 'Media', type: type || getMediaType({ src, name: filename }) }]
       : [];
 
   const currentItem = items[currentIndex] || items[0];
@@ -51,6 +54,7 @@ export default function MediaViewer({
 
   useEffect(() => {
     setLoading(true);
+    setZoomed(false);
   }, [currentIndex]);
 
   const handleDownload = useCallback(() => {
@@ -100,7 +104,9 @@ export default function MediaViewer({
           <img
             src={item.src}
             alt={item.name || 'preview'}
-            style={{ maxWidth: '100%', maxHeight: '90vh', objectFit: 'contain', borderRadius: 8, opacity: loading ? 0 : 1, transition: 'opacity 0.3s' }}
+            className={`media-viewer-media ${zoomed ? 'zoomed' : ''}`}
+            style={{ opacity: loading ? 0 : 1, transition: 'opacity 0.3s' }}
+            onClick={() => setZoomed((z) => !z)}
             onLoad={() => setLoading(false)}
             onError={() => setLoading(false)}
           />
@@ -111,7 +117,7 @@ export default function MediaViewer({
             src={item.src}
             controls
             autoPlay
-            style={{ maxWidth: '100%', maxHeight: '90vh', borderRadius: 8 }}
+            className="media-viewer-media"
             onLoadedData={() => setLoading(false)}
             onError={() => setLoading(false)}
           />
@@ -178,49 +184,52 @@ export default function MediaViewer({
     }
   };
 
+  const handleOverlayClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
-    <Dialog
-      open={open}
-      onClose={onClose}
-      maxWidth={false}
-      fullScreen
-      PaperProps={{
-        sx: {
-          bgcolor: 'rgba(0,0,0,0.94)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-        },
-      }}
-    >
+    <div className="media-viewer-overlay" onClick={handleOverlayClick}>
       {/* Top toolbar */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          right: 0,
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          p: 2,
-          zIndex: 10,
-        }}
-      >
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-          <IconButton onClick={onClose} sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
-            <X size={22} />
-          </IconButton>
+      <div className="media-viewer-toolbar">
+        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+          <button
+            className="media-viewer-btn media-viewer-btn--close"
+            onClick={onClose}
+            aria-label="Close"
+            title="Close (Esc)"
+          >
+            <X size={20} />
+          </button>
           {items.length > 1 && (
-            <Typography sx={{ color: '#fff', fontSize: 14, fontWeight: 500, opacity: 0.9 }}>
+            <span className="media-viewer-counter">
               {currentIndex + 1} / {items.length}
-            </Typography>
+            </span>
           )}
-        </Box>
-        <IconButton onClick={handleDownload} sx={{ color: '#fff', bgcolor: 'rgba(255,255,255,0.15)', '&:hover': { bgcolor: 'rgba(255,255,255,0.25)' } }}>
-          <Download size={22} />
-        </IconButton>
-      </Box>
+        </div>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <button
+            className="media-viewer-btn"
+            onClick={handleDownload}
+            aria-label="Download"
+            title="Download"
+          >
+            <Download size={20} />
+          </button>
+          {currentType === 'image' && (
+            <button
+              className="media-viewer-btn"
+              onClick={() => setZoomed((z) => !z)}
+              aria-label={zoomed ? 'Zoom out' : 'Zoom in'}
+              title={zoomed ? 'Fit to screen' : 'Full size'}
+            >
+              {zoomed ? <ZoomOut size={20} /> : <ZoomIn size={20} />}
+            </button>
+          )}
+        </div>
+      </div>
 
       {/* Navigation arrows */}
       {items.length > 1 && (
@@ -230,27 +239,33 @@ export default function MediaViewer({
             className="media-viewer-nav-btn media-viewer-prev"
             aria-label="Previous"
           >
-            <ChevronLeft size={28} />
+            <ChevronLeft size={24} />
           </button>
           <button
             onClick={goNext}
             className="media-viewer-nav-btn media-viewer-next"
             aria-label="Next"
           >
-            <ChevronRight size={28} />
+            <ChevronRight size={24} />
           </button>
         </>
       )}
 
       {/* Media content */}
-      <Box ref={containerRef} sx={{ maxWidth: '95vw', maxHeight: '95vh', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+      <div className="media-viewer-content" ref={containerRef}>
         {loading && currentType !== 'video' && currentType !== 'audio' && (
-          <Box sx={{ position: 'absolute', zIndex: 1 }}>
+          <div className="media-viewer-loading">
             <CircularProgress size={40} sx={{ color: '#fff' }} />
-          </Box>
+          </div>
         )}
         {renderContent()}
-      </Box>
-    </Dialog>
+      </div>
+
+      {/* Hint */}
+      <div className="media-viewer-hint">
+        {currentType === 'image' ? 'Click image to zoom · ' : ''}
+        Press Esc to close · Click outside to close
+      </div>
+    </div>
   );
 }

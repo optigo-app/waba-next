@@ -44,6 +44,18 @@
   display: inline-block;
   width: auto;
   vertical-align: bottom;
+  animation: messageBubbleFadeIn 0.35s ease-out;
+}
+
+@keyframes messageBubbleFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(6px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .message-bubble:hover {
@@ -65,7 +77,6 @@
 
 .message-text {
   line-height: 1.2;
-  font-family: var(--chat-font);
   font-size: 14px;
   font-weight: 500;
   white-space: pre-wrap;
@@ -90,7 +101,7 @@
 }
 
 .message-bubble.customer .message-time {
-  color: #6b7280;
+  color: #a8a8a8;
 }
 
 .message-status {
@@ -138,12 +149,25 @@
   border-radius: 8px;
   overflow: hidden;
   width: 100%;
-  min-height: clamp(160px, 35vw, 240px);
+}
+
+/* Wrapper around media + caption so text width matches media (WhatsApp-style) */
+.message-media-caption-wrap {
+  display: inline-block;
+  max-width: 100%;
+}
+
+.message-media-caption-wrap .message-media {
+  margin-bottom: 4px;
+}
+
+.message-media-caption-wrap .message-text {
+  width: 100%;
+  padding: 0 2px;
 }
 
 .message-media img {
   width: 100%;
-  max-height: 240px;
   object-fit: contain;
   display: block;
   border-radius: 8px;
@@ -162,7 +186,7 @@
 .message-image-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
   border-radius: 8px;
   display: block;
   transition: opacity 0.3s ease;
@@ -172,11 +196,11 @@
 .message-video-wrapper {
   position: relative;
   width: 100%;
-  max-width: min(350px, 65vw);
-  height: clamp(160px, 35vw, 240px);
+  max-width: min(330px, 70vw);
+  min-height: 160px;
+  aspect-ratio: auto;
   border-radius: 8px;
   overflow: hidden;
-  background: #000;
 }
 
 .message-video-inner {
@@ -307,6 +331,177 @@
 .message-document-download:hover {
   color: var(--chat-primary);
   background: rgba(37, 211, 102, 0.08);
+}
+
+/* ─── Audio Player ───────────────────────────────────────────────────────── */
+.message-audio-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  width: 100%;
+  max-width: min(280px, 70vw);
+  min-height: 56px;
+}
+
+.message-audio-play-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: var(--chat-primary);
+  color: #fff;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: transform 0.15s, opacity 0.15s;
+}
+
+.message-audio-play-btn:hover {
+  opacity: 0.9;
+  transform: scale(1.05);
+}
+
+.message-audio-track {
+  flex: 1 1 auto;
+  height: 4px;
+  background: rgba(0, 0, 0, 0.12);
+  border-radius: 2px;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.message-audio-progress {
+  height: 100%;
+  background: var(--chat-primary);
+  border-radius: 2px;
+  transition: width 0.1s linear;
+}
+
+.message-audio-time {
+  font-size: 11px;
+  color: var(--chat-secondary-color);
+  font-variant-numeric: tabular-nums;
+  flex-shrink: 0;
+  min-width: 32px;
+  text-align: right;
+}
+
+/* ─── Link Preview ───────────────────────────────────────────────────────── */
+.message-link-preview {
+  display: block;
+  margin-top: 6px;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, 0.03);
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  border-radius: 8px;
+  text-decoration: none;
+  color: inherit;
+  transition: background 0.15s;
+  max-width: min(320px, 70vw);
+}
+
+.message-link-preview:hover {
+  background: rgba(0, 0, 0, 0.06);
+}
+
+.message-link-preview-domain {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--chat-title-color);
+  margin-bottom: 2px;
+}
+
+.message-link-preview-favicon {
+  color: var(--chat-secondary-color);
+  display: flex;
+  align-items: center;
+}
+
+.message-link-preview-url {
+  font-size: 11px;
+  color: var(--chat-secondary-color);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* ─── Broken media card (image/video load failure) ────────────────────── */
+.message-broken-media-card {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 12px;
+  background: rgba(255, 68, 68, 0.04);
+  border: 1px solid rgba(255, 68, 68, 0.12);
+  border-radius: 10px;
+  cursor: pointer;
+  max-width: min(320px, 70vw);
+  transition: background 0.15s;
+}
+
+.message-broken-media-card:hover {
+  background: rgba(255, 68, 68, 0.08);
+}
+
+.message-broken-media-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.message-broken-media-info {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.message-broken-media-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--chat-title-color);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.message-broken-media-ext {
+  font-size: 0.7rem;
+  color: #ff4444;
+  text-transform: uppercase;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.message-broken-media-action {
+  flex-shrink: 0;
+  color: var(--chat-secondary-color);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 6px;
+  transition: color 0.15s, background 0.15s;
+}
+
+.message-broken-media-action:hover {
+  color: #ff4444;
+  background: rgba(255, 68, 68, 0.08);
 }
 
 /* ─── Reply indicator inside bubble ─────────────────────────────────────── */
@@ -543,6 +738,7 @@
 /* ─── WhatsApp Template ──────────────────────────────────────────────────── */
 .whatsapp-template-skeleton {
   width: min(380px, 72vw);
+  min-width: min(240px, 55vw);
   margin-bottom: 6px;
   animation: skeletonFadeIn 0.3s ease;
 }
@@ -554,6 +750,7 @@
 
 .whatsapp-template-error {
   width: min(380px, 72vw);
+  min-width: min(240px, 55vw);
   padding: 14px;
   font-size: 13px;
   font-style: italic;
@@ -571,6 +768,7 @@
   overflow: hidden;
   margin-top: 4px;
   max-width: min(380px, 72vw);
+  min-width: min(240px, 55vw);
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
   pointer-events: none;
   animation: templateFadeIn 0.3s ease;
@@ -591,7 +789,6 @@
 .whatsapp-template .template-header.image img,
 .whatsapp-template .template-header.video video {
   width: 100%;
-  max-height: 240px;
   object-fit: contain;
   display: block;
   background: #111b21;
@@ -694,20 +891,29 @@
     font-size: 13px;
   }
 
-  .message-media {
-    min-height: 140px;
-  }
-
   .message-media img {
     max-height: 180px;
   }
 
   .message-video-wrapper {
     max-width: min(350px, 72vw);
-    height: 180px;
+    min-height: 140px;
+  }
+
+  .message-audio-player {
+    max-width: min(280px, 75vw);
+  }
+
+  .message-link-preview {
+    max-width: min(320px, 75vw);
   }
 
   .message-document-card {
+    max-width: min(320px, 70vw);
+    padding: 8px 10px;
+  }
+
+  .message-broken-media-card {
     max-width: min(320px, 70vw);
     padding: 8px 10px;
   }

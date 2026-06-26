@@ -8,9 +8,6 @@ import {
     Paper,
     Alert,
     CircularProgress,
-    Accordion,
-    AccordionSummary,
-    AccordionDetails,
 } from '@mui/material';
 import {
     Globe,
@@ -19,18 +16,10 @@ import {
     AlertTriangle,
     RefreshCw,
     ChevronRight,
-    ChevronDown,
     Smartphone,
-    MessageSquare,
-    TrendingUp,
-    Lock,
 } from 'lucide-react';
-import { exchangeToken } from '../../api/OnboardingApi';
+import { exchangeToken, saveOnboardingData } from '../../api/OnboardingApi';
 import { useAuth } from '../../hooks/useAuth';
-
-const APP_ID = '833458239205319';
-const CONFIG_ID = '2087756442076627';
-const API_BASE = 'https://graph.facebook.com/v19.0';
 
 const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
     const [signupData, setSignupData] = useState(null);
@@ -38,10 +27,9 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
     const [loading, setLoading] = useState(false);
     const [isProcessing, setIsProcessing] = useState(false);
     const [sdkLoaded, setSdkLoaded] = useState(false);
-    const [phoneDetails, setPhoneDetails] = useState(null);
-    const [fetchingDetails, setFetchingDetails] = useState(false);
     const [copiedField, setCopiedField] = useState(null);
-    const [accessTokenInput, setAccessTokenInput] = useState('');
+    const [retryCount, setRetryCount] = useState(0);
+    const MAX_RETRIES = 3;
 
     const { auth } = useAuth();
     const appUserId = auth?.userid || auth?.userId || auth?.appuserid || '';
@@ -51,8 +39,6 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
     }, []);
 
     useEffect(() => {
-        // Inject Meta Embedded Signup CSS custom properties for theming
-        // Newer SDK iframe renders may respect these variables
         const styleId = 'waba-embedded-signup-theme';
         if (!document.getElementById(styleId)) {
             const style = document.createElement('style');
@@ -78,7 +64,7 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
         if (!window.FB) {
             window.fbAsyncInit = function () {
                 window.FB.init({
-                    appId: APP_ID,
+                    appId: process.env.NEXT_PUBLIC_WABA_APP_ID,
                     autoLogAppEvents: true,
                     xfbml: true,
                     version: 'v24.0',
@@ -88,7 +74,7 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
             };
 
             const script = document.createElement('script');
-            script.src = 'https://connect.facebook.net/en_US/sdk.js';
+            script.src = process.env.NEXT_PUBLIC_WABA_FB_SDK;
             script.async = true;
             script.defer = true;
             script.crossOrigin = 'anonymous';
@@ -144,6 +130,11 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
                 console.log('[EmbeddedSignup] Already processed, skipping');
                 return;
             }
+            if (retryCount >= MAX_RETRIES) {
+                setError('Maximum retry attempts reached. Please restart the signup process.');
+                setIsProcessing(false);
+                return;
+            }
 
             console.log('[EmbeddedSignup] Starting token exchange...');
             setSignupData((prev) => ({ ...prev, apiProcessed: true }));
@@ -151,35 +142,57 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
             setError(null);
 
             try {
+                const isLocalhost = typeof window !== 'undefined' && window.location.origin.includes('localhost');
+                const redirectUri = typeof window !== 'undefined'
+                    ? `${window.location.origin}${isLocalhost ? '' : (auth?.redirect_version || '')}/onboarding`
+                    : '';
                 const exchangeRes = await exchangeToken(
                     signupData.authCode,
-                    signupData.phoneNumberId,
-                    signupData.wabaId,
-                    appUserId,
-                    typeof window !== 'undefined' ? window.location.origin : ''
+                    redirectUri,
+                    signupData.phoneNumberId || ''
                 );
                 console.log('[EmbeddedSignup] exchangeToken response:', exchangeRes);
 
+                if (!exchangeRes?.success) {
+                    const errMsg = exchangeRes?.error || 'Token exchange failed. Please try again.';
+                    setError(errMsg);
+                    setSignupData((prev) => ({ ...prev, apiProcessed: false }));
+                    setRetryCount((prev) => prev + 1);
+                    return;
+                }
+
                 const token =
-                    exchangeRes?.data?.accessToken ||
-                    exchangeRes?.data?.token ||
-                    exchangeRes?.data?.AccessToken ||
+                    exchangeRes?.data?.long_lived_token ||
+                    exchangeRes?.data?.short_lived_token ||
                     '';
 
-                const account = {
-                    id: `emb_${Date.now()}`,
-                    name: `Account ${signupData.phoneNumberId.slice(-4)}`,
-                    phoneId: signupData.phoneNumberId,
-                    wabaId: signupData.wabaId,
-                    token: token,
-                    authCode: signupData.authCode,
-                    source: 'embedded',
-                    createdAt: new Date().toISOString(),
+                if (!token) {
+                    setError('No access token received from Meta. Please try again.');
+                    setSignupData((prev) => ({ ...prev, apiProcessed: false }));
+                    setRetryCount((prev) => prev + 1);
+                    return;
+                }
+
+                const credentials = {
+                    companycode: auth?.companycode || auth?.CompanyCode || '',
+                    UserPhone: signupData.phoneNumberId,
+                    WabaId: signupData.wabaId,
+                    WabaPhoneNo: signupData.phoneNumberId,
+                    AppId: process.env.NEXT_PUBLIC_WABA_APP_ID || '',
+                    WabaKey: token,
                 };
 
-                console.log('[EmbeddedSignup] Account ready — calling onSuccess');
+                console.log('[EmbeddedSignup] Saving credentials to DB...');
+                const saveRes = await saveOnboardingData(appUserId, credentials);
+                if (!saveRes?.success) {
+                    setError('Failed to save account details. Please try again.');
+                    setSignupData((prev) => ({ ...prev, apiProcessed: false }));
+                    setRetryCount((prev) => prev + 1);
+                    return;
+                }
+                console.log('[EmbeddedSignup] Account saved — calling onSuccess');
                 if (onSuccess) {
-                    onSuccess(account);
+                    onSuccess(credentials);
                 }
             } catch (err) {
                 setError('Failed to exchange token or save credentials. Please try again.');
@@ -210,15 +223,13 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
                         authCode: code,
                         authResponse: response.authResponse,
                     }));
-                    // Note: automatic token exchange removed since backend endpoint may differ.
-                    // The auth code is preserved for manual exchange or backend processing.
                 } else {
                     setError('Login was cancelled or not authorized');
                     setLoading(false);
                 }
             },
             {
-                config_id: CONFIG_ID,
+                config_id: process.env.NEXT_PUBLIC_WABA_CONFIG_ID,
                 response_type: 'code',
                 override_default_response_type: true,
                 extras: {
@@ -230,64 +241,29 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
         );
     };
 
-    const fetchPhoneNumberDetails = async (phoneNumberId, token) => {
-        if (!phoneNumberId || !token) return;
-        setFetchingDetails(true);
-        setError(null);
+    const handleCopy = async (text, field) => {
         try {
-            const res = await fetch(
-                `${API_BASE}/${phoneNumberId}?fields=verified_name,code_verification_status,display_phone_number,quality_rating,messaging_limit_tier,account_mode,is_official_business_account,name_status,new_name_status,certificate,two_factor_enabled`,
-                { headers: { Authorization: `Bearer ${token}` } }
-            );
-            const data = await res.json();
-            if (data.error) {
-                setError(`Failed to fetch details: ${data.error.message}`);
-            } else {
-                setPhoneDetails(data);
-            }
-        } catch (err) {
-            setError(`Failed to fetch phone details: ${err.message}`);
-        } finally {
-            setFetchingDetails(false);
+            await navigator.clipboard.writeText(text);
+            setCopiedField(field);
+            setTimeout(() => setCopiedField(null), 2000);
+        } catch {
+            // Fallback for insecure contexts
+            const ta = document.createElement('textarea');
+            ta.value = text;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            setCopiedField(field);
+            setTimeout(() => setCopiedField(null), 2000);
         }
-    };
-
-    const handleCopy = (text, field) => {
-        navigator.clipboard.writeText(text);
-        setCopiedField(field);
-        setTimeout(() => setCopiedField(null), 2000);
     };
 
     const handleReset = () => {
         setSignupData(null);
         setError(null);
         setLoading(false);
-        setPhoneDetails(null);
-        setAccessTokenInput('');
-    };
-
-    const getQualityColor = (rating) => {
-        if (rating === 'GREEN') return '#1daa61';
-        if (rating === 'YELLOW') return '#d69e2e';
-        if (rating === 'RED') return '#e53e3e';
-        return '#6D6B77';
-    };
-
-    const getQualityIcon = (rating) => {
-        if (rating === 'GREEN') return <TrendingUp size={18} />;
-        if (rating === 'YELLOW') return <AlertTriangle size={18} />;
-        if (rating === 'RED') return <AlertTriangle size={18} />;
-        return <Smartphone size={18} />;
-    };
-
-    const getTierLabel = (tier) => {
-        const tiers = {
-            TIER_1K: '1K users/day',
-            TIER_10K: '10K users/day',
-            TIER_100K: '100K users/day',
-            TIER_UNLIMITED: 'Unlimited',
-        };
-        return tiers[tier] || tier || 'Unknown';
+        setRetryCount(0);
     };
 
     return (
@@ -641,261 +617,6 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
                             </Paper>
                         )}
                     </Box>
-
-                    {!phoneDetails && (
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                p: 2.5,
-                                borderRadius: '14px',
-                                border: '1px solid rgba(29,170,97,0.18)',
-                                background: 'rgba(29,170,97,0.03)',
-                                mb: 3,
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontFamily: 'Poppins, sans-serif',
-                                    fontWeight: 600,
-                                    fontSize: '0.85rem',
-                                    color: '#444050',
-                                    mb: 1,
-                                }}
-                            >
-                                Fetch Phone Number Details
-                            </Typography>
-                            <Typography
-                                sx={{
-                                    fontFamily: 'Poppins, sans-serif',
-                                    fontSize: '0.78rem',
-                                    color: '#6D6B77',
-                                    mb: 2,
-                                    lineHeight: 1.6,
-                                }}
-                            >
-                                Enter your Access Token to fetch Number Status, Quality Score, Message Limit, and 2FA status.
-                            </Typography>
-                            <Box sx={{ display: 'flex', gap: 1.5 }}>
-                                <Box
-                                    component="input"
-                                    type="password"
-                                    placeholder="Enter Access Token (EAAxxxxx...)"
-                                    value={accessTokenInput}
-                                    onChange={(e) => setAccessTokenInput(e.target.value)}
-                                    sx={{
-                                        flex: 1,
-                                        p: '10px 14px',
-                                        borderRadius: '10px',
-                                        border: '1px solid #e4e8ee',
-                                        fontFamily: 'Poppins, sans-serif',
-                                        fontSize: '0.82rem',
-                                        outline: 'none',
-                                        background: '#fff',
-                                        '&:focus': {
-                                            borderColor: '#1daa61',
-                                            boxShadow: '0 0 0 3px rgba(29,170,97,0.08)',
-                                        },
-                                    }}
-                                />
-                                <Button
-                                    variant="contained"
-                                    disableElevation
-                                    onClick={() => {
-                                        if (accessTokenInput && signupData.phoneNumberId) {
-                                            fetchPhoneNumberDetails(signupData.phoneNumberId, accessTokenInput);
-                                        } else {
-                                            setError('Please enter an access token');
-                                        }
-                                    }}
-                                    disabled={fetchingDetails}
-                                    startIcon={fetchingDetails ? <CircularProgress size={14} color="inherit" /> : <RefreshCw size={16} />}
-                                    sx={{
-                                        textTransform: 'none',
-                                        borderRadius: '10px',
-                                        fontFamily: 'Poppins, sans-serif',
-                                        fontWeight: 600,
-                                        fontSize: '0.8rem',
-                                        background: '#1daa61',
-                                        whiteSpace: 'nowrap',
-                                        '&:hover': { background: '#1a9a57' },
-                                    }}
-                                >
-                                    {fetchingDetails ? 'Fetching...' : 'Fetch Details'}
-                                </Button>
-                            </Box>
-                        </Paper>
-                    )}
-
-                    {phoneDetails && (
-                        <Paper
-                            elevation={0}
-                            sx={{
-                                p: 2.5,
-                                borderRadius: '14px',
-                                border: '1px solid rgba(29,170,97,0.18)',
-                                background: 'rgba(29,170,97,0.03)',
-                                mb: 3,
-                            }}
-                        >
-                            <Typography
-                                sx={{
-                                    fontFamily: 'Poppins, sans-serif',
-                                    fontWeight: 600,
-                                    fontSize: '0.9rem',
-                                    color: '#444050',
-                                    mb: 2,
-                                    display: 'flex',
-                                    alignItems: 'center',
-                                    gap: 1,
-                                }}
-                            >
-                                <Smartphone size={18} color="#1daa61" />
-                                Phone Number Details
-                            </Typography>
-
-                            <Box
-                                sx={{
-                                    display: 'grid',
-                                    gridTemplateColumns: 'repeat(2, 1fr)',
-                                    gap: 1.5,
-                                    mb: 2,
-                                }}
-                            >
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: 2,
-                                        borderRadius: '10px',
-                                        border: '1px solid #e4e8ee',
-                                        background: '#fff',
-                                    }}
-                                >
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.7rem', color: '#6D6B77', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
-                                        Number Status
-                                    </Typography>
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.95rem', fontWeight: 600, color: '#444050', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <Smartphone size={16} />
-                                        {phoneDetails.code_verification_status === 'VERIFIED' ? 'CONNECTED' : phoneDetails.code_verification_status || 'UNKNOWN'}
-                                    </Typography>
-                                </Paper>
-
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: 2,
-                                        borderRadius: '10px',
-                                        border: '1px solid #e4e8ee',
-                                        background: '#fff',
-                                    }}
-                                >
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.7rem', color: '#6D6B77', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
-                                        Quality Score
-                                    </Typography>
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.95rem', fontWeight: 600, color: getQualityColor(phoneDetails.quality_rating), display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        {getQualityIcon(phoneDetails.quality_rating)}
-                                        {phoneDetails.quality_rating || 'UNKNOWN'}
-                                    </Typography>
-                                </Paper>
-
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: 2,
-                                        borderRadius: '10px',
-                                        border: '1px solid #e4e8ee',
-                                        background: '#fff',
-                                    }}
-                                >
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.7rem', color: '#6D6B77', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
-                                        Message Limit
-                                    </Typography>
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.95rem', fontWeight: 600, color: '#444050', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <MessageSquare size={16} />
-                                        {getTierLabel(phoneDetails.messaging_limit_tier)}
-                                    </Typography>
-                                </Paper>
-
-                                <Paper
-                                    elevation={0}
-                                    sx={{
-                                        p: 2,
-                                        borderRadius: '10px',
-                                        border: '1px solid #e4e8ee',
-                                        background: '#fff',
-                                    }}
-                                >
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.7rem', color: '#6D6B77', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
-                                        2FA Enabled
-                                    </Typography>
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.95rem', fontWeight: 600, color: '#444050', display: 'flex', alignItems: 'center', gap: 0.5 }}>
-                                        <Lock size={16} />
-                                        {phoneDetails.two_factor_enabled ? 'Yes' : 'No'}
-                                    </Typography>
-                                </Paper>
-                            </Box>
-
-                            {phoneDetails.display_phone_number && (
-                                <Box sx={{ mb: 1.5 }}>
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.7rem', color: '#6D6B77', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
-                                        Display Phone Number
-                                    </Typography>
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.88rem', fontWeight: 600, color: '#444050' }}>
-                                        {phoneDetails.display_phone_number}
-                                    </Typography>
-                                </Box>
-                            )}
-
-                            {phoneDetails.verified_name && (
-                                <Box>
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.7rem', color: '#6D6B77', textTransform: 'uppercase', letterSpacing: '0.05em', mb: 0.5 }}>
-                                        Verified Name
-                                    </Typography>
-                                    <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.88rem', fontWeight: 600, color: '#444050' }}>
-                                        {phoneDetails.verified_name}
-                                    </Typography>
-                                </Box>
-                            )}
-                        </Paper>
-                    )}
-
-                    <Accordion
-                        elevation={0}
-                        sx={{
-                            borderRadius: '12px',
-                            border: '1px solid #e4e8ee',
-                            mb: 2,
-                            '&:before': { display: 'none' },
-                            overflow: 'hidden',
-                        }}
-                    >
-                        <AccordionSummary
-                            expandIcon={<ChevronDown size={18} color="#6D6B77" />}
-                            sx={{
-                                fontFamily: 'Poppins, sans-serif',
-                                fontWeight: 600,
-                                fontSize: '0.85rem',
-                                color: '#444050',
-                            }}
-                        >
-                            How to Get an Access Token
-                        </AccordionSummary>
-                        <AccordionDetails>
-                            <Typography
-                                sx={{
-                                    fontFamily: 'Poppins, sans-serif',
-                                    fontSize: '0.8rem',
-                                    color: '#6D6B77',
-                                    lineHeight: 1.7,
-                                }}
-                            >
-                                <strong>Option 1:</strong> Exchange the authorization code on your backend using the Meta OAuth endpoint.
-                                <br /><br />
-                                <strong>Option 2:</strong> Go to Meta for Developers, select your app, navigate to WhatsApp &rarr; API Setup, and generate a temporary access token.
-                                <br /><br />
-                                <strong>Option 3:</strong> Create a System User token from Meta Business Suite (never expires and is the most reliable for production).
-                            </Typography>
-                        </AccordionDetails>
-                    </Accordion>
 
                     <Button
                         variant="outlined"

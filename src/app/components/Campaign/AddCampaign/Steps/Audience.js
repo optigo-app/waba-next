@@ -478,29 +478,54 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
         }
     };
 
-    const handleGlobalDragOver = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
+    const dragCounterRef = useRef(0);
 
-        if (e.dataTransfer?.types?.includes('Files')) {
+    // Full-page drag & drop listeners
+    useEffect(() => {
+        const handleDragEnter = (e) => {
+            if (!e.dataTransfer?.types?.includes('Files')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current += 1;
             setIsDragging(true);
-        }
-    };
-
-    const handleGlobalDragLeave = (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-
-        if (!e.currentTarget.contains(e.relatedTarget)) {
+        };
+        const handleDragOver = (e) => {
+            if (!e.dataTransfer?.types?.includes('Files')) return;
+            e.preventDefault();
+            e.stopPropagation();
+            e.dataTransfer.dropEffect = 'copy';
+            setIsDragging(true);
+        };
+        const handleDragLeave = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current -= 1;
+            if (dragCounterRef.current <= 0) {
+                dragCounterRef.current = 0;
+                setIsDragging(false);
+            }
+        };
+        const handleDrop = (e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            dragCounterRef.current = 0;
             setIsDragging(false);
-        }
-    };
+        };
 
-    const handleGlobalDrop = async (e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        setIsDragging(false);
-    };
+        window.addEventListener('dragenter', handleDragEnter);
+        window.addEventListener('dragover', handleDragOver);
+        window.addEventListener('dragleave', handleDragLeave);
+        window.addEventListener('drop', handleDrop);
+
+        return () => {
+            window.removeEventListener('dragenter', handleDragEnter);
+            window.removeEventListener('dragover', handleDragOver);
+            window.removeEventListener('dragleave', handleDragLeave);
+            window.removeEventListener('drop', handleDrop);
+        };
+    }, []);
+
+    // Handlers moved to window-level useEffect above for full-page drag & drop
 
     const handleClearAudience = () => {
         setClearConfirmOpen(true);
@@ -615,23 +640,22 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
 
     return (
         <div className={styles.formCard}>
-            <div
-                className={styles.audienceContainer}
-                onDragOver={handleGlobalDragOver}
-                onDragLeave={handleGlobalDragLeave}
-                onDrop={handleGlobalDrop}
-            >
+            <div className={styles.audienceContainer}>
                 {isDragging && (
                     <Box
                         sx={{
-                            position: 'absolute',
-                            inset: 0,
-                            zIndex: 1300,
-                            backgroundColor: 'rgba(10, 20, 30, 0.45)',
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            right: 0,
+                            bottom: 0,
+                            zIndex: 9999,
+                            backgroundColor: 'rgba(29, 170, 97, 0.08)',
+                            backdropFilter: 'blur(2px)',
                             display: 'flex',
                             alignItems: 'center',
                             justifyContent: 'center',
-                            borderRadius: '12px',
+                            transition: 'opacity 0.2s ease',
                         }}
                         onDragOver={(e) => {
                             e.preventDefault();
@@ -640,48 +664,91 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
                         onDrop={(e) => {
                             e.preventDefault();
                             e.stopPropagation();
+                            dragCounterRef.current = 0;
                             setIsDragging(false);
                         }}
                     >
                         <Box
                             sx={{
-                                width: 'min(680px, 90vw)',
-                                minHeight: 260,
-                                border: '3px dashed #ffffff',
-                                borderRadius: 4,
+                                width: 'min(560px, 86vw)',
+                                minHeight: 280,
+                                border: '3px dashed var(--primary-main)',
+                                borderRadius: '20px',
                                 px: 6,
-                                py: 5,
-                                backgroundColor: 'rgba(255, 255, 255, 0.14)',
-                                backdropFilter: 'blur(4px)',
+                                py: 6,
+                                backgroundColor: 'rgba(255, 255, 255, 0.95)',
+                                boxShadow: '0 20px 60px rgba(29, 170, 97, 0.20), 0 8px 24px rgba(0,0,0,0.08)',
                                 textAlign: 'center',
-                                color: '#fff',
+                                color: 'var(--title-color)',
                                 display: 'flex',
                                 flexDirection: 'column',
                                 alignItems: 'center',
                                 justifyContent: 'center',
-                                gap: 1,
+                                gap: 2,
+                                animation: 'dragPulse 1.6s ease-in-out infinite',
+                                '@keyframes dragPulse': {
+                                    '0%, 100%': { transform: 'scale(1)', boxShadow: '0 20px 60px rgba(29, 170, 97, 0.20), 0 8px 24px rgba(0,0,0,0.08)' },
+                                    '50%': { transform: 'scale(1.02)', boxShadow: '0 24px 72px rgba(29, 170, 97, 0.30), 0 12px 32px rgba(0,0,0,0.10)' },
+                                },
                             }}
                             onDragOver={(e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                e.dataTransfer.dropEffect = 'copy';
                             }}
                             onDrop={async (e) => {
                                 e.preventDefault();
                                 e.stopPropagation();
-
+                                dragCounterRef.current = 0;
+                                setIsDragging(false);
                                 const files = Array.from(e.dataTransfer.files || []);
-                                await processDroppedExcelFile(files[0]);
+                                if (files[0]) await processDroppedExcelFile(files[0]);
                             }}
                         >
-                            <Typography variant="h5" sx={{ fontWeight: 600, mb: 1 }}>
-                                Drop Excel/CSV file here
+                            <Box
+                                sx={{
+                                    width: 72,
+                                    height: 72,
+                                    borderRadius: '50%',
+                                    backgroundColor: 'rgba(29, 170, 97, 0.10)',
+                                    display: 'flex',
+                                    alignItems: 'center',
+                                    justifyContent: 'center',
+                                    mb: 1,
+                                    animation: 'dropBounce 1.2s ease-in-out infinite',
+                                    '@keyframes dropBounce': {
+                                        '0%, 100%': { transform: 'translateY(0)' },
+                                        '50%': { transform: 'translateY(-10px)' },
+                                    },
+                                }}
+                            >
+                                <FileSpreadsheet size={34} color="var(--primary-main)" />
+                            </Box>
+                            <Typography variant="h5" sx={{ fontWeight: 700, color: 'var(--title-color)', mb: 0.5 }}>
+                                Drop file to upload
                             </Typography>
-                            <Typography variant="body1" sx={{ opacity: 0.95 }}>
-                                Drop inside this box to upload
+                            <Typography variant="body1" sx={{ color: 'var(--text-2nd-color)', fontWeight: 500 }}>
+                                Excel / CSV files accepted
                             </Typography>
-                            <Typography variant="caption" sx={{ opacity: 0.85 }}>
-                                Supported: .xlsx, .xls, .csv (Max 10MB)
-                            </Typography>
+                            <Box
+                                sx={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '6px',
+                                    mt: 1.5,
+                                    px: 2,
+                                    py: 0.5,
+                                    borderRadius: '999px',
+                                    backgroundColor: 'rgba(29, 170, 97, 0.08)',
+                                    color: 'var(--primary-main)',
+                                    fontSize: '0.75rem',
+                                    fontWeight: 600,
+                                }}
+                            >
+                                <span>Max 10MB</span>
+                                <span>·</span>
+                                <span>.xlsx .xls .csv</span>
+                            </Box>
                         </Box>
                     </Box>
                 )}

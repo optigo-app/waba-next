@@ -278,15 +278,20 @@
   justify-content: space-between;
   align-items: center;
   width: 100%;
-  gap: 10px;
+  gap: 16px;
   min-height: 22px;
 }
 
 .member-trailing {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 12px;
   flex: 0 0 auto;
+}
+
+.unread-badge {
+  flex-shrink: 0;
+  margin-left: 4px;
 }
 
 .last-message {
@@ -396,20 +401,218 @@
 .action-btn.add-customer-btn {
   position: relative;
   overflow: visible;
-  color: #fff !important;
-  background: #1daa61 !important;
-  border: 1px solid #1daa61 !important;
+  color: #15803d !important;
+  background: #dcfce7 !important;
+  border: 1px solid #86efac !important;
   border-radius: 50% !important;
   padding: 3px !important;
-  box-shadow: 0 2px 8px rgba(29, 170, 97, 0.25) !important;
+  box-shadow: none !important;
   transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease !important;
   animation: addCustomerPulse 2.5s infinite;
 }
 .action-btn.add-customer-btn:hover {
+  background: #bbf7d0 !important;
   transform: scale(1.08) translateY(-1px);
-  box-shadow: 0 8px 22px rgba(29, 170, 97, 0.32) !important;
+  box-shadow: 0 4px 12px rgba(29, 170, 97, 0.15) !important;
 }
 .action-btn.add-customer-btn:active {
   transform: scale(0.96) translateY(0px);
-  box-shadow: 0 2px 8px rgba(29, 170, 97, 0.28) !important;
+  box-shadow: 0 2px 6px rgba(29, 170, 97, 0.12) !important;
+}
+
+/* ─── Tag filter chips ──────────────────────────────────────────────────── */
+.chat-sidebar-tag-filter {
+  padding: 8px 14px 6px;
+  border-bottom: 1px solid var(--chat-sidebar-border);
+  background: var(--chat-sidebar-bg);
+}
+
+.tag-filter-scroll {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  padding-bottom: 2px;
+}
+
+.tag-filter-chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 10px;
+  border-radius: 14px;
+  border: 1px solid var(--chat-sidebar-border);
+  background: #fff;
+  color: var(--chat-secondary-color);
+  font-family: var(--chat-font);
+  font-size: 12px;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: calc(50% - 3px);
+}
+
+.tag-filter-chip:hover {
+  border-color: var(--chat-primary);
+  color: var(--chat-primary);
+  background: rgba(29, 170, 97, 0.04);
+}
+
+.tag-filter-chip.active {
+  background: var(--chat-primary);
+  color: #fff;
+  border-color: var(--chat-primary);
+}
+
+.tag-filter-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.tag-filter-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.tag-filter-more {
+  color: var(--chat-primary);
+  gap: 4px;
+  border-style: dashed;
+  flex: 0 0 auto;
+  max-width: none;
+}
+
+.tag-filter-more-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: 9px;
+  background: var(--chat-primary);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 600;
+}
+
+/* ─── Conversation tag chips in list items ────────────────────────────────── */
+.conversation-tags-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+  flex-wrap: wrap;
+}
+
+.conversation-tag-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border-radius: 10px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--chat-secondary-color);
+  background: rgba(0,0,0,0.04);
+  white-space: nowrap;
+  max-width: 80px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.conversation-tag-dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ─── Tag filter menu popup ──────────────────────────────────────────────── */
+.tag-filter-menu .MuiPaper-root {
+  border-radius: 12px !important;
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.14) !important;
+  border: 1px solid rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+}
+
+.tag-filter-menu .MuiMenuItem-root {
+  font-family: var(--chat-font);
+  font-size: 13px;
+  transition: background 0.15s ease;
+}
+
+.tag-filter-menu .MuiMenuItem-root:hover {
+  background: rgba(29, 170, 97, 0.06);
+}
+
+.tag-filter-menu .MuiMenuItem-root.Mui-selected {
+  background: rgba(29, 170, 97, 0.10);
+}
+
+.tag-filter-menu-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  background: #fff;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.06);
+}
+
+.tag-filter-menu-header input {
+  flex: 1;
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  outline: none;
+  font-family: var(--chat-font);
+  font-size: 13px;
+  color: var(--chat-title-color);
+  background: #fff;
+  min-width: 0;
+  padding: 6px 10px;
+}
+
+.tag-filter-menu-header input:focus {
+  border-color: var(--chat-primary);
+  box-shadow: 0 0 0 2px rgba(29, 170, 97, 0.15);
+}
+
+.tag-filter-menu-header input::placeholder {
+  color: var(--chat-placeholder-color);
+}
+
+.tag-filter-search-clear {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0, 0, 0, 0.06);
+  color: #666;
+  cursor: pointer;
+  transition: background 0.15s ease;
+  padding: 0;
+  flex-shrink: 0;
+}
+
+.tag-filter-search-clear:hover {
+  background: rgba(0, 0, 0, 0.12);
+}
+
+/* Menu height limit */
+.tag-filter-menu .MuiPaper-root {
+  max-height: 420px !important;
 }

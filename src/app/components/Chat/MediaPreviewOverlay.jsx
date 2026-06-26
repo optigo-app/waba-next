@@ -8,7 +8,7 @@ import 'swiper/css';
 import 'swiper/css/pagination';
 import 'swiper/css/navigation';
 import {
-  X, Plus, Paperclip, Smile, Send, FileText, ChevronLeft, ChevronRight,
+  X, Plus, Paperclip, Smile, Send, ChevronLeft, ChevronRight,
 } from 'lucide-react';
 
 export default function MediaPreviewOverlay({
@@ -65,14 +65,14 @@ export default function MediaPreviewOverlay({
 
   const current = mediaPreview[selectedPreviewIndex];
 
-  const getDocColor = (name = '') => {
+  const getDocIcon = (name = '') => {
     const lower = name.toLowerCase();
-    if (lower.endsWith('.pdf')) return '#ef4444';
-    if (lower.endsWith('.doc') || lower.endsWith('.docx')) return '#3b82f6';
-    if (lower.endsWith('.xls') || lower.endsWith('.xlsx')) return '#22c55e';
-    if (lower.endsWith('.ppt') || lower.endsWith('.pptx')) return '#f97316';
-    if (lower.endsWith('.txt')) return '#6b7280';
-    return '#9ca3af';
+    if (lower.endsWith('.pdf')) return '/pdf.png';
+    if (lower.endsWith('.doc') || lower.endsWith('.docx')) return '/doc.png';
+    if (lower.endsWith('.txt')) return '/txt.png';
+    if (lower.endsWith('.xls') || lower.endsWith('.xlsx')) return '/excel.png';
+    if (lower.endsWith('.ppt') || lower.endsWith('.pptx')) return '/ppt.png';
+    return '/pdf.png';
   };
 
   const formatSize = (bytes) => {
@@ -128,7 +128,7 @@ export default function MediaPreviewOverlay({
                 <video src={preview.previewUrl} className="media-preview-slide-img" controls />
               ) : (
                 <div className="media-preview-slide-doc">
-                  <FileText size={48} color={getDocColor(preview.name)} />
+                  <img src={getDocIcon(preview.name)} alt="document" style={{ width: 100, height: 100, objectFit: 'contain' }} />
                   <span>{preview.name}</span>
                 </div>
               )}
@@ -163,9 +163,9 @@ export default function MediaPreviewOverlay({
               {preview.type === 'image' ? (
                 <img src={preview.previewUrl} alt="" />
               ) : preview.type === 'video' ? (
-                <video src={preview.previewUrl} muted />
+                <img src="/video.png" alt="video" style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 4 }} />
               ) : (
-                <FileText size={18} color={getDocColor(preview.name)} />
+                <img src={getDocIcon(preview.name)} alt="document" style={{ width: '100%', height: '100%', objectFit: 'contain' }} />
               )}
               <button
                 className="media-preview-thumb-remove"

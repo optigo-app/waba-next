@@ -2,7 +2,7 @@
 
 import { useState, useRef, memo } from 'react';
 import { Avatar, Skeleton, Tooltip, Box, Typography } from '@mui/material';
-import { MoreVertical, ChevronDown, Paperclip, FileText, Download, AlertCircle } from 'lucide-react';
+import { MoreVertical, ChevronDown, Paperclip, FileText, Download, AlertCircle, Clock3, Check, CheckCheck, Play, Pause } from 'lucide-react';
 import DynamicTemplate from './DynamicTemplate';
 import QuickReactionMenu from './QuickReactionMenu';
 import { Emoji } from 'emoji-picker-react';
@@ -19,32 +19,16 @@ const charToUnified = (char) => {
 const imageDimsCache = new Map();
 
 const calculateImageDimensions = (naturalWidth, naturalHeight) => {
-  const MAX_W = 320;
-  const MAX_H = 240;
-  const MIN_W = 160;
-  const MIN_H = 160;
+  const MAX_W = 300;   // WhatsApp max image width
+  const MAX_H = 380;   // WhatsApp max image height (tall portraits)
 
-  const ratio = naturalWidth / naturalHeight;
-  let width = MAX_W;
-  let height = Math.round(width / ratio);
+  // Uniform scale-down to fit within max box while preserving exact aspect ratio
+  const scale = Math.min(1, MAX_W / naturalWidth, MAX_H / naturalHeight);
 
-  if (height > MAX_H) {
-    height = MAX_H;
-    width = Math.round(height * ratio);
-  }
-
-  if (width < MIN_W) {
-    width = MIN_W;
-    height = Math.round(width / ratio);
-  }
-  if (height < MIN_H) {
-    height = MIN_H;
-    width = Math.round(height * ratio);
-  }
-  if (height > MAX_H) height = MAX_H;
-  if (width > MAX_W) width = MAX_W;
-
-  return { width, height };
+  return {
+    width: Math.round(naturalWidth * scale),
+    height: Math.round(naturalHeight * scale),
+  };
 };
 
 const MessageBubble = memo(function MessageBubble({
@@ -55,6 +39,7 @@ const MessageBubble = memo(function MessageBubble({
   messageReactions,
   loadedMedia,
   setLoadedMedia,
+  mediaCache,
   setMediaViewer,
   reactionPickerMessageId,
   setReactionPickerMessageId,
@@ -65,15 +50,27 @@ const MessageBubble = memo(function MessageBubble({
   scrollToMessage,
 }) {
   const msgType = msg?.type || msg?.MessageType || 'text';
-  const imageSrc = msg?.mediaUrl || msg?.imageUrl || msg?.MediaUrl;
-  const cachedDims = imageSrc ? imageDimsCache.get(imageSrc) : null;
+  const rawImageSrc = msg?.mediaUrl || msg?.imageUrl || msg?.MediaUrl;
+  const resolveMediaUrl = (val) => {
+    if (!val || typeof val !== 'string') return val;
+    if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) return val;
+    return mediaCache?.[val] || val;
+  };
+  const imageSrc = resolveMediaUrl(rawImageSrc);
+  const cachedDims = rawImageSrc ? imageDimsCache.get(rawImageSrc) : null;
 
   const [hovered, setHovered] = useState(false);
   const [isPlaying, setIsPlaying] = useState(false);
   const [imageDims, setImageDims] = useState(cachedDims);
+  const [videoDims, setVideoDims] = useState(null);
+  const [audioProgress, setAudioProgress] = useState(0);
+  const [audioDuration, setAudioDuration] = useState(0);
+  const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const videoRef = useRef(null);
+  const audioRef = useRef(null);
 
-  const hasMedia = msgType === 'image' || msgType === 'video' || msg?.mediaUrl || msg?.imageUrl || msg?.documentUrl || msg?.MediaUrl;
+  const isAudio = msgType?.toLowerCase() === 'audio' || msg?.audioUrl || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp3|ogg|wav|m4a|aac|opus|webm)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp3|ogg|wav|m4a|aac|opus|webm)$/i));
+  const hasMedia = msgType?.toLowerCase() === 'image' || msgType?.toLowerCase() === 'video' || msgType?.toLowerCase() === 'document' || isAudio || msg?.mediaUrl || msg?.imageUrl || msg?.documentUrl || msg?.MediaUrl;
   const replyData = msg?.ContextType === 2 ? msg?.ReplyContext || msg?.replyTo : null;
   const isPickerOpen = reactionPickerMessageId === messageId;
   const isBlinking = blinkMessageId === messageId;
@@ -156,138 +153,229 @@ const MessageBubble = memo(function MessageBubble({
             </div>
           )}
 
-          {/* Media */}
-          {hasMedia && (
-            <div className="message-media" style={(msgType === 'document' || msg?.documentUrl || msg?.DocumentUrl) || imageDims ? { minHeight: 'auto' } : {}}>
-              {msgType === 'image' || msg?.imageUrl || msg?.mediaUrl || msg?.MediaUrl ? (
-                <>
-                  {!loadedMedia[messageId] && (
-                    <Skeleton
-                      variant="rectangular"
-                      width={imageDims ? imageDims.width : '100%'}
-                      height={imageDims ? imageDims.height : 240}
-                      sx={{ borderRadius: '8px', position: 'absolute', top: 0, left: 0 }}
-                    />
-                  )}
-                  <div
-                    className="message-image-wrapper"
-                    style={imageDims ? { width: imageDims.width, height: imageDims.height, maxWidth: '100%' } : { width: '100%', height: 240 }}
-                    onClick={() =>
-                      setMediaViewer({
-                        open: true,
-                        src: msg?.mediaUrl || msg?.imageUrl || msg?.MediaUrl,
-                        filename: msg?.content || msg?.Message || 'image',
-                        type: 'image',
-                      })
-                    }
-                  >
-                    <img
-                      src={msg?.mediaUrl || msg?.imageUrl || msg?.MediaUrl}
-                      alt="media"
-                      style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8, opacity: loadedMedia[messageId] ? 1 : 0, transition: 'opacity 0.3s ease' }}
-                      onLoad={(e) => {
-                        const w = e?.target?.naturalWidth || 0;
-                        const h = e?.target?.naturalHeight || 0;
-                        if (w > 0 && h > 0) {
-                          const dims = calculateImageDimensions(w, h);
-                          setImageDims(dims);
-                          if (imageSrc) imageDimsCache.set(imageSrc, dims);
-                        }
-                        setLoadedMedia((prev) => ({ ...prev, [messageId]: true }));
-                      }}
-                      onError={(e) => {
-                        e.target.style.display = 'none';
-                        setLoadedMedia((prev) => ({ ...prev, [messageId]: true }));
-                      }}
-                    />
-                  </div>
-                </>
-              ) : msgType === 'video' || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) ? (
-                <div
-                  className="message-video-wrapper"
-                >
-                  {!loadedMedia[messageId] && (
-                    <Skeleton
-                      variant="rectangular"
-                      width="100%"
-                      height={240}
-                      sx={{ borderRadius: '8px', position: 'absolute', top: 0, left: 0 }}
-                    />
-                  )}
-                  <div
-                    className="message-video-inner"
-                    onClick={() => {
-                      if (videoRef.current) {
-                        if (videoRef.current.paused) {
-                          videoRef.current.play();
-                        } else {
-                          videoRef.current.pause();
-                        }
-                      }
-                    }}
-                    onDoubleClick={(e) => {
-                      e.stopPropagation();
-                      if (videoRef.current) videoRef.current.pause();
-                      setMediaViewer({
-                        open: true,
-                        src: msg?.mediaUrl || msg?.videoUrl,
-                        filename: msg?.content || msg?.Message || 'video',
-                        type: 'video',
-                      });
-                    }}
-                  >
-                    <video
-                      ref={videoRef}
-                      src={msg?.mediaUrl || msg?.videoUrl}
-                      onLoadedData={() => setLoadedMedia((prev) => ({ ...prev, [messageId]: true }))}
-                      onError={() => setLoadedMedia((prev) => ({ ...prev, [messageId]: true }))}
-                      onPlay={() => setIsPlaying(true)}
-                      onPause={() => setIsPlaying(false)}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                        objectFit: 'cover',
-                        borderRadius: 8,
-                        opacity: loadedMedia[messageId] ? 1 : 0,
-                        transition: 'opacity 0.3s ease',
-                      }}
-                    />
-                    {/* Play overlay */}
-                    {!isPlaying && loadedMedia[messageId] && (
-                      <div className="video-play-overlay">
-                        <div className="video-play-btn">
-                          <div className="video-play-triangle" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                </div>
-              ) : msg?.documentUrl || msg?.DocumentUrl || msg?.fileName ? (
-                <DocumentCard
-                  msg={msg}
-                  setMediaViewer={setMediaViewer}
-                />
-              ) : (
-                <div className="message-doc">
-                  <Paperclip size={18} />
-                  <span>{msg?.content || msg?.Message || msg?.fileName || 'Document'}</span>
-                </div>
-              )}
-              {msg?.isUploading && msg?.percent !== undefined && (
-                <UploadProgressOverlay percent={msg.percent} />
-              )}
-            </div>
-          )}
+          {(() => {
+            if (msgType === 'template') return null;
 
-          {/* Text (skip for template messages) */}
-          {msgType !== 'template' && (msg?.content || msg?.message || msg?.text || msg?.Message) && (
-            <div className="message-text">
-              {renderLinks(
-                msg?.content || msg?.message || msg?.text || msg?.Message,
-                { onLinkClick: onExternalLinkClick }
-              )}
-            </div>
-          )}
+            const isMediaMsg = msgType?.toLowerCase() === 'image' || msgType?.toLowerCase() === 'video' || msgType?.toLowerCase() === 'document' || isAudio || msg?.documentUrl || msg?.DocumentUrl || msg?.fileName || msg?.MediaUrl;
+            const captionText = isMediaMsg
+              ? (msg?.Message || msg?.message || msg?.text || '')
+              : (msg?.content || msg?.message || msg?.text || msg?.Message || '');
+            const isJustFilename = isMediaMsg && captionText === (msg?.fileName || msg?.content || '');
+            const hasCaption = !!captionText && !isJustFilename;
+
+            const captionMediaWidth = (() => {
+              if (msgType?.toLowerCase() === 'image' || msg?.imageUrl) {
+                return imageDims ? imageDims.width : 320;
+              }
+              if (msgType?.toLowerCase() === 'video' || msg?.videoUrl || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp4|webm|ogg|mov)$/i))) {
+                return videoDims ? videoDims.width : 'min(330px, 70vw)';
+              }
+              if (isAudio) {
+                return 'min(280px, 70vw)';
+              }
+              return 'min(320px, 70vw)';
+            })();
+
+            const mediaStyle = hasCaption
+              ? { width: captionMediaWidth, minHeight: 'auto' }
+              : (() => {
+                if (msgType?.toLowerCase() === 'image' || msg?.imageUrl) {
+                  return imageDims ? { width: imageDims.width, minHeight: 'auto' } : { width: 260, minHeight: 'auto' };
+                }
+                if (msgType?.toLowerCase() === 'video' || msg?.videoUrl || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp4|webm|ogg|mov)$/i))) {
+                  return videoDims ? { width: videoDims.width, minHeight: 'auto' } : { minHeight: 'auto' };
+                }
+                if (isAudio) {
+                  return { width: 'min(280px, 70vw)', minHeight: 'auto' };
+                }
+                if (msgType?.toLowerCase() === 'document' || msg?.documentUrl || msg?.DocumentUrl || msg?.fileName) {
+                  return { minHeight: 'auto' };
+                }
+                return {};
+              })();
+
+            const mediaBlock = (
+              <div className="message-media" style={mediaStyle}>
+                {msgType?.toLowerCase() === 'image' || msg?.imageUrl ? (
+                  <>
+                    <div
+                      className="message-image-wrapper"
+                      style={imageDims ? { position: 'relative', width: imageDims.width, height: imageDims.height, maxWidth: '100%' } : { position: 'relative', width: 260, height: 200, maxWidth: '100%' }}
+                      onClick={() =>
+                        setMediaViewer({
+                          open: true,
+                          src: imageSrc,
+                          filename: msg?.content || msg?.Message || 'image',
+                          type: 'image',
+                        })
+                      }
+                    >
+                      {!loadedMedia[messageId] && (
+                        <Skeleton
+                          variant="rectangular"
+                          width="100%"
+                          height="100%"
+                          sx={{ borderRadius: '8px', position: 'absolute', inset: 0, zIndex: 1 }}
+                        />
+                      )}
+                      <img
+                        key={imageSrc}
+                        src={imageSrc}
+                        alt="media"
+                        style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: 8, opacity: loadedMedia[messageId] ? 1 : 0, transition: 'opacity 0.3s ease', position: 'relative', zIndex: 2 }}
+                        onLoad={(e) => {
+                          const w = e?.target?.naturalWidth || 0;
+                          const h = e?.target?.naturalHeight || 0;
+                          if (w > 0 && h > 0) {
+                            const dims = calculateImageDimensions(w, h);
+                            setImageDims(dims);
+                            if (rawImageSrc) imageDimsCache.set(rawImageSrc, dims);
+                          }
+                          setLoadedMedia((prev) => ({ ...prev, [messageId]: true }));
+                        }}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          setLoadedMedia((prev) => ({ ...prev, [messageId]: true }));
+                        }}
+                      />
+                    </div>
+                  </>
+                ) : msgType?.toLowerCase() === 'video' || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) ? (
+                  <div
+                    className="message-video-wrapper"
+                    style={videoDims ? { width: videoDims.width, height: videoDims.height, maxWidth: '100%' } : {}}
+                  >
+                    <div
+                      className="message-video-inner"
+                      style={{ position: 'relative' }}
+                      onClick={() => {
+                        if (videoRef.current) {
+                          if (videoRef.current.paused) {
+                            videoRef.current.play();
+                          } else {
+                            videoRef.current.pause();
+                          }
+                        }
+                      }}
+                      onDoubleClick={(e) => {
+                        e.stopPropagation();
+                        if (videoRef.current) videoRef.current.pause();
+                        setMediaViewer({
+                          open: true,
+                          src: resolveMediaUrl(msg?.mediaUrl || msg?.videoUrl || msg?.MediaUrl),
+                          filename: msg?.content || msg?.Message || 'video',
+                          type: 'video',
+                        });
+                      }}
+                    >
+                      {!loadedMedia[messageId] && (
+                        <Skeleton
+                          variant="rectangular"
+                          width="100%"
+                          height="100%"
+                          sx={{ borderRadius: '8px', position: 'absolute', inset: 0, zIndex: 1 }}
+                        />
+                      )}
+                      <video
+                        ref={videoRef}
+                        src={resolveMediaUrl(msg?.mediaUrl || msg?.videoUrl || msg?.MediaUrl)}
+                        onLoadedMetadata={(e) => {
+                          const w = e?.target?.videoWidth || 0;
+                          const h = e?.target?.videoHeight || 0;
+                          if (w > 0 && h > 0) {
+                            const dims = calculateImageDimensions(w, h);
+                            setVideoDims(dims);
+                          }
+                          setLoadedMedia((prev) => ({ ...prev, [messageId]: true }));
+                        }}
+                        onError={() => setLoadedMedia((prev) => ({ ...prev, [messageId]: true }))}
+                        onPlay={() => setIsPlaying(true)}
+                        onPause={() => setIsPlaying(false)}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                          objectFit: 'cover',
+                          borderRadius: 8,
+                          opacity: loadedMedia[messageId] ? 1 : 0,
+                          transition: 'opacity 0.3s ease',
+                          position: 'relative',
+                          zIndex: 2,
+                        }}
+                      />
+                      {/* Play overlay */}
+                      {!isPlaying && loadedMedia[messageId] && (
+                        <div className="video-play-overlay">
+                          <div className="video-play-btn">
+                            <div className="video-play-triangle" />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                ) : isAudio ? (
+                  <AudioPlayer
+                    src={resolveMediaUrl(msg?.audioUrl || msg?.mediaUrl || msg?.MediaUrl)}
+                    messageId={messageId}
+                    loadedMedia={loadedMedia}
+                    setLoadedMedia={setLoadedMedia}
+                    audioRef={audioRef}
+                    isPlaying={isAudioPlaying}
+                    setIsPlaying={setIsAudioPlaying}
+                    progress={audioProgress}
+                    setProgress={setAudioProgress}
+                    duration={audioDuration}
+                    setDuration={setAudioDuration}
+                  />
+                ) : msgType?.toLowerCase() === 'document' || msg?.documentUrl || msg?.DocumentUrl || msg?.fileName ? (
+                  <DocumentCard
+                    msg={msg}
+                    setMediaViewer={setMediaViewer}
+                    mediaCache={mediaCache}
+                  />
+                ) : (
+                  <div className="message-doc">
+                    <Paperclip size={18} />
+                    <span>{msg?.content || msg?.Message || msg?.fileName || 'Document'}</span>
+                  </div>
+                )}
+                {msg?.isUploading && msg?.percent !== undefined && (
+                  <UploadProgressOverlay percent={msg.percent} />
+                )}
+              </div>
+            );
+
+            const textBlock = (
+              <div className="message-text">
+                {renderLinks(captionText, { onLinkClick: onExternalLinkClick })}
+              </div>
+            );
+
+            const firstUrl = (() => {
+              if (!captionText) return null;
+              const match = captionText.match(/https?:\/\/[^\s]+/i);
+              return match ? match[0] : null;
+            })();
+            const linkPreviewBlock = !hasMedia && firstUrl ? (
+              <LinkPreview url={firstUrl} />
+            ) : null;
+
+            if (hasMedia && hasCaption) {
+              return (
+                <div className="message-media-caption-wrap">
+                  {mediaBlock}
+                  {textBlock}
+                </div>
+              );
+            }
+
+            return (
+              <>
+                {hasMedia && mediaBlock}
+                {hasCaption && textBlock}
+                {linkPreviewBlock}
+              </>
+            );
+          })()}
 
           {/* Template card */}
           {(() => {
@@ -344,10 +432,15 @@ const MessageBubble = memo(function MessageBubble({
 });
 
 /* Document Card */
-function DocumentCard({ msg, setMediaViewer }) {
+function DocumentCard({ msg, setMediaViewer, mediaCache }) {
   const fileName = msg?.fileName || msg?.content || msg?.Message || 'Document';
   const ext = (fileName.split('.').pop() || '').toUpperCase();
-  const href = msg?.documentUrl || msg?.DocumentUrl || msg?.mediaUrl;
+  const resolveMediaUrl = (val) => {
+    if (!val || typeof val !== 'string') return val;
+    if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) return val;
+    return mediaCache?.[val] || val;
+  };
+  const href = resolveMediaUrl(msg?.documentUrl || msg?.DocumentUrl || msg?.mediaUrl || msg?.MediaUrl);
 
   const isExcel = ['XLS', 'XLSX', 'CSV'].includes(ext);
   const isWord = ['DOC', 'DOCX'].includes(ext);
@@ -381,8 +474,57 @@ function DocumentCard({ msg, setMediaViewer }) {
       <a
         className="message-document-download"
         href={href}
-        download
+        download={fileName}
         title="Download"
+        onClick={(e) => {
+          e.stopPropagation();
+          if (!href) e.preventDefault();
+        }}
+      >
+        <Download size={18} />
+      </a>
+    </div>
+  );
+}
+
+/* Broken Media Card — shown when image/video fails to load */
+function BrokenMediaCard({ msg, setMediaViewer, mediaCache }) {
+  const fileName = msg?.fileName || msg?.content || msg?.Message || 'Media';
+  const ext = (fileName.split('.').pop() || '').toUpperCase() || 'IMAGE';
+  const resolveMediaUrl = (val) => {
+    if (!val || typeof val !== 'string') return val;
+    if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) return val;
+    return mediaCache?.[val] || val;
+  };
+  const href = resolveMediaUrl(msg?.mediaUrl || msg?.imageUrl || msg?.MediaUrl);
+
+  return (
+    <div
+      className="message-broken-media-card"
+      onClick={() =>
+        href &&
+        setMediaViewer({
+          open: true,
+          src: href,
+          filename: fileName,
+          type: 'image',
+        })
+      }
+    >
+      <div className="message-broken-media-icon" style={{ backgroundColor: 'rgba(255,68,68,0.12)', color: '#ff4444' }}>
+        <AlertCircle size={22} />
+      </div>
+      <div className="message-broken-media-info">
+        <div className="message-broken-media-name" title={fileName}>
+          {fileName}
+        </div>
+        <div className="message-broken-media-ext">{ext} — Unavailable</div>
+      </div>
+      <a
+        className="message-broken-media-action"
+        href={href}
+        download
+        title="Try download"
         onClick={(e) => {
           e.stopPropagation();
           if (!href) e.preventDefault();
@@ -422,7 +564,9 @@ function UploadProgressOverlay({ percent, size = 48 }) {
 
 /* Per-message status icon with failed tooltip */
 function MessageStatusIcon({ msg }) {
-  const status = typeof msg?.Status === 'number' ? msg.Status : (msg?.status === 'pending' || msg?.isUploading ? 0 : -1);
+  const status = typeof msg?.Status === 'number'
+    ? msg.Status
+    : (msg?.status === 'pending' || msg?.Status === 'pending' || msg?.isUploading ? 0 : -1);
 
   if (msg?.direction !== 1 && msg?.Direction !== 1) return null;
 
@@ -463,48 +607,142 @@ function MessageStatusIcon({ msg }) {
     );
   }
 
-  if (status === 0 || msg?.isUploading || msg?.status === 'pending') {
+  if (status === 0 || msg?.isUploading || msg?.status === 'pending' || msg?.Status === 'pending') {
     return (
-      <span className="message-status" style={{ color: '#9e9e9e' }}>
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <path d="M12 6v6l4 2" />
-          <circle cx="12" cy="12" r="10" />
-        </svg>
+      <span className="message-status" style={{ color: '#9e9e9e', display: 'inline-flex', alignItems: 'center' }}>
+        <Clock3 size={15} />
       </span>
     );
   }
 
   if (status === 3) {
     return (
-      <span className="message-status" style={{ color: '#1F51FF' }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" /><polyline points="20 6 9 17 4 12" transform="translate(2, 0)" />
-        </svg>
+      <span className="message-status" style={{ color: '#1F51FF', display: 'inline-flex', alignItems: 'center' }}>
+        <CheckCheck size={15} />
       </span>
     );
   }
 
   if (status === 2) {
     return (
-      <span className="message-status" style={{ color: '#9e9e9e' }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" /><polyline points="20 6 9 17 4 12" transform="translate(2, 0)" />
-        </svg>
+      <span className="message-status" style={{ color: '#9e9e9e', display: 'inline-flex', alignItems: 'center' }}>
+        <CheckCheck size={15} />
       </span>
     );
   }
 
   if (status === 1) {
     return (
-      <span className="message-status" style={{ color: '#9e9e9e' }}>
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-          <polyline points="20 6 9 17 4 12" />
-        </svg>
+      <span className="message-status" style={{ color: '#9e9e9e', display: 'inline-flex', alignItems: 'center' }}>
+        <Check size={15} />
       </span>
     );
   }
 
   return null;
+}
+
+/* Fixed-height audio player for voice notes & audio files */
+function AudioPlayer({
+  src,
+  messageId,
+  loadedMedia,
+  setLoadedMedia,
+  audioRef,
+  isPlaying,
+  setIsPlaying,
+  progress,
+  setProgress,
+  duration,
+  setDuration,
+}) {
+  const formatTime = (s) => {
+    if (!s || isNaN(s)) return '0:00';
+    const m = Math.floor(s / 60);
+    const sec = Math.floor(s % 60);
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
+  const togglePlay = () => {
+    if (!audioRef.current) return;
+    if (audioRef.current.paused) {
+      audioRef.current.play();
+    } else {
+      audioRef.current.pause();
+    }
+  };
+
+  const handleSeek = (e) => {
+    if (!audioRef.current || !duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    audioRef.current.currentTime = pct * duration;
+  };
+
+  return (
+    <div className="message-audio-player">
+      <button className="message-audio-play-btn" onClick={togglePlay}>
+        {isPlaying ? <Pause size={18} fill="currentColor" /> : <Play size={18} fill="currentColor" />}
+      </button>
+      <div className="message-audio-track" onClick={handleSeek}>
+        <div className="message-audio-progress" style={{ width: `${duration ? (progress / duration) * 100 : 0}%` }} />
+      </div>
+      <span className="message-audio-time">
+        {isPlaying || progress > 0 ? formatTime(progress) : formatTime(duration)}
+      </span>
+      <audio
+        ref={audioRef}
+        src={src}
+        preload="metadata"
+        onLoadedMetadata={() => {
+          if (audioRef.current) {
+            setDuration(audioRef.current.duration || 0);
+          }
+          setLoadedMedia((prev) => ({ ...prev, [messageId]: true }));
+        }}
+        onTimeUpdate={() => {
+          if (audioRef.current) {
+            setProgress(audioRef.current.currentTime || 0);
+          }
+        }}
+        onPlay={() => setIsPlaying(true)}
+        onPause={() => setIsPlaying(false)}
+        onEnded={() => {
+          setIsPlaying(false);
+          setProgress(0);
+        }}
+        onError={() => setLoadedMedia((prev) => ({ ...prev, [messageId]: true }))}
+      />
+    </div>
+  );
+}
+
+/* Link preview micro-card for text messages containing URLs */
+function LinkPreview({ url }) {
+  let domain = '';
+  try {
+    domain = new URL(url).hostname.replace(/^www\./, '');
+  } catch (e) {
+    domain = url;
+  }
+
+  return (
+    <a
+      className="message-link-preview"
+      href={url}
+      target="_blank"
+      rel="noopener noreferrer"
+      onClick={(e) => e.stopPropagation()}
+    >
+      <div className="message-link-preview-domain">
+        <span className="message-link-preview-favicon">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10" /><line x1="2" y1="12" x2="22" y2="12" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></svg>
+        </span>
+        {domain}
+      </div>
+      <div className="message-link-preview-url">{url.length > 60 ? `${url.slice(0, 60)}...` : url}</div>
+    </a>
+  );
 }
 
 export default MessageBubble;

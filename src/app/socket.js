@@ -62,35 +62,6 @@ export const initializeSocket = (token) => {
     socketInstance.on('connect', () => {
         isAuthenticated = true;
         reconnectAttempts = 0; // Reset reconnect attempts on successful connection
-
-        // Clear any existing listeners to prevent duplicates
-        // socketInstance.removeAllListeners('newMessage');
-        // socketInstance.removeAllListeners('changeStatus');
-
-        // Re-attach all message handlers
-        messageHandlers.forEach(handler => {
-            socketInstance.on('newMessage', handler);
-        });
-
-        // session logout
-        sessionLogout.forEach(handler => {
-            socketInstance.on('sessionLogout', handler);
-        });
-
-        // Re-attach all message handlers from assigning users
-        messageHandlersFromAssigningUser.forEach(handler => {
-            socketInstance.on('sendMessage', handler);
-        });
-
-        // Re-attach all message handlers from assigning users
-        messageReactionHandlers.forEach(handler => {
-            socketInstance.on('sendReaction', handler);
-        });
-
-        // Re-attach all status handlers
-        statusHandlers.forEach(handler => {
-            socketInstance.on('changeStatus', handler);
-        });
     });
 
     socketInstance.on('disconnect', (reason) => {

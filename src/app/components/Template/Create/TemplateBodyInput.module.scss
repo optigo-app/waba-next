@@ -4,12 +4,16 @@
     align-items: center;
     margin-top: 8px;
     position: relative;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 6px 10px;
 }
 
 .formattingButtons {
     display: flex !important;
     flex-direction: row !important;
-    gap: 8px;
+    gap: 4px;
     align-items: center;
     flex-wrap: nowrap !important;
     width: fit-content;

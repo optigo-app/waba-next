@@ -43,9 +43,11 @@ const TemplateBodyInput = ({
     onAddVariablePlaceholder,
     styles = {},
     parentStyles = {},
+    textareaRef: forwardedRef,
 }) => {
     const charCount = value.length;
-    const textareaRef = React.useRef(null);
+    const internalRef = React.useRef(null);
+    const textareaRef = forwardedRef || internalRef;
 
     const wrapSelectedText = (prefix, suffix) => {
         const textarea = textareaRef.current;
@@ -96,6 +98,11 @@ const TemplateBodyInput = ({
                 error={error}
                 helperText={helperText}
                 inputRef={textareaRef}
+                sx={{
+                    '& .MuiInputBase-multiline': {
+                        padding: '8px 14px',
+                    },
+                }}
             />
             <Box className={`${styles.bodyFooterRow} ${parentStyles?.bodyFooterRow || ''}`}>
                 {showCharCounter && (

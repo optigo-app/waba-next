@@ -15,6 +15,8 @@ import { useAuthToken } from '../../hooks/useAuthToken';
 import styles from './CampaignGrid.module.scss';
 import { formatDate } from '../../utils/globalFunc';
 import ConfirmationModal from '../ConfirmationModal/ConfirmationModal';
+import ConfettiCanvas from '../Dashboard/ConfettiCanvas';
+import { playCelebrationSound } from '../../utils/celebrationSound';
 import toast from 'react-hot-toast';
 
 // ── Stable helpers ────────────────────────────────────────────────────────────
@@ -95,7 +97,7 @@ const buildColumns = (onAnalytics, onDuplicate, onDownload, onLaunch, onStop, on
           {Number(params.row.Status) === 1 && (
             <>
               <IconButton icon={Edit2} color="secondary" tooltip="Edit" onClick={() => onEdit(params.row)} />
-              {/* <IconButton icon={Trash2} color="error" tooltip="Delete" onClick={() => onDelete(params.row)} /> */}
+              <IconButton icon={Trash2} color="error" tooltip="Delete" onClick={() => onDelete(params.row)} />
             </>
           )}
         </Box>
@@ -202,9 +204,11 @@ const CampaignGrid = () => {
   const [insufficientCampaign, setInsufficientCampaign] = useState(null);
   const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
   const [campaignToDelete, setCampaignToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
   const [launchingCampaignIds, setLaunchingCampaignIds] = useState(() => new Set());
   const launchingCampaignIdsRef = useRef(new Set());
   const sendingCampaignIdsRef = useRef(new Set());
+  const [showConfetti, setShowConfetti] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 100 });
 
   const [activeTimers, setActiveTimers] = useState(() => {
@@ -230,7 +234,18 @@ const CampaignGrid = () => {
     if (!userToken?.username) return;
     setLoading(true);
     const result = await fetchCampaignLists(userToken.username);
-    setCampaigns(result.data || []);
+    const raw = result.data || [];
+    // Deduplicate by Id to prevent DataGrid duplicate key errors
+    const seen = new Set();
+    const deduped = [];
+    for (const row of raw) {
+      const id = Number(row?.Id);
+      if (!seen.has(id)) {
+        seen.add(id);
+        deduped.push(row);
+      }
+    }
+    setCampaigns(deduped);
     setLoading(false);
   }, [userToken?.username]);
 
@@ -264,6 +279,9 @@ const CampaignGrid = () => {
             }
             : campaign
         ));
+        setShowConfetti(true);
+        playCelebrationSound();
+        setTimeout(() => setShowConfetti(false), 3000);
         toast.success(`Campaign ${campaignId} completed`);
         await loadCampaigns();
       } else {
@@ -420,6 +438,7 @@ const CampaignGrid = () => {
 
   const handleDeleteConfirm = async () => {
     if (!campaignToDelete) return;
+    setIsDeleting(true);
     try {
       toast.loading('Deleting campaign...', { id: 'delete-campaign' });
       const result = await deleteCampaign(userToken?.username, campaignToDelete.Id);
@@ -436,6 +455,7 @@ const CampaignGrid = () => {
       toast.error('Error deleting campaign');
       console.error('Delete error:', error);
     } finally {
+      setIsDeleting(false);
       setDeleteConfirmOpen(false);
       setCampaignToDelete(null);
     }
@@ -637,7 +657,7 @@ const CampaignGrid = () => {
                         {Number(campaign.Status) === 1 && (
                           <>
                             <IconButton icon={Edit2} color="secondary" tooltip="Edit" onClick={() => handlers.onEdit(campaign)} />
-                            {/* <IconButton icon={Trash2} color="error" tooltip="Delete" onClick={() => handlers.onDelete(campaign)} /> */}
+                            <IconButton icon={Trash2} color="error" tooltip="Delete" onClick={() => handlers.onDelete(campaign)} />
                           </>
                         )}
                       </Box>
@@ -748,7 +768,14 @@ const CampaignGrid = () => {
         isDanger={true}
         confirmLabel="Delete"
         cancelLabel="Cancel"
+        isLoading={isDeleting}
       />
+
+      {showConfetti && (
+        <div style={{ position: 'fixed', inset: 0, zIndex: 9999, pointerEvents: 'none' }}>
+          <ConfettiCanvas active={showConfetti} duration={3000} />
+        </div>
+      )}
     </div>
   );
 };

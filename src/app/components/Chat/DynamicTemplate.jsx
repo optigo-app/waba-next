@@ -7,6 +7,7 @@ import { Skeleton } from '@mui/material';
 import {
   ChevronLeft, ChevronRight, ExternalLink, Phone, FileText, Play,
 } from 'lucide-react';
+import './styles/TemplateStyles.scss';
 
 const MEDIA_FORMATS = ['IMAGE', 'VIDEO'];
 
@@ -121,13 +122,12 @@ export default function DynamicTemplate({
     setMediaViewerOpen(true);
   };
 
-  const renderText = (text = '', isCarouselCard = false) => {
-    if (!isCarouselCard) {
-      Object.entries(params).forEach(([key, value], index) => {
-        const placeholder = new RegExp(`\\{\\{\\s*${index + 1}\\s*\\}\\}`, 'g');
-        text = text.replace(placeholder, value || '');
-      });
-    }
+  const renderText = (text = '') => {
+    if (!text) return '';
+    Object.entries(params).forEach(([key, value], index) => {
+      const placeholder = new RegExp(`\\{\\{\\s*${index + 1}\\s*\\}\\}`, 'g');
+      text = text.replace(placeholder, value || '');
+    });
     return text;
   };
 
@@ -205,12 +205,12 @@ export default function DynamicTemplate({
         }
 
         return component.text ? (
-          <div className="template-header text">{renderText(component.text, isCarouselCard)}</div>
+          <div className="template-header text">{renderText(component.text)}</div>
         ) : null;
       }
 
       case 'BODY': {
-        let bodyText = renderText(component.text || '', isCarouselCard);
+        let bodyText = renderText(component.text || '');
         return (
           <div className="template-body">
             {bodyText.split('\n').map((line, i) => (
@@ -252,15 +252,17 @@ export default function DynamicTemplate({
       case 'CAROUSEL':
         return (
           <div className="template-carousel-wrapper">
-            {showLeftArrow && (
-              <button
-                className="carousel-nav-btn left"
-                onClick={() => scrollCarousel('left')}
-                type="button"
-              >
-                <ChevronLeft size={20} />
-              </button>
-            )}
+            <button
+              className={`carousel-nav-btn left ${!showLeftArrow ? 'hidden' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                scrollCarousel('left');
+              }}
+              type="button"
+              aria-label="Previous card"
+            >
+              <ChevronLeft size={20} />
+            </button>
 
             <div
               className="template-carousel"
@@ -298,15 +300,17 @@ export default function DynamicTemplate({
               </div>
             </div>
 
-            {showRightArrow && component.cards?.length > 1 && (
-              <button
-                className="carousel-nav-btn right"
-                onClick={() => scrollCarousel('right')}
-                type="button"
-              >
-                <ChevronRight size={20} />
-              </button>
-            )}
+            <button
+              className={`carousel-nav-btn right ${!showRightArrow ? 'hidden' : ''}`}
+              onClick={(e) => {
+                e.stopPropagation();
+                scrollCarousel('right');
+              }}
+              type="button"
+              aria-label="Next card"
+            >
+              <ChevronRight size={20} />
+            </button>
           </div>
         );
 

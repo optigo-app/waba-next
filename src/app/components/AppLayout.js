@@ -9,6 +9,7 @@ import { DashboardFiltersProvider, useDashboardFilters } from '../contexts/Dashb
 import { WalletProvider } from '../contexts/WalletContext';
 import Sidebar from './Siderbar/Sidebar';
 import AuthGuard from './AuthGuard';
+import NotificationBanner from './NotificationBanner/NotificationBanner';
 import { storage } from '../utils/storage';
 
 function SidebarWrapper({ isCollapsed, onCollapsedChange }) {
@@ -98,6 +99,7 @@ export default function AppLayout({ children }) {
           <WalletProvider>
             <AuthGuard>
               {content}
+              {isChatRoute && <NotificationBanner />}
             </AuthGuard>
           </WalletProvider>
         </DashboardFiltersProvider>

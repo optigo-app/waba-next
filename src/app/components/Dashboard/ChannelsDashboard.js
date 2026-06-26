@@ -12,7 +12,6 @@ import {
 import { Search, Plus, MessageCircle } from 'lucide-react';
 import WalletDrawer from './WalletDrawer';
 import ChannelCardSkeleton from './ChannelCardSkeleton';
-import OnboardingModal from './OnboardingModal';
 import ChannelCard from './ChannelCard';
 import { useAuth } from '../../hooks/useAuth';
 import { useWallet } from '../../contexts/WalletContext';
@@ -30,11 +29,10 @@ const CHANNELS = [
 const ChannelsDashboard = () => {
     const router = useRouter();
     const { auth } = useAuth();
-    const { walletInfo, isLoading, loadWalletData, refreshWallet } = useWallet();
+    const { walletInfo, isLoading, loadWalletData } = useWallet();
     const [walletOpen, setWalletOpen] = useState(false);
     const [activeChannel, setActiveChannel] = useState(null);
     const [searchQuery, setSearchQuery] = useState('');
-    const [onboardingOpen, setOnboardingOpen] = useState(false);
 
     const appUserId = useMemo(
         () => auth?.userid || auth?.userId || auth?.appuserid || '',
@@ -78,7 +76,7 @@ const ChannelsDashboard = () => {
     };
 
     const handleAddChannel = () => {
-        setOnboardingOpen(true);
+        router.push('/onboarding');
     };
 
     return (
@@ -320,15 +318,6 @@ const ChannelsDashboard = () => {
                 open={walletOpen}
                 onClose={() => setWalletOpen(false)}
                 channel={activeChannel}
-            />
-
-            {/* Onboarding Modal */}
-            <OnboardingModal
-                open={onboardingOpen}
-                onClose={() => setOnboardingOpen(false)}
-                onChannelAdded={() => {
-                    refreshWallet();
-                }}
             />
         </Box>
     );

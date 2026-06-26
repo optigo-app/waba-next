@@ -29,6 +29,7 @@ export default function ChatHeader({
   setEscalatedList,
   auth,
   setDetailsOpen,
+  onDeleteTag,
 }) {
   const can = useAuthStore((s) => s.can);
   const baseAvatarConfig = selectedCustomer?.avatarConfig
@@ -131,7 +132,7 @@ export default function ChatHeader({
                               style={{ cursor: 'pointer', marginLeft: 4 }}
                               onClick={(e) => {
                                 e.stopPropagation();
-                                // TODO: wire delete tag API
+                                onDeleteTag?.(tag);
                               }}
                             />
                           </span>
@@ -170,7 +171,7 @@ export default function ChatHeader({
                           style={{ cursor: 'pointer', marginLeft: 4 }}
                           onClick={(e) => {
                             e.stopPropagation();
-                            // TODO: wire delete tag API
+                            onDeleteTag?.(tag);
                           }}
                         />
                       </span>

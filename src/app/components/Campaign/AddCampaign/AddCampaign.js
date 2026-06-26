@@ -208,6 +208,13 @@ const AddCampaign = () => {
         return;
       }
 
+      // Validate scheduled date is not in the past
+      if (campaignType === 'schedule' && scheduledFor && scheduledFor.isBefore(dayjs())) {
+        toast.error('Cannot schedule a campaign for a past date/time.');
+        setIsSaving(false);
+        return;
+      }
+
       const customerJson = audience.map(item => {
         const customerId = item.customerId ?? '';
         const countryCode = item.CountryCode || item.countryCode || '91';
@@ -778,7 +785,8 @@ const AddCampaign = () => {
         message={saveProcess.message || 'Please wait...'}
         progress={saveProcess.progress}
       />
-    </div >
+
+    </div>
   );
 };
 

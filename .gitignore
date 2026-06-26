@@ -42,3 +42,11 @@ next-env.d.ts
 
 #md
 .md*
+
+#sessiondata
+sessiondata.txt
+
+#.devin
+.devin
+
+

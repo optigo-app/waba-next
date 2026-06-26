@@ -221,10 +221,9 @@ const FilterSelectionDialog = ({
     }
   };
 
-  // Handle drag & drop
+  // Handle drag & drop inside dialog content area
   const handleDragOver = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     if (localSource === 'excel') {
       setIsDragging(true);
     }
@@ -232,13 +231,11 @@ const FilterSelectionDialog = ({
 
   const handleDragLeave = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
   };
 
   const handleDrop = (e) => {
     e.preventDefault();
-    e.stopPropagation();
     setIsDragging(false);
 
     if (localSource === 'excel') {

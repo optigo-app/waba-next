@@ -15,12 +15,15 @@
             width: 6px;
             height: 6px;
         }
+
         &::-webkit-scrollbar-track {
             background: transparent;
         }
+
         &::-webkit-scrollbar-thumb {
             background: #cbd5e1;
             border-radius: 99px;
+
             &:hover {
                 background: #94a3b8;
             }
@@ -37,11 +40,12 @@
         :global(.MuiOutlinedInput-input) {
             padding: 10px 14px !important;
             color: $titleColor;
-             font-size: 1rem !important;
+            font-size: 1rem !important;
             font-weight: 500 !important;
 
             &::placeholder {
-                color: #94a3b8 !important;
+                font-weight: 400;
+                color: $placeholderColor !important;
                 opacity: 1 !important;
             }
         }
@@ -92,6 +96,7 @@
             :global(fieldset) {
                 border-color: $error-main !important;
             }
+
             &.Mui-focused {
                 box-shadow: 0 0 0 4px rgba($error-main, 0.1) !important;
             }
@@ -109,8 +114,8 @@
     // MUI Label styling inside input
     :global(.MuiInputLabel-root) {
         font-size: 0.82rem !important;
-        font-weight: 500 !important;
-        color: #64748b !important;
+        font-weight: 600 !important;
+        color: $titleColor !important;
 
         &.Mui-focused {
             color: $primary-main !important;
@@ -468,7 +473,7 @@
     border-color: $primary-main !important;
     background-color: rgba($primary-main, 0.05) !important;
     box-shadow: 0 4px 16px rgba($primary-main, 0.08) !important;
-    
+
     .categoryIconWrap {
         background-color: rgba($primary-main, 0.12) !important;
         color: $primary-main !important;
@@ -702,7 +707,7 @@
 
 .categoryTitle {
     font-size: 0.92rem;
-    font-weight: 600;
+    font-weight: 700;
     color: $titleColor;
 }
 
@@ -738,6 +743,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
+    padding-bottom: 80px;
 }
 
 .previewShell {
@@ -800,12 +806,20 @@
     box-shadow: 0 5px 14px rgba(15, 23, 42, 0.04);
 }
 
+.sectionCard {
+    transition: border-color 0.2s ease, box-shadow 0.2s ease !important;
+
+    &:focus-within {
+        border-color: rgba($primary-main, 0.5) !important;
+        box-shadow: 0 0 0 4px rgba($primary-main, 0.08), 0 4px 16px rgba(15, 23, 42, 0.06) !important;
+    }
+}
+
 .sectionTitle {
     font-size: 0.95rem;
     font-weight: 600;
     color: $titleColor;
     margin: 0;
-    letter-spacing: -0.2px;
 }
 
 .sectionHeaderRow {
@@ -854,7 +868,7 @@
 // Header text sub-section
 .headerTextLabel {
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
     color: $titleColor;
 }
 
@@ -876,7 +890,7 @@
 
 .variableTitle {
     font-size: 0.85rem;
-    font-weight: 600;
+    font-weight: 700;
     color: $titleColor;
 }
 
@@ -939,12 +953,16 @@
     position: relative;
     width: 100%;
     margin-bottom: 1rem;
+    margin-left: 0;
+    padding-left: 0;
 }
 
 .quickAddButtons {
     display: flex;
     gap: 0.5rem;
     flex-wrap: wrap;
+    margin-left: 0;
+    padding-left: 0;
 }
 
 .quickAddBtn {
@@ -989,8 +1007,8 @@
 
 .buttonMenuSectionTitle {
     font-size: 0.72rem;
-    font-weight: 600;
-    color: $secondaryColor;
+    font-weight: 700;
+    color: $titleColor;
     margin: 2px 0 6px;
 }
 
@@ -1387,7 +1405,7 @@
     }
 
     .builderRoot {
-        padding: 0.75rem 0.5rem;
+        padding: 0.75rem 0.5rem 80px;
     }
 
     .stepPanel {
@@ -1430,10 +1448,57 @@
     }
 }
 
-// ── Section subtitle ──────────────────────────────────────────────────────────
+// ── Sticky bottom action bar ──────────────────────────────────────────────────
+.stickyBottomBar {
+    position: sticky;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    z-index: 50;
+    background: #fff;
+    border-top: 1px solid $sidebar-borderColor;
+    padding: 0.75rem 1.5rem;
+    border-radius: 12px;
+    box-shadow: 0 2px 8px #0f172a0a;
+    margin-top: auto;
+}
+
+.stickyBottomBarInner {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 1rem;
+    flex-wrap: wrap;
+    max-width: 100%;
+}
+
+.stickyBottomBarActions {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    margin-left: auto;
+}
+
+@media (max-width: 640px) {
+    .stickyBottomBar {
+        padding: 0.75rem 1rem;
+    }
+
+    .stickyBottomBarInner {
+        flex-direction: column;
+        align-items: stretch;
+    }
+
+    .stickyBottomBarActions {
+        width: 100%;
+        justify-content: flex-end;
+    }
+}
+
 .sectionSubtitle {
     font-size: 0.78rem !important;
-    color: #64748b !important;
+    font-weight: 500 !important;
+    color: $text2ndColor !important;
     margin-top: 3px !important;
     margin-bottom: 0.8rem !important;
     line-height: 1.45 !important;
@@ -1461,43 +1526,52 @@
     gap: 8px;
 }
 
-// ── Media icon card grid ──────────────────────────────────────────────────────
+// ── Media icon pill row ───────────────────────────────────────────────────────
 .mediaPickerWrap {
-    margin-top: 1.25rem;
+    margin-top: 1rem;
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
 .mediaIconGrid {
-    display: grid;
-    grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    background: #f8fafc;
+    padding: 8px;
+    border-radius: 8px;
+    border: 1px solid $sidebar-borderColor;
 }
 
 .mediaIconCard {
     position: relative !important;
     display: flex !important;
-    flex-direction: column !important;
     align-items: center !important;
-    justify-content: center !important;
-    gap: 6px !important;
-    padding: 14px 8px 10px !important;
-    border: 1.5px solid $sidebar-borderColor !important;
-    border-radius: 10px !important;
-    background: #fff !important;
+    gap: 5px !important;
+    padding: 0.32rem 0.75rem !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 999px !important;
+    background: #f8fafc !important;
     cursor: pointer !important;
     transition: all 0.15s !important;
+    text-transform: none !important;
+    min-width: auto !important;
+    color: $text2ndColor !important;
+    font-size: 0.75rem !important;
+    font-weight: 600 !important;
 
     &:hover {
-        border-color: rgba($primary-main, 0.4) !important;
-        background: rgba($primary-main, 0.02) !important;
+        border-color: rgba($primary-main, 0.35) !important;
+        background: #fff !important;
+        color: $titleColor !important;
     }
 }
 
 .mediaIconCardActive {
     border-color: $primary-main !important;
-    background: rgba($primary-main, 0.06) !important;
+    background: rgba($primary-main, 0.08) !important;
+    color: $primary-main !important;
 
     .mediaIconSvg {
         color: $primary-main !important;
@@ -1510,19 +1584,7 @@
 }
 
 .mediaIconCheck {
-    position: absolute;
-    top: 5px;
-    left: 7px;
-    font-size: 0.65rem;
-    font-weight: 600;
-    color: #fff;
-    background: $primary-main;
-    border-radius: 50%;
-    width: 14px;
-    height: 14px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
+    display: none;
 }
 
 .mediaIconSvg {
@@ -1531,9 +1593,9 @@
 }
 
 .mediaIconLabel {
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 600;
-    color: $titleColor;
+    color: inherit;
 }
 
 .mediaIconSoon {
@@ -1549,16 +1611,18 @@
     background: #f8fafc;
     border: 1px solid $sidebar-borderColor;
     border-radius: 10px;
-    padding: 1.1rem;
+    padding: 0.75rem 0.9rem;
     display: flex;
     flex-direction: column;
-    gap: 10px;
+    gap: 8px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .mediaSampleTitle {
     margin: 0;
     font-size: 0.85rem !important;
-    font-weight: 600 !important;
+    font-weight: 700 !important;
     color: $titleColor !important;
 }
 
@@ -1758,7 +1822,7 @@
 
     .cardTitle {
         font-size: 0.95rem;
-        font-weight: 600;
+        font-weight: 700;
         color: $titleColor;
     }
 }

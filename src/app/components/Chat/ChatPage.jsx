@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { Button, Typography } from '@mui/material';
 import { MessageCircle } from 'lucide-react';
@@ -20,6 +20,7 @@ export default function ChatPage() {
   const [converList, setConvList] = useState([]);
   const [isConversationRead, setIsConversationRead] = useState(false);
   const [viewConversationRead, setViewConversationRead] = useState(false);
+  const [selectedTag, setSelectedTag] = useState('All');
 
   const handleCustomerSelect = useCallback((customer) => {
     setSelectedCustomer(customer);
@@ -41,6 +42,25 @@ export default function ChatPage() {
   const handleViewConversationRead = useCallback((isRead) => {
     setViewConversationRead(isRead);
   }, []);
+
+  // Handle browser-notification click to open a specific conversation
+  useEffect(() => {
+    const handler = (e) => {
+      const conversationId = e?.detail?.conversationId;
+      if (!conversationId) return;
+      const found = converList.find(
+        (c) =>
+          String(c?.ConversationId) === String(conversationId) ||
+          String(c?.CustomerId) === String(conversationId) ||
+          String(c?.autoid) === String(conversationId)
+      );
+      if (found) {
+        handleCustomerSelect(found);
+      }
+    };
+    window.addEventListener('SELECT_CONVERSATION', handler);
+    return () => window.removeEventListener('SELECT_CONVERSATION', handler);
+  }, [converList, handleCustomerSelect]);
 
   const auth = useAuthStore((s) => s.auth);
   const isAddConversation = pathname === '/chat/add-conversation';
@@ -84,6 +104,8 @@ export default function ChatPage() {
             viewConversationRead={viewConversationRead}
             onConversationList={handleConversationList}
             isAddConversation={isAddConversation}
+            selectedTag={selectedTag}
+            onTagSelect={setSelectedTag}
           />
         </div>
 

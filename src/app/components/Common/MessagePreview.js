@@ -46,14 +46,23 @@ const MessagePreview = ({
         setVideoError(true);
     };
 
-    const previewBody = useMemo(() =>
-        (body || '').replace(/\{\{(\d+)\}\}/g, (_, k) => {
+    const previewBody = useMemo(() => {
+        let text = body || '';
+        // Convert WhatsApp markdown to HTML
+        text = text
+            .replace(/\*(.+?)\*/g, '<strong>$1</strong>')
+            .replace(/_(.+?)_/g, '<em>$1</em>')
+            .replace(/~(.+?)~/g, '<s>$1</s>')
+            .replace(/`(.+?)`/g, '<code style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</code>');
+        // Replace variable placeholders (numeric or named)
+        return text.replace(/\{\{([^}]+)\}\}/g, (_, k) => {
             const value = variableValues[k]?.trim();
             if (value) {
                 return `<span style="color: #000; font-weight: 600; background: rgba(0, 0, 0, 0.05); padding: 0 2px; border-radius: 2px;">${value}</span>`;
             }
             return `{{${k}}}`;
-        }), [body, variableValues]);
+        });
+    }, [body, variableValues]);
 
     const headerImageFile = !previewImageUrl && headerType === 'Media' && headerMedia?.mediaType === 'image' ? headerMedia.file : null;
     const headerVideoFile = !previewVideoUrl && headerType === 'Media' && headerMedia?.mediaType === 'video' ? headerMedia.file : null;
@@ -84,6 +93,41 @@ const MessagePreview = ({
         buttons.length > 0 ||
         (templateType === 'Carousel' && carouselCards.length > 0);
 
+    const showPreviewBubble = templateType === 'Carousel'
+        ? carouselCards.length > 0 || previewBody.trim()
+        : true; // Always show for Interactive templates
+
+    const renderPlaceholder = (text, type = 'text') => {
+        const baseStyle = {
+            display: 'block',
+            color: '#94a3b8',
+            fontSize: type === 'small' ? '0.7rem' : '0.78rem',
+            fontStyle: 'italic',
+            lineHeight: 1.4,
+        };
+        if (type === 'box') {
+            return (
+                <div style={{
+                    background: '#f1f5f9',
+                    borderRadius: '8px',
+                    padding: '12px',
+                    marginBottom: '0.55rem',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    minHeight: '60px',
+                    fontSize: '0.72rem',
+                    color: '#94a3b8',
+                    fontStyle: 'italic',
+                    border: '1px dashed #cbd5e1',
+                }}>
+                    {text}
+                </div>
+            );
+        }
+        return <span style={baseStyle}>{text}</span>;
+    };
+
     return (
         <div className={styles.previewShell}>
             <div className={styles.previewPhone}>
@@ -100,7 +144,7 @@ const MessagePreview = ({
                     </div>
                 </div>
                 <div className={styles.previewChatBg} style={previewBg}>
-                    {hasPreviewMessage ? (
+                    {showPreviewBubble ? (
                         <div className={`${styles.previewBubbleWrap} ${templateType === 'Carousel' ? styles.previewBubbleWrapCarousel : ''}`}>
                             {templateType === 'Carousel' ? (
                                 <div className={styles.previewCarouselWrap}>
@@ -161,7 +205,18 @@ const MessagePreview = ({
                                                         )}
 
                                                         <div className={styles.previewCardContent}>
-                                                            {card.body && <Typography className={styles.previewCardBody}>{card.body}</Typography>}
+                                                            {card.body && (
+                                                                <Typography
+                                                                    className={styles.previewCardBody}
+                                                                    dangerouslySetInnerHTML={{
+                                                                        __html: card.body
+                                                                            .replace(/\*(.+?)\*/g, '<strong>$1</strong>')
+                                                                            .replace(/_(.+?)_/g, '<em>$1</em>')
+                                                                            .replace(/~(.+?)~/g, '<s>$1</s>')
+                                                                            .replace(/`(.+?)`/g, '<code style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</code>')
+                                                                    }}
+                                                                />
+                                                            )}
                                                         </div>
 
                                                         <div className={styles.previewCardButtons}>
@@ -199,49 +254,74 @@ const MessagePreview = ({
                                 </div>
                             ) : (
                                 <div className={styles.previewBubble}>
-                                    {headerType === 'Text' && headerText && (
-                                        <Typography className={styles.previewHeaderText}>
-                                            {headerText.replace(/\{\{1\}\}/g, headerTextExample || '{{1}}')}
-                                        </Typography>
+                                    {headerType === 'Text' && (
+                                        headerText ? (
+                                            <Typography
+                                                className={styles.previewHeaderText}
+                                                dangerouslySetInnerHTML={{
+                                                    __html: headerText
+                                                        .replace(/\*(.+?)\*/g, '<strong>$1</strong>')
+                                                        .replace(/_(.+?)_/g, '<em>$1</em>')
+                                                        .replace(/~(.+?)~/g, '<s>$1</s>')
+                                                        .replace(/`(.+?)`/g, '<code style="background: rgba(0,0,0,0.06); padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 0.9em;">$1</code>')
+                                                        .replace(/\{\{1\}\}/g, headerTextExample || '{{1}}')
+                                                }}
+                                            />
+                                        ) : (
+                                            renderPlaceholder('Header text will appear here', 'text')
+                                        )
                                     )}
-                                    {finalPreviewImageUrl && (
-                                        <img
-                                            src={finalPreviewImageUrl}
-                                            alt="Header"
-                                            className={styles.previewHeaderImage}
-                                            onError={handleImageFallback}
-                                        />
+                                    {headerType === 'Media' && (
+                                        headerMedia?.mediaType === 'image' ? (
+                                            finalPreviewImageUrl ? (
+                                                <img
+                                                    src={finalPreviewImageUrl}
+                                                    alt="Header"
+                                                    className={styles.previewHeaderImage}
+                                                    onError={handleImageFallback}
+                                                />
+                                            ) : (
+                                                renderPlaceholder('Image will appear here', 'box')
+                                            )
+                                        ) : headerMedia?.mediaType === 'video' ? (
+                                            (finalPreviewVideoUrl && !videoError && !headerMedia?.isInvalid) ? (
+                                                <video
+                                                    key={finalPreviewVideoUrl}
+                                                    src={finalPreviewVideoUrl}
+                                                    className={styles.previewHeaderVideo}
+                                                    controls playsInline preload="metadata"
+                                                    onError={handleVideoError}
+                                                />
+                                            ) : (
+                                                renderPlaceholder('Video will appear here', 'box')
+                                            )
+                                        ) : headerMedia?.mediaType === 'document' ? (
+                                            previewDocumentLabel ? (
+                                                <div className={styles.previewHeaderDocument}>
+                                                    <div className={styles.previewDocIconWrap}>
+                                                        <FileText size={18} className={styles.previewDocIcon} />
+                                                    </div>
+                                                    <div className={styles.previewDocMeta}>
+                                                        <span className={styles.previewDocTitle}>Document</span>
+                                                        <span className={styles.previewDocSub}>{previewDocumentLabel}</span>
+                                                    </div>
+                                                </div>
+                                            ) : (
+                                                renderPlaceholder('Document will appear here', 'box')
+                                            )
+                                        ) : (
+                                            renderPlaceholder('Media will appear here', 'box')
+                                        )
                                     )}
-                                    {(finalPreviewVideoUrl && !videoError && !headerMedia?.isInvalid) ? (
-                                        <video
-                                            key={finalPreviewVideoUrl}
-                                            src={finalPreviewVideoUrl}
-                                            className={styles.previewHeaderVideo}
-                                            controls playsInline preload="metadata"
-                                            onError={handleVideoError}
-                                        />
-                                    ) : (headerType === 'Media' && headerMedia?.mediaType === 'video' && (videoError || headerMedia?.isInvalid)) ? (
-                                        <div className={styles.previewVideoFallback}>
-                                            <Video size={32} color="#94a3b8" />
-                                            <span>Video unavailable</span>
-                                        </div>
-                                    ) : null}
-                                    {previewDocumentLabel && (
-                                        <div className={styles.previewHeaderDocument}>
-                                            <div className={styles.previewDocIconWrap}>
-                                                <FileText size={18} className={styles.previewDocIcon} />
-                                            </div>
-                                            <div className={styles.previewDocMeta}>
-                                                <span className={styles.previewDocTitle}>Document</span>
-                                                <span className={styles.previewDocSub}>{previewDocumentLabel}</span>
-                                            </div>
-                                        </div>
-                                    )}
-                                    {previewBody.trim() && (
+                                    {previewBody.trim() ? (
                                         <Typography 
                                             className={styles.previewBodyText}
                                             dangerouslySetInnerHTML={{ __html: previewBody }}
                                         />
+                                    ) : (
+                                        <div style={{ marginTop: '0.3rem' }}>
+                                            {renderPlaceholder('Body text will appear here...', 'text')}
+                                        </div>
                                     )}
                                     {footer && (
                                         <Typography className={styles.previewFooterText}>{footer}</Typography>

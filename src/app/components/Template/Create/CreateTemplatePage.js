@@ -55,6 +55,7 @@ const CreateTemplatePage = () => {
     const searchParams = useSearchParams();
     const { auth } = useAuth();
     const [step, setStep] = useState(1);
+    const bodyTextareaRef = useRef(null);
 
     const [templateDetails, setTemplateDetails] = useState({
         templateName: '',
@@ -375,6 +376,12 @@ const CreateTemplatePage = () => {
         const missingVar = variableKeys.find((k) => !variableValues[k]?.trim());
         if (missingVar !== undefined) {
             return `Provide a sample value for variable {{${missingVar}}}.`;
+        }
+
+        // Ensure all variables map to a sequential number for Meta
+        const invalidVar = variableKeys.find((k) => !variableMetaMap[k]);
+        if (invalidVar !== undefined) {
+            return `Variable {{${invalidVar}}} could not be mapped. Please check your syntax.`;
         }
 
         if (builderData.templateType === 'Carousel') {
@@ -769,7 +776,7 @@ const CreateTemplatePage = () => {
     };
 
     const handleHeaderMediaRemove = () => {
-        setHeaderMedia((p) => ({ ...p, file: null, mediaUrl: p.existingHandle || '' }));
+        setHeaderMedia((p) => ({ ...p, file: null, mediaUrl: '', existingHandle: null }));
     };
 
     const updateCardButton = (cardIndex, buttonId, patch) => {
@@ -851,31 +858,79 @@ const CreateTemplatePage = () => {
     const footerCharCount = useMemo(() => builderData.footer.length, [builderData.footer]);
 
     const variableKeys = useMemo(() => {
-        const matches = [...builderData.body.matchAll(/\{\{(\d+)\}\}/g)];
-        return [...new Set(matches.map((m) => Number(m[1])))]
-            .filter(Number.isFinite)
-            .sort((a, b) => a - b);
+        const matches = [...builderData.body.matchAll(/\{\{([^}]+)\}\}/g)];
+        const identifiers = matches.map((m) => m[1].trim());
+        return [...new Set(identifiers)];
     }, [builderData.body]);
 
-    const addVariablePlaceholder = () => {
-        const currentCount = variableKeys.length + 1;
+    // Map each variable identifier to a sequential number for Meta API
+    const variableMetaMap = useMemo(() => {
+        const map = {};
+        variableKeys.forEach((id, idx) => {
+            map[id] = idx + 1;
+        });
+        return map;
+    }, [variableKeys]);
+
+    // Auto-create sample value entries for any newly discovered variables
+    useEffect(() => {
+        if (variableKeys.length === 0) return;
+        setVariableValues((prev) => {
+            let changed = false;
+            const next = { ...prev };
+            for (const key of variableKeys) {
+                if (!(key in next)) {
+                    next[key] = '';
+                    changed = true;
+                }
+            }
+            return changed ? next : prev;
+        });
+    }, [variableKeys]);
+
+    const insertAtCursor = (text) => {
+        const textarea = bodyTextareaRef.current;
+        const currentBody = builderData.body || '';
+        let newBody;
+        let newCursorPos;
+
+        if (textarea && typeof textarea.selectionStart === 'number') {
+            const start = textarea.selectionStart;
+            const end = textarea.selectionEnd;
+            newBody = currentBody.substring(0, start) + text + currentBody.substring(end);
+            newCursorPos = start + text.length;
+        } else {
+            newBody = currentBody + text;
+            newCursorPos = newBody.length;
+        }
+
         setBuilderData((prev) => ({
             ...prev,
-            body: prev.body + `{{${currentCount}}}`
+            body: newBody.slice(0, 1024),
         }));
+
+        // Restore cursor position after React re-render
+        if (textarea) {
+            setTimeout(() => {
+                textarea.focus();
+                textarea.setSelectionRange(newCursorPos, newCursorPos);
+            }, 0);
+        }
+    };
+
+    const addVariablePlaceholder = () => {
+        const nextNum = variableKeys.length + 1;
+        insertAtCursor(`{{${nextNum}}}`);
     };
 
     // Emoji picker handlers
     const handleEmojiSelect = (emoji) => {
-        setBuilderData((prev) => ({
-            ...prev,
-            body: prev.body + emoji.native
-        }));
+        insertAtCursor(emoji.native);
         setEmojiPickerOpen(false);
     };
 
     const previewBody = useMemo(() =>
-        (builderData.body || '').replace(/\{\{(\d+)\}\}/g, (_, k) =>
+        (builderData.body || '').replace(/\{\{([^}]+)\}\}/g, (_, k) =>
             variableValues[k]?.trim() ? variableValues[k] : `{{${k}}}`
         ), [builderData.body, variableValues]);
 
@@ -1051,9 +1106,13 @@ const CreateTemplatePage = () => {
 
                 // Add top-level body
                 if (rawBody) {
-                    const bComp = { type: 'BODY', text: rawBody };
+                    const metaBodyText = rawBody.replace(/\{\{([^}]+)\}\}/g, (match, id) => {
+                        const num = variableMetaMap[id.trim()];
+                        return num !== undefined ? `{{${num}}}` : match;
+                    });
+                    const bComp = { type: 'BODY', text: metaBodyText };
                     if (variableKeys.length > 0) {
-                        bComp.example = { body_text: [variableKeys.map((k) => String(variableValues[k].trim()))] };
+                        bComp.example = { body_text: [variableKeys.map((k) => String(variableValues[k]?.trim() || ''))] };
                     }
                     components.push(bComp);
                 }
@@ -1123,9 +1182,13 @@ const CreateTemplatePage = () => {
 
                 // BODY
                 if (rawBody) {
-                    const bComp = { type: 'BODY', text: rawBody };
+                    const metaBodyText = rawBody.replace(/\{\{([^}]+)\}\}/g, (match, id) => {
+                        const num = variableMetaMap[id.trim()];
+                        return num !== undefined ? `{{${num}}}` : match;
+                    });
+                    const bComp = { type: 'BODY', text: metaBodyText };
                     if (variableKeys.length > 0) {
-                        bComp.example = { body_text: [variableKeys.map((k) => String(variableValues[k].trim()))] };
+                        bComp.example = { body_text: [variableKeys.map((k) => String(variableValues[k]?.trim() || ''))] };
                     }
                     components.push(bComp);
                 }
@@ -1257,61 +1320,37 @@ const CreateTemplatePage = () => {
                     </Box>
                 </Box>
 
-                {/* Step progress pills */}
-                <Box className={styles.stepProgress}>
-                    {[
-                        { num: 1, label: 'Template Details' },
-                        { num: 2, label: 'Build Template' },
-                    ].map((s, i, arr) => {
-                        const done = step > s.num;
-                        const active = step === s.num;
-                        return (
-                            <React.Fragment key={s.num}>
-                                <Box
-                                    component="button"
-                                    className={`${styles.stepPill} ${active ? styles.stepPillActive : ''} ${done ? styles.stepPillDone : ''}`}
-                                    onClick={() => s.num < step && setStep(s.num)}
-                                    sx={{ cursor: s.num < step ? 'pointer' : 'default' }}
-                                >
-                                    <span className={styles.stepPillNum}>{done ? '✓' : s.num}</span>
-                                    <span className={styles.stepPillLabel}>{s.label}</span>
-                                </Box>
-                                {i < arr.length - 1 && (
-                                    <Box className={`${styles.stepConnector} ${done ? styles.stepConnectorDone : ''}`} />
-                                )}
-                            </React.Fragment>
-                        );
-                    })}
-                </Box>
-
-                {/* Unified action buttons in Step 2 */}
-                {step === 2 && (
-                    <Box className={styles.headerRightActions}>
-                        {saveError && (
-                            <span className={styles.saveErrorText}>{saveError}</span>
-                        )}
-                        {!isEditMode && (
-                            <Button
-                                variant="outlined"
-                                onClick={handleDraftClick}
-                                disabled={isSaving || isUploading}
-                                startIcon={<Save size={16} />}
-                                className={styles.cancelBtn}
-                            >
-                                Save Template as Draft
-                            </Button>
-                        )}
-                        <Button
-                            variant="contained"
-                            onClick={handleCreateClick}
-                            disabled={isSaving || isUploading}
-                            className={styles.primaryBtn}
-                            startIcon={(isSaving || isUploading) ? <CircularProgress size={14} color="inherit" /> : <Plus size={16} />}
-                        >
-                            {isUploading ? `Uploading... ${uploadProgress}%` : isSaving ? 'Saving...' : (isEditMode ? 'Update Template' : 'Create Template')}
-                        </Button>
+                {/* Right side: step progress + error */}
+                <Box className={styles.headerRightActions}>
+                    <Box className={styles.stepProgress}>
+                        {[
+                            { num: 1, label: 'Template Details' },
+                            { num: 2, label: 'Build Template' },
+                        ].map((s, i, arr) => {
+                            const done = step > s.num;
+                            const active = step === s.num;
+                            return (
+                                <React.Fragment key={s.num}>
+                                    <Box
+                                        component="button"
+                                        className={`${styles.stepPill} ${active ? styles.stepPillActive : ''} ${done ? styles.stepPillDone : ''}`}
+                                        onClick={() => s.num < step && setStep(s.num)}
+                                        sx={{ cursor: s.num < step ? 'pointer' : 'default' }}
+                                    >
+                                        <span className={styles.stepPillNum}>{done ? '✓' : s.num}</span>
+                                        <span className={styles.stepPillLabel}>{s.label}</span>
+                                    </Box>
+                                    {i < arr.length - 1 && (
+                                        <Box className={`${styles.stepConnector} ${done ? styles.stepConnectorDone : ''}`} />
+                                    )}
+                                </React.Fragment>
+                            );
+                        })}
                     </Box>
-                )}
+                    {step === 2 && saveError && (
+                        <span className={styles.saveErrorText}>{saveError}</span>
+                    )}
+                </Box>
             </Box>
 
             {isEditLoading && (
@@ -1350,7 +1389,7 @@ const CreateTemplatePage = () => {
                             {/* Left: form */}
                             <Grid size={{ lg: 8, md: 8, sm: 12, xs: 12 }}>
                                 {/* Template Type */}
-                                <Paper elevation={0} sx={{ p: 3, mb: 2, border: '1px solid var(--sidebar-borderColor, #e2e8f0)', borderRadius: '12px' }}>
+                                <Paper elevation={0} className={styles.sectionCard} sx={{ p: 3, mb: 2, border: '1px solid var(--sidebar-borderColor, #e2e8f0)', borderRadius: '12px' }}>
                                     <h3 className={styles.sectionTitle}>Template Type</h3>
                                     <Box className={styles.chipRow}>
                                         {templateTypeOptions?.map((opt) => {
@@ -1440,6 +1479,7 @@ const CreateTemplatePage = () => {
                                     onEmojiSelect={handleEmojiSelect}
                                     onAddVariablePlaceholder={addVariablePlaceholder}
                                     onVariableValueChange={(key, value) => setVariableValues((p) => ({ ...p, [key]: value }))}
+                                    textareaRef={bodyTextareaRef}
                                 />
 
                                 {/* Carousel Cards Section */}
@@ -1470,7 +1510,7 @@ const CreateTemplatePage = () => {
 
                                 {/* Footer */}
                                 {builderData.templateType !== 'Carousel' && (
-                                    <Paper elevation={0} sx={{ p: 3, mb: 2, border: '1px solid var(--sidebar-borderColor, #e2e8f0)', borderRadius: '12px' }}>
+                                    <Paper elevation={0} className={styles.sectionCard} sx={{ p: 3, mb: 2, border: '1px solid var(--sidebar-borderColor, #e2e8f0)', borderRadius: '12px' }}>
                                         <Box className={styles.sectionHeaderRow}>
                                             <Box>
                                                 <h3 className={styles.sectionTitle}>
@@ -1491,7 +1531,7 @@ const CreateTemplatePage = () => {
 
                                 {/* Buttons */}
                                 {builderData.templateType !== 'Carousel' && (
-                                    <Paper elevation={0} sx={{ p: 3, mb: 2, border: '1px solid var(--sidebar-borderColor, #e2e8f0)', borderRadius: '12px' }}>
+                                    <Paper elevation={0} className={styles.sectionCard} sx={{ p: 3, mb: 2, border: '1px solid var(--sidebar-borderColor, #e2e8f0)', borderRadius: '12px' }}>
                                         <TemplateButtonSection
                                             title={<>
                                                 Buttons <span className={styles.optionalBadge}>Optional</span>
@@ -1532,6 +1572,37 @@ const CreateTemplatePage = () => {
                                 </Box>
                             </Grid>
                         </Grid>
+
+                        {/* Sticky bottom action bar */}
+                        <Box className={styles.stickyBottomBar}>
+                            <Box className={styles.stickyBottomBarInner}>
+                                {saveError && (
+                                    <span className={styles.saveErrorText}>{saveError}</span>
+                                )}
+                                <Box className={styles.stickyBottomBarActions}>
+                                    {!isEditMode && (
+                                        <Button
+                                            variant="outlined"
+                                            onClick={handleDraftClick}
+                                            disabled={isSaving || isUploading}
+                                            startIcon={<Save size={16} />}
+                                            className={styles.cancelBtn}
+                                        >
+                                            Save Template as Draft
+                                        </Button>
+                                    )}
+                                    <Button
+                                        variant="contained"
+                                        onClick={handleCreateClick}
+                                        disabled={isSaving || isUploading}
+                                        className={styles.primaryBtn}
+                                        startIcon={(isSaving || isUploading) ? <CircularProgress size={14} color="inherit" /> : <Plus size={16} />}
+                                    >
+                                        {isUploading ? `Uploading... ${uploadProgress}%` : isSaving ? 'Saving...' : (isEditMode ? 'Update Template' : 'Create Template')}
+                                    </Button>
+                                </Box>
+                            </Box>
+                        </Box>
                     </Box>
                 )}
 

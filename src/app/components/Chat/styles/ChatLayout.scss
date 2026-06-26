@@ -68,6 +68,34 @@
   font-size: 12px;
 }
 
+.add-customer-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 10px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 500;
+  color: #15803d;
+  background: #dcfce7;
+  border: 1px solid #86efac;
+  cursor: pointer;
+  margin-left: 8px;
+  transition: all 0.2s ease;
+  font-family: var(--chat-font);
+  white-space: nowrap;
+  flex-shrink: 0;
+
+  &:hover {
+    background: #bbf7d0;
+    transform: translateY(-1px);
+  }
+
+  &:active {
+    transform: scale(0.96);
+  }
+}
+
 .chat-conv-header-phone {
   font-family: var(--chat-font);
   color: #6b7280;

@@ -8,11 +8,16 @@ import {
   disconnectSocket,
   isSocketConnected,
   addSessionLogoutHandler,
+  addMessageHandler,
+  addMessageHandlerFromAssigningUser,
+  addMessageReactionHandler,
   broadcastLogout,
 } from '../socket';
 import { useAuth } from '../hooks/useAuth';
 import { getUserData, storage } from '../utils/storage';
 import { savePlayerId } from '../api/chat/conversationApi';
+import { notify } from '../utils/notifications';
+import { unlockNotificationAudio } from '../utils/notificationSound';
 
 const SocketStatusContext = createContext({ isConnected: false, socketStatus: 'disconnected' });
 
@@ -153,6 +158,45 @@ export default function SocketProvider({ children }) {
       if (bc && bcHandler) bc.removeEventListener('message', bcHandler);
       if (bc) bc.close();
       window.removeEventListener('storage', storageHandler);
+    };
+  }, [isPublicRoute]);
+
+  // Unlock notification audio on first user interaction (browser autoplay policy)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const unlock = () => {
+      unlockNotificationAudio();
+      document.removeEventListener('click', unlock);
+      document.removeEventListener('keydown', unlock);
+    };
+    document.addEventListener('click', unlock, { once: true });
+    document.addEventListener('keydown', unlock, { once: true });
+    return () => {
+      document.removeEventListener('click', unlock);
+      document.removeEventListener('keydown', unlock);
+    };
+  }, []);
+
+  // Browser notifications for incoming chat events
+  useEffect(() => {
+    if (isPublicRoute) return;
+
+    const removeNewMsg = addMessageHandler((data) => {
+      notify(data, 'NEW_MESSAGE');
+    });
+
+    const removeAssignMsg = addMessageHandlerFromAssigningUser((data) => {
+      notify(data, 'NEW_MESSAGE');
+    });
+
+    const removeReaction = addMessageReactionHandler((data) => {
+      notify(data, 'MESSAGE_REACTION');
+    });
+
+    return () => {
+      removeNewMsg();
+      removeAssignMsg();
+      removeReaction();
     };
   }, [isPublicRoute]);
 

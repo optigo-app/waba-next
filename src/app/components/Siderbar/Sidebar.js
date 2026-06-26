@@ -5,7 +5,6 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { disconnectSocket, broadcastLogout } from '../../socket'
 import {Menu, MenuItem, Tooltip, IconButton, Avatar } from '@mui/material'
-const poweredByImg = '/poweredBy.png';
 import { getWhatsAppAvatarConfig } from '@/app/utils/globalFunc'
 import { useAuth } from '../../hooks/useAuth'
 import { useWallet } from '../../contexts/WalletContext'
@@ -38,13 +37,15 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
         disconnectSocket(true);
         broadcastLogout();
         logout();
-        window.location.replace(`${window.location.origin}/`);
+        window.location.replace(`${window.location.origin}${basePath}/`);
     };
 
     const ICON_PROPS = { size: 20, strokeWidth: 2 };
 
     const isLocalhost = typeof window !== 'undefined' && window.location.origin.includes('localhost');
-    const chatPath = isLocalhost ? '/chat' : `${auth?.redirect_version || ''}/chat`;
+    const basePath = isLocalhost ? '' : (auth?.redirect_version || '');
+    const chatPath = `${basePath}/chat`;
+    const poweredByImg = `${basePath}/poweredBy.png`;
 
     const hasWabaData = !!walletInfo && !!walletInfo.wabaId && walletInfo.wabaId !== '-';
 

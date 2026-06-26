@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect } from 'react';
+import { useCallback, useEffect, useRef } from 'react';
 import { CircularProgress, Skeleton } from '@mui/material';
 import { Paperclip, ArrowDown } from 'lucide-react';
 import { formatDateHeader } from './utils/dateUtils';
@@ -34,6 +34,7 @@ export default function ChatMessagesArea({
   messageReactions,
   loadedMedia,
   setLoadedMedia,
+  mediaCache,
   setMediaViewer,
   reactionPickerMessageId,
   setReactionPickerMessageId,
@@ -52,6 +53,7 @@ export default function ChatMessagesArea({
   hasMore,
   loadMoreMessages,
 }) {
+  console.log("messages", messages)
   const groupMessagesByDate = useCallback(() => {
     const grouped = {};
     messages.forEach((msg) => {
@@ -68,6 +70,29 @@ export default function ChatMessagesArea({
     });
     return grouped;
   }, [messages]);
+
+  // Track whether user is near bottom so we can auto-scroll when media loads
+  const wasNearBottomRef = useRef(true);
+  useEffect(() => {
+    const el = messagesListRef.current;
+    if (!el) return;
+    const onScroll = () => {
+      wasNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => el.removeEventListener('scroll', onScroll);
+  }, [messagesListRef]);
+
+  // When any media finishes loading, keep the user at the bottom if they were already there
+  useEffect(() => {
+    const el = messagesListRef.current;
+    if (!el) return;
+    if (wasNearBottomRef.current) {
+      requestAnimationFrame(() => {
+        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
+      });
+    }
+  }, [loadedMedia]);
 
   return (
     <div
@@ -158,6 +183,7 @@ export default function ChatMessagesArea({
                   messageReactions={messageReactions}
                   loadedMedia={loadedMedia}
                   setLoadedMedia={setLoadedMedia}
+                  mediaCache={mediaCache}
                   setMediaViewer={setMediaViewer}
                   reactionPickerMessageId={reactionPickerMessageId}
                   setReactionPickerMessageId={setReactionPickerMessageId}
@@ -195,6 +221,7 @@ export default function ChatMessagesArea({
       {mediaPreview.length > 0 && (
         <MediaPreviewOverlay
           mediaPreview={mediaPreview}
+          messages={messages}
           selectedPreviewIndex={selectedPreviewIndex}
           onSelectIndex={setSelectedPreviewIndex}
           isSendingMedia={isSendingMedia}

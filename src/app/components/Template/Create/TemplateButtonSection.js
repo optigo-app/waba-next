@@ -162,7 +162,7 @@ const TemplateButtonSection = ({
                 >
                     {menuOptions.map((section, sectionIdx) => (
                         <Box key={section.section}>
-                            <ListSubheader sx={{ fontSize: '0.78rem', fontWeight: 600, color: '#64748b', lineHeight: 1.8 }}>
+                            <ListSubheader sx={{ fontSize: '0.78rem', fontWeight: 700, color: 'var(--titleColor)', lineHeight: 1.8 }}>
                                 {section.section}
                             </ListSubheader>
                             {section.items.map((item) => {
@@ -201,7 +201,7 @@ const TemplateButtonSection = ({
                             background: '#ffffff'
                         }}
                     >
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', mb: 1 }}>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--titleColor)', mb: 1 }}>
                             Quick Reply
                         </Typography>
 
@@ -245,7 +245,7 @@ const TemplateButtonSection = ({
                                                 <X size={16} />
                                             </IconButton>
 
-                                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
+                                            <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--titleColor)', mb: 0.7 }}>
                                                 Button Text
                                             </Typography>
 
@@ -279,7 +279,7 @@ const TemplateButtonSection = ({
                             background: '#ffffff'
                         }}
                     >
-                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 600, color: '#334155', mb: 1, display: 'flex', alignItems: 'center', gap: 0.7 }}>
+                        <Typography sx={{ fontSize: '0.85rem', fontWeight: 700, color: 'var(--titleColor)', mb: 1, display: 'flex', alignItems: 'center', gap: 0.7 }}>
                             <MousePointerClick size={14} />
                             Call-to-action Buttons
                         </Typography>
@@ -308,7 +308,7 @@ const TemplateButtonSection = ({
 
                                         <Box className={styles.buttonConfigRow}>
                                             <Box>
-                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
+                                                <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--titleColor)', mb: 0.7 }}>
                                                     Button Text
                                                 </Typography>
                                                 <TextField
@@ -329,7 +329,7 @@ const TemplateButtonSection = ({
 
                                             {btn.type === 'PHONE_NUMBER' && (
                                                 <Box sx={{ minWidth: '70%', flex: isCarouselContext ? 1 : 'unset' }}>
-                                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
+                                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--titleColor)', mb: 0.7 }}>
                                                         Phone Number
                                                     </Typography>
                                                     <PhoneInput
@@ -349,7 +349,7 @@ const TemplateButtonSection = ({
 
                                             {btn.type === 'URL' && (
                                                 <Box sx={{ minWidth: 380, width: '70%' }}>
-                                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 600, color: '#475569', mb: 0.7 }}>
+                                                    <Typography sx={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--titleColor)', mb: 0.7 }}>
                                                         Website URL
                                                     </Typography>
                                                     <TextField

@@ -1,10 +1,10 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo, useDeferredValue } from 'react';
 import { Avatar, Badge, IconButton, Menu, MenuItem, Tooltip, Skeleton, CircularProgress } from '@mui/material';
 import {
   Search, Pin, PinOff, Star, StarOff, Archive, ArchiveRestore,
-  ChevronDown, UserPlus, X, User as PersonIcon,
+  ChevronDown, UserPlus, X, User as PersonIcon, Tag, Check,
 } from 'lucide-react';
 import {
   getWhatsAppAvatarConfig, getCustomerDisplayName, getCustomerAvatarSeed,
@@ -12,6 +12,7 @@ import {
 } from './utils/chatUtils';
 import {
   fetchConversationLists,
+  fetchAllTags,
   pinConversationApi,
   unPinConversationApi,
   favoriteApi,
@@ -59,12 +60,16 @@ const getMenuItems = (member, can) => {
   return items;
 };
 
+const getTagId = (tag) => tag?.TagId ?? tag?.Id ?? tag?.id ?? null;
+
 export default function ChatSidebar({
   onCustomerSelect,
   selectedCustomer,
   isConversationRead,
   viewConversationRead,
   onConversationList,
+  selectedTag,
+  onTagSelect,
 }) {
   const auth = useAuthStore((s) => s.auth);
   const can = useAuthStore((s) => s.can);
@@ -76,6 +81,9 @@ export default function ChatSidebar({
   const [hasMore, setHasMore] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
+  const [allTags, setAllTags] = useState([]);
+  const [tagSearchTerm, setTagSearchTerm] = useState('');
+  const [tagMenuAnchor, setTagMenuAnchor] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
   const [contextMember, setContextMember] = useState(null);
   const [anchorEl, setAnchorEl] = useState(null);
@@ -86,6 +94,8 @@ export default function ChatSidebar({
   const listRef = useRef(null);
   const itemRefs = useRef({});
   const searchInputRef = useRef(null);
+  const tagSearchInputRef = useRef(null);
+  const tagMenuItemRefs = useRef([]);
 
   // Single ref for all keyboard-handler state to keep listener stable
   const kbRef = useRef({
@@ -200,8 +210,20 @@ export default function ChatSidebar({
         case 2: return isFavorite;
         default: return true;
       }
+    }).filter((c) => {
+      if (!selectedTag || selectedTag === 'All') return true;
+      return c.tags && c.tags.some((tag) => String(getTagId(tag)) === String(getTagId(selectedTag)));
     });
-  }, [conversations, searchTerm, tabValue]);
+  }, [conversations, searchTerm, tabValue, selectedTag]);
+
+  const deferredTagSearch = useDeferredValue(tagSearchTerm);
+
+  const filteredTagsForMenu = useMemo(() => {
+    const list = Array.isArray(allTags) ? allTags : [];
+    const q = String(deferredTagSearch || '').trim().toLowerCase();
+    if (!q) return list;
+    return list.filter((t) => String(t?.TagName || '').toLowerCase().includes(q));
+  }, [allTags, deferredTagSearch]);
 
   // Sync all keyboard-relevant state into a single ref (cheap, no re-renders)
   useEffect(() => {
@@ -303,6 +325,25 @@ export default function ChatSidebar({
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  // Fetch all tags for filtering
+  useEffect(() => {
+    if (!auth?.userId) return;
+    const controller = new AbortController();
+    (async () => {
+      try {
+        const resp = await fetchAllTags(auth.userId, controller.signal);
+        if (resp?.rd) {
+          setAllTags(resp.rd);
+        }
+      } catch (err) {
+        if (err.name !== 'AbortError') {
+          console.error('Failed to fetch tags:', err);
+        }
+      }
+    })();
+    return () => controller.abort();
+  }, [auth?.userId]);
 
   // Scroll highlighted item into view instantly (auto) via rAF for rapid keys
   useEffect(() => {
@@ -512,6 +553,201 @@ export default function ChatSidebar({
         </div>
       </div>
 
+      {/* Tag filter */}
+      {allTags?.length > 0 && (
+        <div className="chat-sidebar-tag-filter">
+          <div className="tag-filter-scroll">
+            <button
+              type="button"
+              className={`tag-filter-chip ${selectedTag === 'All' ? 'active' : ''}`}
+              onClick={() => onTagSelect?.('All')}
+            >
+              All
+            </button>
+            {allTags.slice(0, 4).map((tag) => {
+              const isActive = selectedTag !== 'All' && String(getTagId(selectedTag)) === String(getTagId(tag));
+              return (
+                <button
+                  key={getTagId(tag)}
+                  type="button"
+                  className={`tag-filter-chip ${isActive ? 'active' : ''}`}
+                  onClick={() => {
+                    if (isActive) {
+                      onTagSelect?.('All');
+                    } else {
+                      onTagSelect?.(tag);
+                    }
+                  }}
+                  title={tag.TagName}
+                >
+                  <span
+                    className="tag-filter-dot"
+                    style={{ backgroundColor: tag.color || '#1daa61' }}
+                  />
+                  <span className="tag-filter-name">{tag.TagName}</span>
+                </button>
+              );
+            })}
+            {allTags.length > 4 && (
+              <button
+                type="button"
+                className="tag-filter-chip tag-filter-more"
+                onClick={(e) => setTagMenuAnchor(e.currentTarget)}
+                title={`${allTags.length - 4} more tags`}
+              >
+                <Tag size={14} />
+                <span>More</span>
+                <span className="tag-filter-more-count">{allTags.length - 4}</span>
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Tag filter menu */}
+      <Menu
+        className="tag-filter-menu"
+        anchorEl={tagMenuAnchor}
+        open={Boolean(tagMenuAnchor)}
+        onClose={() => {
+          setTagMenuAnchor(null);
+          setTagSearchTerm('');
+        }}
+        disableAutoFocusItem
+        PaperProps={{
+          elevation: 0,
+          sx: {
+            minWidth: 260,
+            maxHeight: 420,
+            borderRadius: 3,
+            boxShadow: '0 12px 40px rgba(0,0,0,0.14)',
+            border: '1px solid rgba(0,0,0,0.06)',
+            overflow: 'hidden',
+          },
+        }}
+      >
+        {/* Sticky search header */}
+        <div className="tag-filter-menu-header">
+          <Search size={14} color="#888" style={{ flexShrink: 0 }} />
+          <input
+            ref={tagSearchInputRef}
+            type="text"
+            placeholder="Search tags..."
+            value={tagSearchTerm}
+            onChange={(e) => setTagSearchTerm(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'ArrowDown') {
+                e.preventDefault();
+                e.stopPropagation();
+                const first = tagMenuItemRefs.current[0];
+                if (first) first.focus();
+              } else if (e.key === 'Escape') {
+                e.stopPropagation();
+                setTagMenuAnchor(null);
+                setTagSearchTerm('');
+              }
+            }}
+            className="tag-filter-search-input"
+            autoFocus
+          />
+          {tagSearchTerm && (
+            <button
+              type="button"
+              className="tag-filter-search-clear"
+              onClick={() => {
+                setTagSearchTerm('');
+                tagSearchInputRef.current?.focus();
+              }}
+              tabIndex={-1}
+            >
+              <X size={14} />
+            </button>
+          )}
+        </div>
+
+        {/* All / Clear filter */}
+        <MenuItem
+          ref={(el) => { tagMenuItemRefs.current[0] = el; }}
+          selected={selectedTag === 'All'}
+          onClick={() => {
+            onTagSelect?.('All');
+            setTagMenuAnchor(null);
+            setTagSearchTerm('');
+          }}
+          onKeyDown={(e) => {
+            if (e.key === 'ArrowUp') {
+              e.preventDefault();
+              e.stopPropagation();
+              tagSearchInputRef.current?.focus();
+            }
+          }}
+          sx={{ py: 1.2, display: 'flex', alignItems: 'center', gap: 1.5 }}
+        >
+          <span style={{ width: 20, display: 'flex', justifyContent: 'center' }}>
+            {selectedTag === 'All' && <Check size={16} color="#1daa61" strokeWidth={2.5} />}
+          </span>
+          <span style={{ fontSize: 14, fontWeight: selectedTag === 'All' ? 600 : 500, color: '#555' }}>
+            All conversations
+          </span>
+        </MenuItem>
+
+        {/* Tag list */}
+        {filteredTagsForMenu.map((tag, idx) => {
+          const isActive = selectedTag !== 'All' && String(getTagId(selectedTag)) === String(getTagId(tag));
+          const refIndex = idx + 1;
+          return (
+            <MenuItem
+              key={getTagId(tag)}
+              ref={(el) => { tagMenuItemRefs.current[refIndex] = el; }}
+              selected={isActive}
+              onClick={() => {
+                if (isActive) {
+                  onTagSelect?.('All');
+                } else {
+                  onTagSelect?.(tag);
+                }
+                setTagMenuAnchor(null);
+                setTagSearchTerm('');
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'ArrowUp' && refIndex === 0) {
+                  e.preventDefault();
+                  e.stopPropagation();
+                  tagSearchInputRef.current?.focus();
+                }
+              }}
+              sx={{ py: 1.2, display: 'flex', alignItems: 'center', gap: 1.5 }}
+            >
+              <span style={{ width: 20, display: 'flex', justifyContent: 'center' }}>
+                {isActive && <Check size={16} color="#1daa61" strokeWidth={2.5} />}
+              </span>
+              <span
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: '50%',
+                  background: tag.color || '#1daa61',
+                  display: 'inline-block',
+                  flexShrink: 0,
+                }}
+              />
+              <span style={{ fontSize: 14, fontWeight: isActive ? 600 : 500, overflow: 'hidden', textOverflow: 'ellipsis', flex: 1 }}>
+                {tag.TagName}
+              </span>
+              {isActive && (
+                <span style={{ fontSize: 11, color: '#1daa61', fontWeight: 600 }}>Active</span>
+              )}
+            </MenuItem>
+          );
+        })}
+
+        {filteredTagsForMenu.length === 0 && (
+          <MenuItem disabled sx={{ opacity: 0.6, justifyContent: 'center', py: 2 }}>
+            <span style={{ fontSize: 13, color: '#888' }}>No tags found</span>
+          </MenuItem>
+        )}
+      </Menu>
+
       {/* List */}
       {!can(15) ? (
         <div className="chat-sidebar-list">
@@ -673,6 +909,22 @@ export default function ChatSidebar({
                         </div>
                       </span>
                     </div>
+                    {Array.isArray(member.tags) && member.tags.length > 0 && (
+                      <div className="conversation-tags-row">
+                        {member.tags.slice(0, 3).map((tag) => (
+                          <span key={getTagId(tag)} className="conversation-tag-chip" title={tag.TagName}>
+                            <span
+                              className="conversation-tag-dot"
+                              style={{ backgroundColor: tag.color || '#1daa61' }}
+                            />
+                            {tag.TagName}
+                          </span>
+                        ))}
+                        {member.tags.length > 3 && (
+                          <span className="conversation-tag-chip">+{member.tags.length - 3}</span>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
               </li>

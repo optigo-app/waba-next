@@ -1,7 +1,7 @@
 'use client';
 
 import { callCommonApi } from '../CommonApi';
-import { MESSAGEAPIURL, MESSAGEAPIURLBULK, getHeaders } from '../Config';
+import { MESSAGEAPIURL, MESSAGEAPIURLBULK, MEDIARETRIEVED, getHeaders } from '../Config';
 import { getUserData } from '../../utils/storage';
 
 export const fetchConversationLists = async (page = 1, pageSize = 20, userId, search = '') => {
@@ -87,16 +87,113 @@ export const sendChatText = async ({ phoneNo, message, userId, customerId }) => 
   }
 };
 
-export const sendChatMedia = async ({ phoneNo, mediaUrl, type, caption, userId, customerId }) => {
+export const uploadChatMedia = async (file, whatsappNumber, whatsappKey, onProgress) => {
+  try {
+    const token = typeof window !== 'undefined' ? JSON.parse(sessionStorage.getItem('token') || '{}') : {};
+    const formData = new FormData();
+    formData.append('messaging_product', 'whatsapp');
+    formData.append('file', file);
+    if (file?.type) formData.append('type', file.type);
+
+    const baseURL = token?.isMeta == 1
+      ? `https://graph.facebook.com/v19.0/${whatsappNumber}/media`
+      : `https://crmapp.mpillarapi.com/api/meta/v19.0/${whatsappNumber}/media`;
+
+    const headers = {
+      Authorization: `Bearer ${whatsappKey}`,
+    };
+
+    // Simulated progress since native fetch doesn't expose upload progress
+    let progressInterval = null;
+    if (onProgress) {
+      let simulated = 0;
+      progressInterval = setInterval(() => {
+        simulated += Math.random() * 12 + 3;
+        if (simulated >= 95) simulated = 95;
+        onProgress(Math.round(simulated));
+      }, 400);
+    }
+
+    const response = await fetch(baseURL, {
+      method: 'POST',
+      headers,
+      body: formData,
+    });
+
+    if (progressInterval) {
+      clearInterval(progressInterval);
+      onProgress(100);
+    }
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({}));
+      throw new Error(errorData?.error?.message || `Upload failed: ${response.statusText}`);
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Upload Error:', error);
+    throw error;
+  }
+};
+
+export const fetchChatMediaBlob = async (mediaId) => {
+  try {
+    const headers = getHeaders();
+    const response = await fetch(MEDIARETRIEVED(), {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...headers,
+      },
+      body: JSON.stringify({ mediaid: mediaId }),
+    });
+
+    console.log('[fetchChatMediaBlob] mediaId:', mediaId, 'status:', response.status, 'ok:', response.ok);
+
+    if (!response.ok) {
+      console.error('Media fetch API error:', response.statusText);
+      return null;
+    }
+
+    const contentType = response.headers.get('Content-Type') || '';
+    console.log('[fetchChatMediaBlob] content-type:', contentType);
+
+    // If API returns JSON with a direct URL, return that URL string
+    if (contentType.includes('application/json')) {
+      const data = await response.json();
+      console.log('[fetchChatMediaBlob] JSON response:', data);
+      if (data?.url || data?.mediaUrl || data?.link) {
+        return { url: data.url || data.mediaUrl || data.link };
+      }
+      console.warn('[fetchChatMediaBlob] JSON response missing url/mediaUrl/link');
+      return null;
+    }
+
+    // Otherwise return the actual binary blob (images, videos, documents, audio)
+    const blob = await response.blob();
+    console.log('[fetchChatMediaBlob] blob type:', blob.type, 'size:', blob.size);
+    return { blob };
+  } catch (error) {
+    console.error('Error fetching media blob:', error);
+    return null;
+  }
+};
+
+export const sendChatMedia = async ({ phoneNo, mediaUrl, mediaId, type, caption, userId, customerId }) => {
+  const mediaPayload = { caption: caption || '' };
+  if (mediaId) {
+    mediaPayload.id = mediaId;
+  } else if (mediaUrl) {
+    mediaPayload.link = mediaUrl;
+  }
+
   const body = {
     userId: String(userId),
     customerId: String(customerId),
     phoneNo: String(phoneNo),
     type,
-    [type]: {
-      link: mediaUrl,
-      caption: caption || '',
-    },
+    [type]: mediaPayload,
   };
 
   try {
@@ -134,6 +231,26 @@ export const fetchTags = async () => {
     return response.Data.rd;
   }
   return [];
+};
+
+export const fetchAllTags = async (userId, signal) => {
+  try {
+    const response = await callCommonApi({
+      mode: 'wa_list_tags',
+      f: 'WhatsApp Chat ( List Tags )',
+      p: '',
+      userId,
+      signal,
+    });
+    if (response?.Data) {
+      return response.Data;
+    }
+    return null;
+  } catch (error) {
+    if (error.message === 'AbortError' || error.name === 'AbortError') throw error;
+    console.error('Error fetching all tags:', error);
+    return null;
+  }
 };
 
 export const fetchCustomerTags = async (customerId, userId, signal) => {

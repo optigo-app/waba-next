@@ -21,7 +21,7 @@ const TemplateHeaderSection = ({
     onHeaderMediaRemove,
 }) => {
     return (
-        <Paper elevation={0} sx={{ p: 3, mb: 2, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
+        <Paper elevation={0} className={styles.sectionCard} sx={{ p: 3, mb: 2, border: '1px solid #e2e8f0', borderRadius: '12px' }}>
             <h3 className={styles.sectionTitle}>Header</h3>
             <p className={styles.sectionSubtitle}>Add a title or choose which type of media you'll use for this header.</p>
 
@@ -104,10 +104,7 @@ const TemplateHeaderSection = ({
                                 className={`${styles.mediaIconCard} ${headerMedia.mediaType === type ? styles.mediaIconCardActive : ''}`}
                                 onClick={() => onHeaderMediaTypeChange(type)}
                             >
-                                {headerMedia.mediaType === type && (
-                                    <span className={styles.mediaIconCheck}>✓</span>
-                                )}
-                                <Icon size={28} className={styles.mediaIconSvg} />
+                                <Icon size={16} className={styles.mediaIconSvg} />
                                 <span className={styles.mediaIconLabel}>{label}</span>
                                 {type === 'location' && <span className={styles.mediaIconSoon}>soon</span>}
                             </Button>
@@ -144,9 +141,19 @@ const TemplateHeaderSection = ({
                                             <span>Current document</span>
                                         </Box>
                                     )}
-                                    <p className={styles.existingMediaLabel}>
-                                        Current file will be kept. Upload a new file to replace it.
-                                    </p>
+                                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, mt: 1 }}>
+                                        <p className={styles.existingMediaLabel}>
+                                            Current file will be kept. Upload a new file to replace it.
+                                        </p>
+                                        <Button
+                                            size="small"
+                                            onClick={onHeaderMediaRemove}
+                                            sx={{ minWidth: 'auto', padding: '4px 8px', color: 'var(--error-main)', fontSize: '0.75rem', gap: '4px' }}
+                                        >
+                                            <X size={14} />
+                                            Remove
+                                        </Button>
+                                    </Box>
                                 </Box>
                             )}
 

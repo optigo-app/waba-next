@@ -7,7 +7,7 @@ import {
   Check, CheckCheck, Clock3, AlertCircle,
 } from 'lucide-react';
 import { getCustomerDisplayName, getCustomerAvatarSeed, getWhatsAppAvatarConfig } from './utils/chatUtils';
-import { fetchConversationView, sendChatText, sendChatMedia, sendReplyMessage, sendForwardMessage, fetchCustomerTags, fetchAgentLists } from '../../api/chat/conversationApi';
+import { fetchConversationView, sendChatText, sendChatMedia, sendReplyMessage, sendForwardMessage, fetchCustomerTags, fetchAgentLists, uploadChatMedia, deleteAssignedTags, fetchChatMediaBlob } from '../../api/chat/conversationApi';
 import ChatHeader from './ChatHeader';
 import ChatMessagesArea from './ChatMessagesArea';
 import ChatInputArea from './ChatInputArea';
@@ -49,6 +49,7 @@ export default function ChatConversation({
   const [emojiPickerOpen, setEmojiPickerOpen] = useState(false);
   const emojiPickerRef = useRef(null);
   const [loadedMedia, setLoadedMedia] = useState({});
+  const [mediaCache, setMediaCache] = useState({});
   const [forwardMessage, setForwardMessage] = useState(null);
   const [mediaPreview, setMediaPreview] = useState([]);
   const [selectedPreviewIndex, setSelectedPreviewIndex] = useState(0);
@@ -115,6 +116,9 @@ export default function ChatConversation({
   const tagsScrollRef = useRef(null);
   const dragCounterRef = useRef(0);
   const isPrependingRef = useRef(false);
+  const initialScrollDoneRef = useRef(false);
+  const fetchingMediaRef = useRef(new Set());
+  const processedMediaIdsRef = useRef(new Set());
   const { auth } = useAuth();
 
   const conversationId = selectedCustomer?.ConversationId ?? selectedCustomer?.Id ?? selectedCustomer?.autoid;
@@ -159,6 +163,15 @@ export default function ChatConversation({
         setEscalatedList([]);
         setReplyToMessage(null);
         setLoadedMedia({});
+        fetchingMediaRef.current.clear();
+        processedMediaIdsRef.current.clear();
+        // Revoke any cached blob URLs before switching conversations
+        Object.values(mediaCache).forEach((url) => {
+          if (url?.startsWith('blob:')) {
+            try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
+          }
+        });
+        setMediaCache({});
         setUnreadCount(0);
         setForwardMessage(null);
         setMediaPreview([]);
@@ -231,10 +244,24 @@ export default function ChatConversation({
   }, [conversationId, auth?.userId, selectedCustomer?.autoid]);
 
   useEffect(() => {
+    initialScrollDoneRef.current = false;
+  }, [conversationId]);
+
+  useEffect(() => {
     if (isPrependingRef.current) {
       isPrependingRef.current = false;
       return;
     }
+    if (!messages.length) return;
+
+    if (!initialScrollDoneRef.current) {
+      initialScrollDoneRef.current = true;
+      const timer = setTimeout(() => {
+        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages]);
 
@@ -333,24 +360,11 @@ export default function ChatConversation({
   }, [mediaPreview.length]);
 
   const removeMediaPreview = useCallback((index) => {
-    setMediaPreview((prev) => {
-      const item = prev[index];
-      if (item?.previewUrl) {
-        try { URL.revokeObjectURL(item.previewUrl); } catch (e) { /* ignore */ }
-      }
-      return prev.filter((_, i) => i !== index);
-    });
+    setMediaPreview((prev) => prev.filter((_, i) => i !== index));
   }, []);
 
   const clearMediaPreview = useCallback(() => {
-    setMediaPreview((prev) => {
-      prev.forEach((item) => {
-        if (item?.previewUrl) {
-          try { URL.revokeObjectURL(item.previewUrl); } catch (e) { /* ignore */ }
-        }
-      });
-      return [];
-    });
+    setMediaPreview([]);
     setSelectedPreviewIndex(0);
   }, []);
 
@@ -376,49 +390,101 @@ export default function ChatConversation({
           {
             id: tempId,
             content: preview.name,
-            Message: text || preview.name,
+            fileName: preview.name,
+            Message: text || '',
             type: preview.type,
             mediaUrl: preview.previewUrl,
             direction: 1,
             sentAt: new Date().toISOString(),
             Date: new Date().toISOString().split('T')[0],
             status: 'sending',
+            isUploading: true,
+            percent: 0,
             ...(isReply && { ContextType: 2, ReplyContext: replyToMessage }),
           },
         ]);
 
+        let uploadedId = null;
         try {
-          // TODO: upload file to server to get permanent URL, then call sendChatMedia
-          // For now, simulate a successful send
-          await new Promise((resolve) => setTimeout(resolve, 800));
+          const uploadResp = await uploadChatMedia(
+            preview.file,
+            auth?.whatsappNumber,
+            auth?.whatsappKey,
+            (percent) => {
+              setMessages((prev) =>
+                prev.map((msg) =>
+                  msg.id === tempId ? { ...msg, isUploading: true, percent: Math.max(0, Math.min(99, percent)) } : msg
+                )
+              );
+            }
+          );
+          uploadedId = uploadResp?.id ?? uploadResp?.mediaId ?? null;
+
+          if (!uploadedId) {
+            throw new Error('Upload did not return media id');
+          }
+        } catch (err) {
+          console.error('Upload failed:', err);
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === tempId ? { ...msg, status: 'sent' } : msg
+              msg.id === tempId ? { ...msg, status: 'failed', isUploading: false } : msg
             )
           );
+          toast.error(err?.message || 'Failed to upload media');
+          continue;
+        }
+
+        try {
+          const sendResp = await sendChatMedia({
+            phoneNo: selectedCustomer?.CustomerPhone || selectedCustomer?.Sender || '',
+            mediaId: uploadedId,
+            type: preview.type,
+            caption: text || '',
+            userId: auth.userId,
+            customerId: conversationId,
+          });
+
+          if (!sendResp) {
+            throw new Error('Failed to send media message');
+          }
+
+          // Mark sent — keep local preview URL visible
+          setLoadedMedia((prev) => ({ ...prev, [tempId]: false }));
+          setMessages((prev) =>
+            prev.map((msg) =>
+              msg.id === tempId
+                ? { ...msg, isUploading: false, status: 'sent', id: sendResp?.Data?.autoid || tempId }
+                : msg
+            )
+          );
+
+          // Retrieve final media URL in background for this uploaded ID only
+          (async () => {
+            try {
+              const result = await fetchChatMediaBlob(uploadedId);
+              const mediaUrl = result?.url || (result?.blob ? URL.createObjectURL(result.blob) : null);
+              if (mediaUrl) {
+                setMediaCache((prev) => ({ ...prev, [uploadedId]: mediaUrl }));
+                setMessages((prev) =>
+                  prev.map((msg) =>
+                    msg.id === tempId
+                      ? { ...msg, mediaUrl }
+                      : msg
+                  )
+                );
+              }
+            } catch (e) {
+              // Silent fail — local preview already showing
+            }
+          })();
         } catch (err) {
           console.error('Media send error:', err);
           setMessages((prev) =>
             prev.map((msg) =>
-              msg.id === tempId ? { ...msg, status: 'failed' } : msg
+              msg.id === tempId ? { ...msg, status: 'failed', isUploading: false } : msg
             )
           );
-          toast.error('Failed to send media');
-        }
-      }
-
-      // Also send text caption separately if present and no reply context
-      if (text && !isReply) {
-        try {
-          const response = await sendChatText({
-            phoneNo: selectedCustomer?.CustomerPhone || selectedCustomer?.Sender || '',
-            message: text,
-            userId: auth.userId,
-            customerId: conversationId,
-          });
-          if (!response) toast.error('Failed to send caption');
-        } catch (e) {
-          toast.error('Failed to send caption');
+          toast.error(err?.message || 'Failed to send media');
         }
       }
 
@@ -563,6 +629,30 @@ export default function ChatConversation({
       setForwardMessage(null);
     }
   }, [forwardMessage, auth?.userId]);
+
+  const handleDeleteTag = useCallback(async (tag) => {
+    if (!tag?.Id || !selectedCustomer?.CustomerId || !auth?.userId) return;
+    try {
+      const response = await deleteAssignedTags(selectedCustomer.CustomerId, tag.Id, auth.userId);
+      if (response) {
+        toast.success('Tag removed');
+        // Re-fetch tags
+        try {
+          const tagsResponse = await fetchCustomerTags(selectedCustomer.CustomerId, auth.userId);
+          if (tagsResponse?.rd) {
+            setTagsList(tagsResponse.rd);
+          }
+        } catch (err) {
+          console.error('Failed to refresh tags:', err);
+        }
+      } else {
+        toast.error('Failed to remove tag');
+      }
+    } catch (error) {
+      console.error('Delete tag error:', error);
+      toast.error('Failed to remove tag');
+    }
+  }, [selectedCustomer?.CustomerId, auth?.userId]);
 
   const handleFileUpload = useCallback(
     (e) => {
@@ -723,6 +813,64 @@ export default function ChatConversation({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [emojiPickerOpen]);
 
+  // Fetch media blobs for messages that only have a media ID (not a direct URL)
+  useEffect(() => {
+    const idsToFetch = [];
+    messages.forEach((msg) => {
+      // Collect all possible media ID fields (images, videos, documents, audio)
+      const candidates = [
+        msg?.MediaUrl,
+        msg?.mediaUrl,
+        msg?.mediaId,
+        msg?.imageUrl,
+        msg?.documentUrl,
+        msg?.DocumentUrl,
+        msg?.videoUrl,
+        msg?.audioUrl,
+      ];
+      candidates.forEach((val) => {
+        if (!val || typeof val !== 'string') return;
+        // Skip if already a direct URL or blob
+        if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) return;
+        // Skip if already cached or already processed in this conversation
+        if (mediaCache[val]) return;
+        if (processedMediaIdsRef.current.has(val)) return;
+        idsToFetch.push(val);
+      });
+    });
+
+    const uniqueIds = [...new Set(idsToFetch)];
+    uniqueIds.forEach(async (id) => {
+      if (fetchingMediaRef.current.has(id)) return;
+      if (processedMediaIdsRef.current.has(id)) return;
+      fetchingMediaRef.current.add(id);
+      try {
+        const result = await fetchChatMediaBlob(id);
+        const url = result?.url || (result?.blob ? URL.createObjectURL(result.blob) : null);
+        if (url) {
+          processedMediaIdsRef.current.add(id);
+          setMediaCache((prev) => ({ ...prev, [id]: url }));
+        }
+      } catch (err) {
+        console.error('Failed to fetch media blob for', id, err);
+      } finally {
+        fetchingMediaRef.current.delete(id);
+      }
+    });
+  }, [messages]);
+
+  // Cleanup blob URLs on unmount
+  useEffect(() => {
+    return () => {
+      Object.values(mediaCache).forEach((url) => {
+        if (url?.startsWith('blob:')) {
+          try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
+        }
+      });
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
@@ -763,6 +911,7 @@ export default function ChatConversation({
         setEscalatedList={setEscalatedList}
         auth={auth}
         setDetailsOpen={setDetailsOpen}
+        onDeleteTag={handleDeleteTag}
       />
 
       <ChatMessagesArea
@@ -792,6 +941,7 @@ export default function ChatConversation({
         messageReactions={messageReactions}
         loadedMedia={loadedMedia}
         setLoadedMedia={setLoadedMedia}
+        mediaCache={mediaCache}
         setMediaViewer={setMediaViewer}
         reactionPickerMessageId={reactionPickerMessageId}
         setReactionPickerMessageId={setReactionPickerMessageId}
@@ -871,6 +1021,7 @@ export default function ChatConversation({
         onClose={() => setMediaViewer({ open: false, src: '', filename: '', type: '' })}
         src={mediaViewer.src}
         filename={mediaViewer.filename}
+        type={mediaViewer.type}
         mediaItems={mediaViewer.mediaItems}
         initialIndex={mediaViewer.initialIndex ?? 0}
       />

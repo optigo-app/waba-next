@@ -1,14 +1,11 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
 import {
-    Dialog,
-    DialogTitle,
-    DialogContent,
-    DialogActions,
-    Button,
     Box,
     Typography,
+    Button,
     Paper,
     Fade,
 } from '@mui/material';
@@ -17,30 +14,22 @@ import {
     MessageCircle,
     ArrowLeft,
     X,
+    CheckCircle2,
 } from 'lucide-react';
-import EmbeddedSignupStep from './EmbeddedSignupStep';
-import ConfettiCanvas from './ConfettiCanvas';
-import { playCelebrationSound } from '../../utils/celebrationSound';
+import EmbeddedSignupStep from '../components/Dashboard/EmbeddedSignupStep';
+import ConfettiCanvas from '../components/Dashboard/ConfettiCanvas';
+import { playCelebrationSound } from '../utils/celebrationSound';
 
-const OnboardingModal = ({ open, onClose, onChannelAdded }) => {
+export default function OnboardingPage() {
+    const router = useRouter();
     const [activeStep, setActiveStep] = useState(0);
     const [completedData, setCompletedData] = useState(null);
 
-    useEffect(() => {
-        if (open) {
-            setActiveStep(0);
-            setCompletedData(null);
-        }
-    }, [open]);
-
     const handleSignupSuccess = useCallback((data) => {
         setCompletedData(data);
-        if (onChannelAdded) {
-            onChannelAdded(data);
-        }
         setActiveStep(1);
         playCelebrationSound();
-    }, [onChannelAdded]);
+    }, []);
 
     const handleBack = () => {
         if (activeStep > 0) {
@@ -49,7 +38,11 @@ const OnboardingModal = ({ open, onClose, onChannelAdded }) => {
     };
 
     const handleFinish = () => {
-        onClose();
+        router.push('/');
+    };
+
+    const handleCancel = () => {
+        router.back();
     };
 
     const renderStepContent = () => {
@@ -142,19 +135,19 @@ const OnboardingModal = ({ open, onClose, onChannelAdded }) => {
                                     Account Details
                                 </Typography>
                             </Box>
-                            {completedData.phoneId && (
+                            {completedData.WabaPhoneNo && (
                                 <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.78rem', color: '#6D6B77', mb: 0.5 }}>
-                                    <strong>Phone ID:</strong> {completedData.phoneId}
+                                    <strong>Phone Number ID:</strong> {completedData.WabaPhoneNo}
                                 </Typography>
                             )}
-                            {completedData.wabaId && (
+                            {completedData.WabaId && (
                                 <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.78rem', color: '#6D6B77', mb: 0.5 }}>
-                                    <strong>WABA ID:</strong> {completedData.wabaId}
+                                    <strong>WABA ID:</strong> {completedData.WabaId}
                                 </Typography>
                             )}
-                            {completedData.name && (
+                            {completedData.companycode && (
                                 <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontSize: '0.78rem', color: '#6D6B77' }}>
-                                    <strong>Name:</strong> {completedData.name}
+                                    <strong>Company:</strong> {completedData.companycode}
                                 </Typography>
                             )}
                         </Paper>
@@ -189,84 +182,125 @@ const OnboardingModal = ({ open, onClose, onChannelAdded }) => {
     };
 
     return (
-        <Dialog
-            open={open}
-            onClose={onClose}
-            maxWidth="md"
-            fullWidth
-            slotProps={{
-                paper: {
-                    sx: {
-                        borderRadius: '20px',
-                        boxShadow: '0 20px 60px rgba(0,0,0,0.15)',
-                        overflow: 'hidden',
-                        maxWidth: 720,
-                        minHeight: activeStep === 0 ? 560 : 440,
-                        transition: 'min-height 0.45s cubic-bezier(0.4, 0, 0.2, 1), max-width 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
-                    },
-                },
+        <Box
+            sx={{
+                minHeight: '100vh',
+                background: '#f8f9fa',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                p: { xs: 2, sm: 3, md: 4 },
             }}
         >
-            <DialogTitle
+            <Box
                 sx={{
-                    pb: 1.5,
-                    pt: 3,
-                    px: 3,
-                    fontFamily: 'Poppins, sans-serif',
-                    fontWeight: 600,
-                    fontSize: '1.25rem',
-                    color: '#444050',
+                    width: '100%',
+                    maxWidth: 720,
+                    background: '#fff',
+                    borderRadius: '20px',
+                    boxShadow: '0 20px 60px rgba(0,0,0,0.08)',
+                    overflow: 'hidden',
+                    minHeight: activeStep === 0 ? 560 : 440,
+                    transition: 'min-height 0.45s cubic-bezier(0.4, 0, 0.2, 1)',
                     display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
+                    flexDirection: 'column',
                 }}
             >
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
-                    <Box
-                        sx={{
-                            width: 40,
-                            height: 40,
-                            borderRadius: '12px',
-                            background: 'linear-gradient(135deg, #1daa61, #25d366)',
-                            display: 'flex',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                        }}
-                    >
-                        <Plus size={20} color="#fff" />
-                    </Box>
-                    Add New Channel
-                </Box>
-                <Button
-                    onClick={onClose}
+                {/* Header */}
+                <Box
                     sx={{
-                        textTransform: 'none',
-                        borderRadius: '10px',
-                        fontFamily: 'Poppins, sans-serif',
-                        fontWeight: 500,
-                        color: '#6D6B77',
-                        fontSize: '0.85rem',
-                        minWidth: 'auto',
-                        p: '6px 12px',
+                        p: { xs: 2, sm: 3 },
+                        pb: 1.5,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'space-between',
+                        borderBottom: '1px solid #f0f0f0',
                     }}
                 >
-                    <X size={16} />
-                </Button>
-            </DialogTitle>
-
-            <DialogContent sx={{ px: 3, pb: 2 }}>
-                <Fade in timeout={350} key={`step-${activeStep}`} unmountOnExit>
-                    <Box>
-                        {renderStepContent()}
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+                        <Box
+                            sx={{
+                                width: 40,
+                                height: 40,
+                                borderRadius: '12px',
+                                background: 'linear-gradient(135deg, #1daa61, #25d366)',
+                                display: 'flex',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                            }}
+                        >
+                            <Plus size={20} color="#fff" />
+                        </Box>
+                        <Typography
+                            sx={{
+                                fontFamily: 'Poppins, sans-serif',
+                                fontWeight: 600,
+                                fontSize: '1.25rem',
+                                color: '#444050',
+                            }}
+                        >
+                            Add New Channel
+                        </Typography>
                     </Box>
-                </Fade>
-            </DialogContent>
-
-            <DialogActions sx={{ px: 3, pb: 3, display: 'flex', justifyContent: 'space-between' }}>
-                {activeStep === 1 ? (
                     <Button
-                        onClick={handleBack}
-                        startIcon={<ArrowLeft size={16} />}
+                        onClick={handleCancel}
+                        sx={{
+                            textTransform: 'none',
+                            borderRadius: '10px',
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 500,
+                            color: '#6D6B77',
+                            fontSize: '0.85rem',
+                            minWidth: 'auto',
+                            p: '6px 12px',
+                        }}
+                    >
+                        <X size={16} />
+                    </Button>
+                </Box>
+
+                {/* Content */}
+                <Box sx={{ flex: 1, px: { xs: 2, sm: 3 }, py: 2, overflow: 'auto' }}>
+                    <Fade in timeout={350} key={`step-${activeStep}`} unmountOnExit>
+                        <Box>
+                            {renderStepContent()}
+                        </Box>
+                    </Fade>
+                </Box>
+
+                {/* Footer */}
+                <Box
+                    sx={{
+                        px: { xs: 2, sm: 3 },
+                        pb: 3,
+                        pt: 1,
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        borderTop: '1px solid #f0f0f0',
+                    }}
+                >
+                    {activeStep === 1 ? (
+                        <Button
+                            onClick={handleBack}
+                            startIcon={<ArrowLeft size={16} />}
+                            sx={{
+                                textTransform: 'none',
+                                borderRadius: '10px',
+                                fontFamily: 'Poppins, sans-serif',
+                                fontWeight: 500,
+                                color: '#6D6B77',
+                                fontSize: '0.85rem',
+                            }}
+                        >
+                            Back
+                        </Button>
+                    ) : (
+                        <Box />
+                    )}
+                    <Button
+                        onClick={handleCancel}
+                        startIcon={activeStep === 1 ? <X size={16} /> : null}
                         sx={{
                             textTransform: 'none',
                             borderRadius: '10px',
@@ -276,28 +310,10 @@ const OnboardingModal = ({ open, onClose, onChannelAdded }) => {
                             fontSize: '0.85rem',
                         }}
                     >
-                        Back
+                        {activeStep === 1 ? 'Close' : 'Cancel'}
                     </Button>
-                ) : (
-                    <Box />
-                )}
-                <Button
-                    onClick={onClose}
-                    startIcon={activeStep === 1 ? <X size={16} /> : null}
-                    sx={{
-                        textTransform: 'none',
-                        borderRadius: '10px',
-                        fontFamily: 'Poppins, sans-serif',
-                        fontWeight: 500,
-                        color: '#6D6B77',
-                        fontSize: '0.85rem',
-                    }}
-                >
-                    {activeStep === 1 ? 'Close' : 'Cancel'}
-                </Button>
-            </DialogActions>
-        </Dialog>
+                </Box>
+            </Box>
+        </Box>
     );
-};
-
-export default OnboardingModal;
+}

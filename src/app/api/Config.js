@@ -7,7 +7,7 @@ export const getEnvFlags = () => {
     const hostname = window.location.hostname;
     return {
         isLocal: ['localhost', '5dmjw0dg-2000.inc1.devtunnels.ms'].includes(hostname),
-        isNxt: ['nxt21.optigoapps.com'].includes(hostname),
+        isNxt: ['nxt17.optigoapps.com'].includes(hostname),
         isLocalWeb: ["waba.web"].includes(hostname),
     };
 };
@@ -54,6 +54,8 @@ export const TEMPLATE_MD_UPLOAD = `${getApiBaseUrl()}/whatsapp/media/upload`;
 
 export const EXCELIMPORT = `${getApiBaseUrl()}/whatsapp/brodcast/excel-import`;
 export const SENDBULK = `${getApiBaseUrl()}/whatsapp/brodcast/send-bulk`;
+
+export const ONBOARDING = `${getApiBaseUrl()}/whatsapp/onboarding/exchange-token`;
 
 export const UPLOADFILE = () => {
     const { isLocal } = getEnvFlags();

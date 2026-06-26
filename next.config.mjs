@@ -8,8 +8,8 @@ export default nextConfig;
 
 // /** @type {import('next').NextConfig} */
 // const nextConfig = {
-//   basePath: "/v1",
-//   assetPrefix: "/v1",
+//   basePath: "/V1",
+//   assetPrefix: "/V1",
 //   trailingSlash: false,
 //   skipTrailingSlashRedirect: true,
 

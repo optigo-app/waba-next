@@ -43,13 +43,20 @@ const CampaignDetails = ({
   setCampaignNameError
 }) => {
   const [nameError, setNameError] = useState(false);
+  const [scheduleError, setScheduleError] = useState(false);
 
   const handleNextClick = () => {
     if (!campaignName.trim()) {
       setNameError(true);
       return;
     }
+    if (campaignType === 'schedule' && (!scheduledFor || scheduledFor.isBefore(dayjs()))) {
+      setScheduleError(true);
+      toast.error('Please select a future date/time for the schedule.');
+      return;
+    }
     setNameError(false);
+    setScheduleError(false);
     onNext();
   };
 
@@ -158,15 +165,25 @@ const CampaignDetails = ({
           <LocalizationProvider dateAdapter={AdapterDayjs}>
             <DateTimePicker
               value={scheduledFor}
-              onChange={(newValue) => setScheduledFor(newValue)}
+              onChange={(newValue) => {
+                setScheduledFor(newValue);
+                if (newValue && newValue.isBefore(dayjs())) {
+                  setScheduleError(true);
+                } else {
+                  setScheduleError(false);
+                }
+              }}
               views={['year', 'month', 'day', 'hours']}
               ampm={true}
               format="DD/MM/YYYY hh A"
+              minDateTime={dayjs()}
               slotProps={{
                 textField: {
                   fullWidth: true,
                   size: 'small',
-                  className: styles.textField
+                  className: styles.textField,
+                  error: scheduleError,
+                  helperText: scheduleError ? 'Please select a future date/time' : ''
                 }
               }}
             />
@@ -209,6 +226,7 @@ const CampaignDetails = ({
                   value={recurrenceStartDate}
                   onChange={(newValue) => setRecurrenceStartDate(newValue)}
                   format="DD/MM/YYYY"
+                  minDate={dayjs()}
                   slotProps={{
                     textField: {
                       fullWidth: true,
@@ -272,6 +290,7 @@ const CampaignDetails = ({
                   value={recurrenceEndBy}
                   onChange={(newValue) => setRecurrenceEndBy(newValue)}
                   format="DD/MM/YYYY"
+                  minDate={recurrenceStartDate || dayjs()}
                   slotProps={{
                     textField: {
                       fullWidth: true,
