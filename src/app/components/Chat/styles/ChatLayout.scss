@@ -259,7 +259,7 @@
 .chat-messages-list {
   display: flex;
   padding: 24px 32px;
-  flex-direction: column;
+  flex-direction: column-reverse;
   gap: 10px;
   height: 100%;
   overflow-y: auto;

@@ -13,7 +13,6 @@ export default function ChatMessagesArea({
   isDragOver,
   containerRef,
   messagesListRef,
-  messagesEndRef,
   handleDragEnter,
   handleDragOver,
   handleDragLeave,
@@ -35,6 +34,7 @@ export default function ChatMessagesArea({
   loadedMedia,
   setLoadedMedia,
   mediaCache,
+  requestMediaFetch,
   setMediaViewer,
   reactionPickerMessageId,
   setReactionPickerMessageId,
@@ -70,28 +70,6 @@ export default function ChatMessagesArea({
     return grouped;
   }, [messages]);
 
-  // Track whether user is near bottom so we can auto-scroll when media loads
-  const wasNearBottomRef = useRef(true);
-  useEffect(() => {
-    const el = messagesListRef.current;
-    if (!el) return;
-    const onScroll = () => {
-      wasNearBottomRef.current = el.scrollHeight - el.scrollTop - el.clientHeight < 120;
-    };
-    el.addEventListener('scroll', onScroll, { passive: true });
-    return () => el.removeEventListener('scroll', onScroll);
-  }, [messagesListRef]);
-
-  // When any media finishes loading, keep the user at the bottom if they were already there
-  useEffect(() => {
-    const el = messagesListRef.current;
-    if (!el) return;
-    if (wasNearBottomRef.current) {
-      requestAnimationFrame(() => {
-        el.scrollTo({ top: el.scrollHeight, behavior: 'smooth' });
-      });
-    }
-  }, [loadedMedia]);
 
   return (
     <div
@@ -118,8 +96,9 @@ export default function ChatMessagesArea({
         onScroll={() => {
           const el = messagesListRef.current;
           if (!el || isLoadingMore || !hasMore || loading) return;
-          const nearTop = el.scrollTop < 100;
-          if (nearTop) {
+          // In column-reverse, visual top = large scrollTop (near max)
+          const nearVisualTop = el.scrollTop > el.scrollHeight - el.clientHeight - 150;
+          if (nearVisualTop) {
             loadMoreMessages();
           }
         }}
@@ -147,14 +126,13 @@ export default function ChatMessagesArea({
           <div className="chat-empty-center">No messages yet. Start the conversation!</div>
         )}
 
-        {Object.entries(groupMessagesByDate()).map(([date, dateMessages]) => (
+        {Object.entries(groupMessagesByDate()).reverse().map(([date, dateMessages]) => (
           <div key={`group-${date}`}>
             {dateMessages.some((m) => m?.DateTime || m?.sentAt || m?.sent_at) && (
               <div className="message-date-header" key={`header-${date}`}>
                 <span>{formatDateHeader(date)}</span>
               </div>
             )}
-
             {dateMessages.map((msg) => {
               const isOutgoing = msg?.direction === 1 || msg?.Direction === 1 || msg?.direction === '1';
               const messageId = msg?.id || msg?.Id || msg?.autoid || msg?.MessageId;
@@ -169,6 +147,7 @@ export default function ChatMessagesArea({
                   loadedMedia={loadedMedia}
                   setLoadedMedia={setLoadedMedia}
                   mediaCache={mediaCache}
+                  requestMediaFetch={requestMediaFetch}
                   setMediaViewer={setMediaViewer}
                   reactionPickerMessageId={reactionPickerMessageId}
                   setReactionPickerMessageId={setReactionPickerMessageId}
@@ -182,7 +161,6 @@ export default function ChatMessagesArea({
             })}
           </div>
         ))}
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Scroll to bottom button */}

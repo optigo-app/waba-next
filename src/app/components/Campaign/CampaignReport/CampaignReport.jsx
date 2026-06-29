@@ -117,6 +117,7 @@ const CampaignReport = () => {
                 field: 'TemplateName',
                 headerName: 'TEMPLATE NAME',
                 flex: 1,
+                minWidth: 140,
                 renderCell: (params) => (
                     <Typography variant="body2">
                         {params.value || '—'}
@@ -127,6 +128,7 @@ const CampaignReport = () => {
                 field: 'CustomerName',
                 headerName: 'CUSTOMER NAME',
                 flex: 1,
+                minWidth: 140,
                 renderCell: (params) => (
                     <Typography variant="body2">
                         {params.value || `${params.row.FirstName || ''} ${params.row.LastName || ''}`.trim() || '—'}
@@ -137,6 +139,7 @@ const CampaignReport = () => {
                 field: 'PhoneNo',
                 headerName: 'PHONE NO',
                 flex: 1,
+                minWidth: 120,
                 renderCell: (params) => (
                     <Typography variant="body2" className={styles.userPhone}>
                         {params.value || '—'}
@@ -149,6 +152,7 @@ const CampaignReport = () => {
             field: 'Status',
             headerName: 'STATUS',
             width: 120,
+            minWidth: 120,
             renderCell: (params) => {
                 const statusConfig = getMessageStatus(params.value);
                 return (
@@ -172,6 +176,7 @@ const CampaignReport = () => {
             field: 'SentAt',
             headerName: 'Sent At',
             width: 180,
+            minWidth: 150,
             renderCell: (params) => (
                 <Typography variant="body2">
                     {formatDate(params.value) || '—'}
@@ -183,6 +188,7 @@ const CampaignReport = () => {
             field: 'DeliveredAt',
             headerName: 'Delivered At',
             width: 180,
+            minWidth: 150,
             renderCell: (params) => (
                 <Typography variant="body2">
                     {formatDate(params.value) || '—'}
@@ -194,6 +200,7 @@ const CampaignReport = () => {
             field: 'ReadAt',
             headerName: 'Read At',
             width: 180,
+            minWidth: 150,
             renderCell: (params) => (
                 <Typography variant="body2">
                     {formatDate(params.value) || '—'}
@@ -205,6 +212,7 @@ const CampaignReport = () => {
             field: 'FailedAt',
             headerName: 'Failed At',
             width: 180,
+            minWidth: 150,
             renderCell: (params) => (
                 <Typography variant="body2">
                     {formatDate(params.value) || '—'}
@@ -215,7 +223,8 @@ const CampaignReport = () => {
         const errorColumn = {
             field: 'FailedReson',
             headerName: 'Error',
-            width: 400,
+            width: 300,
+            minWidth: 200,
             renderCell: (params) => {
                 const errorValue = params.value;
                 if (!errorValue) return <Typography variant="body2">—</Typography>;
@@ -250,6 +259,7 @@ const CampaignReport = () => {
             field: 'RepliedAt',
             headerName: 'Replied At',
             width: 180,
+            minWidth: 150,
             renderCell: (params) => (
                 <Typography variant="body2">
                     {formatDate(params.value) || '—'}
@@ -260,7 +270,8 @@ const CampaignReport = () => {
         const replyColumn = {
             field: 'ReplyMessage',
             headerName: 'Reply',
-            width: 300,
+            width: 250,
+            minWidth: 150,
             renderCell: (params) => (
                 <Typography 
                     variant="body2" 
@@ -829,6 +840,8 @@ const CampaignReport = () => {
                                         getRowId={(row) => row.MessageId || row.PhoneNo}
                                         checkboxSelection
                                         disableRowSelectionOnClick
+                                        disableColumnMenu
+                                        disableColumnFilter
                                         rowSelectionModel={selectedTemplateRowSelectionModel}
                                         onRowSelectionModelChange={(newSelection) =>
                                             setSelectedTemplateRowSelectionModel(normalizeSelectionModel(newSelection))
@@ -843,7 +856,7 @@ const CampaignReport = () => {
                                         loading={templateMessagesLoading}
                                         sx={{
                                             border: 'none',
-                                            height: 520,
+                                            height: { xs: 360, sm: 420, md: 520 },
                                             '& .MuiDataGrid-virtualScroller': {
                                                 overflowX: 'auto',
                                             },

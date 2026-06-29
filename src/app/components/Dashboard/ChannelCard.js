@@ -80,7 +80,7 @@ const ChannelCard = ({ channel, onWalletOpen, onTemplatesClick }) => {
                         </Typography>
                     </Box>
                 </Box>
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: '3px' }}>
+                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: { xs: 'flex-start', sm: 'flex-end' }, gap: '3px' }}>
                     <Typography
                         sx={{
                             fontSize: '0.68rem',

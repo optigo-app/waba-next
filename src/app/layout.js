@@ -4,6 +4,7 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v16-appRouter';
 import ThemeRegistry from "./providers/ThemeRegistry";
 import SocketProvider from "./providers/SocketProvider";
 import { NotificationProvider } from "./components/NotificationProvider/NotificationProvider";
+import NotificationToast from "./components/NotificationToast/NotificationToast";
 import AuthHydrator from "./components/AuthHydrator";
 import AppLayout from "./components/AppLayout";
 import { Toaster } from "react-hot-toast";
@@ -30,6 +31,7 @@ export default function RootLayout({ children }) {
               <AppRouterCacheProvider>
                 <ThemeRegistry>
                   <AppLayout>{children}</AppLayout>
+                  <NotificationToast />
                 </ThemeRegistry>
               </AppRouterCacheProvider>
             </NotificationProvider>

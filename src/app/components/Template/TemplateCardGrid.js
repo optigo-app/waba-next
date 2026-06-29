@@ -1,10 +1,11 @@
 import React from 'react';
-import { Box, Card, CardContent, Typography, Chip, Grid, Pagination } from '@mui/material';
+import { Box, Card, CardContent, Typography, Chip, Grid } from '@mui/material';
 import {
     Eye, Send, Copy, Trash2, BookOpen, CheckCircle2, Clock, XCircle, AlertCircle,
     Image, Video, FileType, FileQuestion, Rocket, Edit2, Hash, Globe, Variable,
 } from 'lucide-react';
 import IconButton from '../Common/IconButton';
+import Pagination from '../Common/Pagination/Pagination';
 
 // ── Status Config ────────────────────────────────────────────────────────────
 const STATUS_CONFIG = {
@@ -331,39 +332,35 @@ const TemplateCard = ({ template, onView, onSend, onClone, onEdit, onDelete, onP
 // ── Grid ─────────────────────────────────────────────────────────────────────
 const TemplateCardGrid = ({ items, onView, onSend, onClone, onEdit, onDelete, onPublish, count, page, rowsPerPage, onPageChange, onRowsPerPageChange }) => {
     return (
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 2, flex: 1, overflowY: 'auto', py: 0.5, px: 0.25 }}>
-            <Grid container spacing={2}>
-                {items.map((template) => (
-                    <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={template.Id}>
-                        <TemplateCard
-                            template={template}
-                            onView={onView}
-                            onSend={onSend}
-                            onClone={onClone}
-                            onEdit={onEdit}
-                            onDelete={onDelete}
-                            onPublish={onPublish}
-                        />
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 0, overflow: 'hidden' }}>
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto', position: 'relative' }}>
+                <Box sx={{ pb: 16, pr: 1 }}>
+                    <Grid container spacing={2}>
+                        {items.map((template) => (
+                            <Grid size={{ xs: 12, sm: 6, lg: 4 }} key={template.Id}>
+                                <TemplateCard
+                                    template={template}
+                                    onView={onView}
+                                    onSend={onSend}
+                                    onClone={onClone}
+                                    onEdit={onEdit}
+                                    onDelete={onDelete}
+                                    onPublish={onPublish}
+                                />
+                            </Grid>
+                        ))}
                     </Grid>
-                ))}
-            </Grid>
-
-            {/* Pagination */}
-            {count > rowsPerPage && (
-                <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', pt: 2, borderTop: '1px solid #e4e8ee', mt: 'auto' }}>
-                    <Typography sx={{ color: '#6D6B77', fontSize: '0.82rem', fontFamily: 'Poppins, sans-serif', mb: 1 }}>
-                        Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, count)} of {count} entries
-                    </Typography>
-                    <Pagination
-                        count={Math.ceil(count / rowsPerPage)}
-                        page={page + 1}
-                        onChange={(event, newPage) => onPageChange(event, newPage - 1)}
-                        shape="rounded"
-                        color="primary"
-                        size="small"
-                    />
                 </Box>
-            )}
+
+                {/* Pagination - Sticky at bottom */}
+                <Pagination
+                    count={count}
+                    page={page}
+                    rowsPerPage={rowsPerPage}
+                    onPageChange={onPageChange}
+                    onRowsPerPageChange={onRowsPerPageChange}
+                />
+            </Box>
         </Box>
     );
 };

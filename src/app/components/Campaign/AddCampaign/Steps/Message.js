@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Typography, TextField, Button, RadioGroup, Radio, FormControlLabel, Select, MenuItem, Box, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Menu, ListItemText, ListItemIcon, Popover, Skeleton, Alert } from '@mui/material';
-import { Smile, Send, Info} from 'lucide-react';
+import { Typography, TextField, Button, RadioGroup, Radio, FormControlLabel, Select, MenuItem, Box, IconButton, Tooltip, Dialog, DialogTitle, DialogContent, DialogActions, Grid, Menu, ListItemText, ListItemIcon, Popover, Skeleton, Alert, Drawer, useMediaQuery } from '@mui/material';
+import { Smile, Send, Info, Eye, X } from 'lucide-react';
 import SelectAutocomplete from '../../Audience/SelectAutocomplete';
 import { useAuthToken } from '../../../../hooks/useAuthToken';
 import Picker from '@emoji-mart/react';
@@ -70,6 +70,8 @@ const Message = ({ onNext, onBack, onMessageConfigured, showError, messageError,
   const [sendTestDialogOpen, setSendTestDialogOpen] = useState(false);
   const [previewData, setPreviewData] = useState(null);
   const [mediaDataMissing, setMediaDataMissing] = useState(false);
+  const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
+  const isMobilePreview = useMediaQuery('(max-width:768px)');
 
   const handleVariableMenuOpen = (event, index) => {
     setVariableMenuAnchor(event.currentTarget);
@@ -392,6 +394,21 @@ const Message = ({ onNext, onBack, onMessageConfigured, showError, messageError,
 
   return (
     <div className={styles.formCard}>
+      {/* Mobile preview toggle */}
+      {isMobilePreview && showPreview && (
+        <Box sx={{ mb: 2, display: 'flex', justifyContent: 'flex-end' }}>
+          <Button
+            variant="outlined"
+            size="small"
+            startIcon={<Eye size={16} />}
+            onClick={() => setMobilePreviewOpen(true)}
+            sx={{ borderRadius: '8px', textTransform: 'none', fontWeight: 600 }}
+          >
+            Preview
+          </Button>
+        </Box>
+      )}
+
       <Grid container spacing={4}>
         {/* Left: Form */}
         <Grid size={{ lg: showPreview ? 8 : 12, md: showPreview ? 8 : 12, sm: 12, xs: 12 }} sx={{ display: 'flex', flexDirection: 'column', minHeight: 0 }}>
@@ -538,23 +555,25 @@ const Message = ({ onNext, onBack, onMessageConfigured, showError, messageError,
                   onChange={(val) => setRegularMessageText(val)}
                   variant="outlined"
                   className={styles.textField}
-                  InputProps={{
-                    endAdornment: (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
-                        <Typography variant="caption" className={styles.charCount}>
-                          {regularMessageText.length} characters
-                        </Typography>
-                        <Tooltip title="Add Emoji">
-                          <IconButton
-                            size="small"
-                            className={styles.inputIconButton}
-                            onClick={(e) => handleEmojiPickerOpen(e, 'regularMessage')}
-                          >
-                            <Smile size={16} />
-                          </IconButton>
-                        </Tooltip>
-                      </Box>
-                    ),
+                  slotProps={{
+                    input: {
+                      endAdornment: (
+                        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-end', gap: 0.5 }}>
+                          <Typography variant="caption" className={styles.charCount}>
+                            {regularMessageText.length} characters
+                          </Typography>
+                          <Tooltip title="Add Emoji">
+                            <IconButton
+                              size="small"
+                              className={styles.inputIconButton}
+                              onClick={(e) => handleEmojiPickerOpen(e, 'regularMessage')}
+                            >
+                              <Smile size={16} />
+                            </IconButton>
+                          </Tooltip>
+                        </Box>
+                      ),
+                    },
                   }}
                 />
               </div>
@@ -620,7 +639,7 @@ const Message = ({ onNext, onBack, onMessageConfigured, showError, messageError,
               onClose={() => setAutoFillDialogOpen(false)}
               maxWidth="md"
               fullWidth
-              PaperProps={{ className: styles.autoFillDialogPaper }}
+              slotProps={{ paper: { className: styles.autoFillDialogPaper } }}
             >
               <DialogTitle className={styles.dialogTitle}>Auto Fill Body Variables</DialogTitle>
               <DialogContent className={styles.dialogContent}>
@@ -683,9 +702,9 @@ const Message = ({ onNext, onBack, onMessageConfigured, showError, messageError,
           </div>
         </Grid>
 
-        {/* Right: Preview — only shown when showPreview is true */}
-        {showPreview && (
-          <Grid size={{ lg: 4, md: 4, sm: 12, xs: 12 }}>
+        {/* Right: Preview — desktop only; mobile uses drawer */}
+        {showPreview && !isMobilePreview && (
+          <Grid size={{ lg: 4, md: 4 }}>
             {messageType === 'preApprovedTemplate' && template ? (
               <MessagePreview
                 headerType={previewData?.headerType || 'None'}
@@ -732,11 +751,13 @@ const Message = ({ onNext, onBack, onMessageConfigured, showError, messageError,
           vertical: 'top',
           horizontal: 'right',
         }}
-        PaperProps={{
-          sx: {
-            borderRadius: '12px',
-            boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
-            overflow: 'hidden'
+        slotProps={{
+          paper: {
+            sx: {
+              borderRadius: '12px',
+              boxShadow: '0 8px 30px rgba(0,0,0,0.12)',
+              overflow: 'hidden'
+            }
           }
         }}
       >
@@ -754,6 +775,59 @@ const Message = ({ onNext, onBack, onMessageConfigured, showError, messageError,
         template={template}
         userToken={userToken}
       />
+
+      {/* Mobile Preview Drawer */}
+      <Drawer
+        anchor="right"
+        open={mobilePreviewOpen}
+        onClose={() => setMobilePreviewOpen(false)}
+        slotProps={{
+          paper: {
+            sx: {
+              width: { xs: '100%', sm: 400 },
+              p: 2,
+              background: '#f8fafc',
+              borderRadius:'16px 0px 0px 16px'
+            },
+          },
+        }}
+      >
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+          <Typography sx={{ fontWeight: 600, fontSize: '1rem' }}>Preview</Typography>
+          <IconButton size="small" onClick={() => setMobilePreviewOpen(false)}>
+            <X size={18} />
+          </IconButton>
+        </Box>
+        {messageType === 'preApprovedTemplate' && template ? (
+          <MessagePreview
+            headerType={previewData?.headerType || 'None'}
+            headerText={previewData?.headerText || ''}
+            headerTextExample={previewData?.headerTextExample || ''}
+            headerMedia={previewData?.headerMedia || null}
+            body={previewData?.body || ''}
+            footer={previewData?.footer || ''}
+            buttons={previewData?.buttons || []}
+            templateType={previewData?.templateType || 'Interactive'}
+            carouselCards={previewData?.carouselCards || []}
+            variableValues={variables}
+            showEmptyHint={false}
+          />
+        ) : messageType === 'regularMessage' ? (
+          <MessagePreview
+            headerType="None"
+            headerText=""
+            headerTextExample=""
+            headerMedia={null}
+            body={regularMessageText}
+            footer=""
+            buttons={[]}
+            templateType="Interactive"
+            carouselCards={[]}
+            variableValues={{}}
+            showEmptyHint={false}
+          />
+        ) : null}
+      </Drawer>
     </div>
   );
 };

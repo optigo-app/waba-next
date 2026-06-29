@@ -181,16 +181,34 @@ export default function SocketProvider({ children }) {
   useEffect(() => {
     if (isPublicRoute) return;
 
+    // Deduplicate notifications within 2 seconds by message ID
+    const recentNotifications = new Map();
+
+    const handleNotify = (data, type) => {
+      console.log('[SocketProvider] handleNotify called:', { type, data });
+      const msgId = data?.Id ?? data?.id ?? data?.autoid ?? data?.MessageId;
+      if (msgId) {
+        const key = `${type}-${msgId}`;
+        const last = recentNotifications.get(key);
+        if (last && Date.now() - last < 2000) {
+          console.log('[SocketProvider] Duplicate notification skipped:', key);
+          return; // skip duplicate
+        }
+        recentNotifications.set(key, Date.now());
+      }
+      notify(data, type);
+    };
+
     const removeNewMsg = addMessageHandler((data) => {
-      notify(data, 'NEW_MESSAGE');
+      handleNotify(data, 'NEW_MESSAGE');
     });
 
     const removeAssignMsg = addMessageHandlerFromAssigningUser((data) => {
-      notify(data, 'NEW_MESSAGE');
+      handleNotify(data, 'NEW_MESSAGE');
     });
 
     const removeReaction = addMessageReactionHandler((data) => {
-      notify(data, 'MESSAGE_REACTION');
+      handleNotify(data, 'MESSAGE_REACTION');
     });
 
     return () => {

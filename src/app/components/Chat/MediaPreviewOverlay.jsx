@@ -52,16 +52,25 @@ export default function MediaPreviewOverlay({
     activeThumb.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
   }, [selectedPreviewIndex]);
 
-  // Escape key closes overlay
+  // Escape key closes overlay, Enter sends media
   useEffect(() => {
     const onKeyDown = (e) => {
       if (e.key === 'Escape' && !isSendingMedia) {
         onClear();
       }
+      if (e.key === 'Enter' && !e.shiftKey && !isSendingMedia && !sending) {
+        // Don't send if user is typing in the caption input (handled natively there)
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        const isTyping = activeTag === 'input' || activeTag === 'textarea';
+        if (!isTyping) {
+          e.preventDefault();
+          handleSend();
+        }
+      }
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [isSendingMedia, onClear]);
+  }, [isSendingMedia, sending, onClear, handleSend]);
 
   const current = mediaPreview[selectedPreviewIndex];
 

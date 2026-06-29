@@ -8,8 +8,9 @@ import {
 } from 'lucide-react';
 import {
   getWhatsAppAvatarConfig, getCustomerDisplayName, getCustomerAvatarSeed,
-  hasCustomerName, processApiResponse, getMessageStatusIcon,
+  hasCustomerName, processApiResponse, getMessageStatusIcon, getMessagePreview,
 } from './utils/chatUtils';
+import { formatChatTimestamp } from './utils/dateUtils';
 import {
   fetchConversationLists,
   fetchAllTags,
@@ -22,6 +23,7 @@ import {
 } from '../../api/chat/conversationApi';
 import AddCustomerDialog from './AddCustomerDialog';
 import { useAuthStore } from '../../store/authStore';
+import { useChatStore } from '../../store/chatStore';
 import toast from 'react-hot-toast';
 
 const TAB_ITEMS = [
@@ -73,8 +75,10 @@ function ChatSidebar({
 }) {
   const auth = useAuthStore((s) => s.auth);
   const can = useAuthStore((s) => s.can);
-  const [conversations, setConversations] = useState([]);
-  const [allConversationsCache, setAllConversationsCache] = useState([]);
+  const conversations = useChatStore((s) => s.conversations);
+  const allConversationsCache = useChatStore((s) => s.allConversationsCache);
+  const setConversations = useChatStore.getState().setConversations;
+  const setAllConversationsCache = useChatStore.getState().setAllConversationsCache;
   const [loading, setLoading] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [page, setPage] = useState(1);
@@ -82,6 +86,8 @@ function ChatSidebar({
   const [searchTerm, setSearchTerm] = useState('');
   const [tabValue, setTabValue] = useState(0);
   const [allTags, setAllTags] = useState([]);
+  const [tagsLoading, setTagsLoading] = useState(true);
+  const [showEmptyAfterDelay, setShowEmptyAfterDelay] = useState(false);
   const [tagSearchTerm, setTagSearchTerm] = useState('');
   const [tagMenuAnchor, setTagMenuAnchor] = useState(null);
   const [contextMenu, setContextMenu] = useState(null);
@@ -142,17 +148,25 @@ function ChatSidebar({
       const list = processApiResponse(rawList);
 
       if (append) {
-        setConversations((prev) => {
-          const existingIds = new Set(prev.map((c) => c.Id));
-          const newItems = list.filter((c) => !existingIds.has(c.Id));
-          return [...prev, ...newItems];
-        });
-        if (!searchTerm) {
-          setAllConversationsCache((prev) => {
-            const existingIds = new Set(prev.map((c) => c.Id));
-            const newItems = list.filter((c) => !existingIds.has(c.Id));
-            return [...prev, ...newItems];
+        const mergeAndSort = (prev) => {
+          const prevMap = new Map(prev.map((c) => [c.Id, c]));
+          list.forEach((item) => {
+            const existing = prevMap.get(item.Id);
+            if (existing) {
+              prevMap.set(item.Id, { ...existing, ...item });
+            } else {
+              prevMap.set(item.Id, item);
+            }
           });
+          return Array.from(prevMap.values()).sort((a, b) => {
+            const tA = new Date(a.lastMessageTimestamp || a.DateTime || 0).getTime();
+            const tB = new Date(b.lastMessageTimestamp || b.DateTime || 0).getTime();
+            return tB - tA;
+          });
+        };
+        setConversations((prev) => mergeAndSort(prev));
+        if (!searchTerm) {
+          setAllConversationsCache((prev) => mergeAndSort(prev));
         }
       } else {
         setConversations(list);
@@ -173,9 +187,10 @@ function ChatSidebar({
     }
   }, [auth?.userId, onConversationList, searchTerm]);
 
-  // Handle search term changes: clear search instantly restores cache if available
+  // Handle search term changes: wait for tags first, then load conversations
   useEffect(() => {
     if (!auth?.token || !auth?.userId) return;
+    if (tagsLoading) return; // tags API first
 
     if (!searchTerm.trim()) {
       if (allConversationsCache.length > 0) {
@@ -194,7 +209,7 @@ function ChatSidebar({
       loadConversations(1, false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [auth?.token, auth?.userId, searchTerm]);
+  }, [auth?.token, auth?.userId, searchTerm, tagsLoading]);
 
   const filtered = useMemo(() => {
     const term = searchTerm.toLowerCase().replace(/[+\-\s()]/g, '');
@@ -211,10 +226,11 @@ function ChatSidebar({
         default: return true;
       }
     }).filter((c) => {
+      if (tagsLoading) return true;
       if (!selectedTag || selectedTag === 'All') return true;
-      return c.tags && c.tags.some((tag) => String(getTagId(tag)) === String(getTagId(selectedTag)));
+      return !c.tags || c.tags.length === 0 || c.tags.some((tag) => String(getTagId(tag)) === String(getTagId(selectedTag)));
     });
-  }, [conversations, searchTerm, tabValue, selectedTag]);
+  }, [conversations, searchTerm, tabValue, selectedTag, tagsLoading]);
 
   const deferredTagSearch = useDeferredValue(tagSearchTerm);
 
@@ -298,12 +314,12 @@ function ChatSidebar({
           e.preventDefault();
           if (isSearchFocused && list.length > 0) {
             searchInputRef.current?.blur();
-            onCustomerSelect?.(list[0]);
+            handleSelectCustomer(list[0]);
             setHighlightedIndex(0);
           } else {
             const idx = s.highlightedIndex;
             if (idx >= 0 && idx < list.length) {
-              onCustomerSelect?.(list[idx]);
+              handleSelectCustomer(list[idx]);
             }
           }
           break;
@@ -329,6 +345,7 @@ function ChatSidebar({
   // Fetch all tags for filtering
   useEffect(() => {
     if (!auth?.userId) return;
+    setTagsLoading(true);
     const controller = new AbortController();
     (async () => {
       try {
@@ -340,10 +357,23 @@ function ChatSidebar({
         if (err.name !== 'AbortError') {
           console.error('Failed to fetch tags:', err);
         }
+      } finally {
+        setTagsLoading(false);
       }
     })();
     return () => controller.abort();
   }, [auth?.userId]);
+
+  // Delay showing 'No conversations found' to prevent flash during loading
+  useEffect(() => {
+    const isEmpty = !loading && !tagsLoading && filtered.length === 0;
+    if (!isEmpty) {
+      setShowEmptyAfterDelay(false);
+      return;
+    }
+    const timer = setTimeout(() => setShowEmptyAfterDelay(true), 600);
+    return () => clearTimeout(timer);
+  }, [loading, tagsLoading, filtered.length]);
 
   // Scroll highlighted item into view instantly (auto) via rAF for rapid keys
   useEffect(() => {
@@ -390,6 +420,16 @@ function ChatSidebar({
     setAddCustomerDialogOpen(false);
     setAddCustomerMember(null);
   };
+
+  const handleSelectCustomer = useCallback((customer) => {
+    if (customer) {
+      const convId = String(customer?.ConversationId ?? customer?.Id ?? customer?.CustomerId);
+      useChatStore.getState().setSelectedConversationId(convId);
+    } else {
+      useChatStore.getState().setSelectedConversationId(null);
+    }
+    onCustomerSelect?.(customer);
+  }, [onCustomerSelect]);
 
   const handleAddCustomerSuccess = async () => {
     // Refresh conversation list after adding customer
@@ -553,10 +593,10 @@ function ChatSidebar({
         </div>
       </div>
 
-      {/* Tag filter */}
-      {allTags?.length > 0 && (
-        <div className="chat-sidebar-tag-filter">
-          <div className="tag-filter-scroll">
+      {/* Tag filter — 'All' always visible, skeleton chips while loading */}
+      <div className="chat-sidebar-tag-filter">
+        <div className="tag-filter-scroll">
+          {!tagsLoading && allTags?.length > 0 && (
             <button
               type="button"
               className={`tag-filter-chip ${selectedTag === 'All' ? 'active' : ''}`}
@@ -564,45 +604,64 @@ function ChatSidebar({
             >
               All
             </button>
-            {allTags.slice(0, 4).map((tag) => {
-              const isActive = selectedTag !== 'All' && String(getTagId(selectedTag)) === String(getTagId(tag));
-              return (
-                <button
-                  key={getTagId(tag)}
-                  type="button"
-                  className={`tag-filter-chip ${isActive ? 'active' : ''}`}
-                  onClick={() => {
-                    if (isActive) {
-                      onTagSelect?.('All');
-                    } else {
-                      onTagSelect?.(tag);
-                    }
-                  }}
-                  title={tag.TagName}
-                >
-                  <span
-                    className="tag-filter-dot"
-                    style={{ backgroundColor: tag.color || '#1daa61' }}
-                  />
-                  <span className="tag-filter-name">{tag.TagName}</span>
-                </button>
-              );
-            })}
-            {allTags.length > 4 && (
+          )}
+
+          {tagsLoading && (
+            <>
+              <span className="tag-filter-chip" style={{ pointerEvents: 'none', opacity: 0.6 }}>
+                <Skeleton variant="rounded" width="100%" height={16} sx={{ borderRadius: 99 }} />
+              </span>
+              <span className="tag-filter-chip" style={{ pointerEvents: 'none', opacity: 0.6 }}>
+                <Skeleton variant="rounded" width="100%" height={16} sx={{ borderRadius: 99 }} />
+              </span>
+              <span className="tag-filter-chip" style={{ pointerEvents: 'none', opacity: 0.6 }}>
+                <Skeleton variant="rounded" width="100%" height={16} sx={{ borderRadius: 99 }} />
+              </span>
+              <span className="tag-filter-chip" style={{ pointerEvents: 'none', opacity: 0.6 }}>
+                <Skeleton variant="rounded" width="100%" height={16} sx={{ borderRadius: 99 }} />
+              </span>
+            </>
+          )}
+
+          {!tagsLoading && allTags?.slice(0, 4).map((tag) => {
+            const isActive = selectedTag !== 'All' && String(getTagId(selectedTag)) === String(getTagId(tag));
+            return (
               <button
+                key={getTagId(tag)}
                 type="button"
-                className="tag-filter-chip tag-filter-more"
-                onClick={(e) => setTagMenuAnchor(e.currentTarget)}
-                title={`${allTags.length - 4} more tags`}
+                className={`tag-filter-chip ${isActive ? 'active' : ''}`}
+                onClick={() => {
+                  if (isActive) {
+                    onTagSelect?.('All');
+                  } else {
+                    onTagSelect?.(tag);
+                  }
+                }}
+                title={tag.TagName}
               >
-                <Tag size={14} />
-                <span>More</span>
-                <span className="tag-filter-more-count">{allTags.length - 4}</span>
+                <span
+                  className="tag-filter-dot"
+                  style={{ backgroundColor: tag.color || '#1daa61' }}
+                />
+                <span className="tag-filter-name">{tag.TagName}</span>
               </button>
-            )}
-          </div>
+            );
+          })}
+
+          {!tagsLoading && allTags?.length > 4 && (
+            <button
+              type="button"
+              className="tag-filter-chip tag-filter-more"
+              onClick={(e) => setTagMenuAnchor(e.currentTarget)}
+              title={`${allTags.length - 4} more tags`}
+            >
+              <Tag size={14} />
+              <span>More</span>
+              <span className="tag-filter-more-count">{allTags.length - 4}</span>
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* Tag filter menu */}
       <Menu
@@ -756,189 +815,189 @@ function ChatSidebar({
           </div>
         </div>
       ) : (
-      <div className="chat-sidebar-list">
-        {loading && (
-          <ul>
-            {Array.from({ length: 13 }).map((_, i) => (
-              <li key={`skel-${i}`} className="chat-sidebar-skeleton">
-                <div className="member-item">
-                  <div className="member-avatar">
-                    <Skeleton variant="circular" animation="wave" width={40} height={40} sx={{ borderRadius: '50% !important' }} />
-                  </div>
-                  <div className="member-info">
-                    <div className="member-header">
-                      <Skeleton variant="text" animation="wave" width="60%" height={18} />
-                      <Skeleton variant="text" animation="wave" width={40} height={15} />
+        <div className="chat-sidebar-list">
+          {loading && (
+            <ul>
+              {Array.from({ length: 13 }).map((_, i) => (
+                <li key={`skel-${i}`} className="chat-sidebar-skeleton">
+                  <div className="member-item">
+                    <div className="member-avatar">
+                      <Skeleton variant="circular" animation="wave" width={40} height={40} sx={{ borderRadius: '50% !important' }} />
                     </div>
-                    <div className="member-message">
-                      <Skeleton variant="text" animation="wave" width="80%" height={15} />
+                    <div className="member-info">
+                      <div className="member-header">
+                        <Skeleton variant="text" animation="wave" width="60%" height={18} />
+                        <Skeleton variant="text" animation="wave" width={40} height={15} />
+                      </div>
+                      <div className="member-message">
+                        <Skeleton variant="text" animation="wave" width="80%" height={15} />
+                      </div>
                     </div>
                   </div>
-                </div>
-              </li>
-            ))}
-          </ul>
-        )}
+                </li>
+              ))}
+            </ul>
+          )}
 
-        {!loading && filtered.length === 0 && (
-          <div className="chat-empty">No conversations found</div>
-        )}
+          {showEmptyAfterDelay && (
+            <div className="chat-empty">No conversations found</div>
+          )}
 
-        <ul
-          ref={listRef}
-          onScroll={() => {
-            const el = listRef.current;
-            if (!el || isLoadingMore || !hasMore || loading) return;
-            const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 5;
-            if (atBottom) {
-              loadConversations(page + 1, true);
-            }
-          }}
-        >
-          {filtered.map((member, index) => {
-            const isSelected = selectedCustomer?.Id === member.Id;
-            const isMenuOpen = Boolean(anchorEl) && menuMember?.Id === member.Id;
-            const isKeyboardHighlighted = highlightedIndex === index;
-            const shouldShowUnread = member.unreadCount > 0;
-            const name = member.name || getCustomerDisplayName(member);
+          <ul
+            ref={listRef}
+            onScroll={() => {
+              const el = listRef.current;
+              if (!el || isLoadingMore || !hasMore || loading) return;
+              const atBottom = el.scrollHeight - el.scrollTop - el.clientHeight <= 5;
+              if (atBottom) {
+                loadConversations(page + 1, true);
+              }
+            }}
+          >
+            {filtered.map((member, index) => {
+              const isSelected = selectedCustomer?.Id === member.Id;
+              const isMenuOpen = Boolean(anchorEl) && menuMember?.Id === member.Id;
+              const isKeyboardHighlighted = highlightedIndex === index;
+              const shouldShowUnread = member.unreadCount > 0;
+              const name = member.name || getCustomerDisplayName(member);
 
-            return (
-              <li
-                key={member.Id}
-                ref={(el) => { itemRefs.current[index] = el; }}
-                className={`${isSelected ? 'active' : ''} ${member?.isReading ? 'reading' : ''} ${isMenuOpen ? 'menu-open' : ''} ${isKeyboardHighlighted ? 'keyboard-highlight' : ''}`}
-                onContextMenu={(e) => handleContextMenu(e, member)}
-              >
-                <div
-                  className={`member-item ${isSelected ? 'active' : ''} ${member?.isReading ? 'reading' : ''} ${isMenuOpen ? 'menu-open' : ''} ${isKeyboardHighlighted ? 'keyboard-highlight' : ''}`}
-                  onClick={() => onCustomerSelect?.(member)}
+              return (
+                <li
+                  key={member.Id}
+                  ref={(el) => { itemRefs.current[index] = el; }}
+                  className={`${isSelected ? 'active' : ''} ${member?.isReading ? 'reading' : ''} ${isMenuOpen ? 'menu-open' : ''} ${isKeyboardHighlighted ? 'keyboard-highlight' : ''}`}
+                  onContextMenu={(e) => handleContextMenu(e, member)}
                 >
-                  <div className="member-avatar">
-                    {!hasCustomerName(member) ? (
-                      <Avatar {...getWhatsAppAvatarConfig(getCustomerAvatarSeed(member), 38)}>
-                        <PersonIcon size={16} />
-                      </Avatar>
-                    ) : (
-                      <Avatar {...member.avatarConfig} />
-                    )}
-                  </div>
-
-                  <div className="member-info">
-                    <div className="member-header">
-                      <span className={shouldShowUnread ? 'member-name-unread' : 'member-name'}>
-                        {name}
-                      </span>
-                      {member?.lastMessageText && member?.lastMessageText !== 'No message' && (
-                        <span className="member-time">{member.lastMessageTime}</span>
+                  <div
+                    className={`member-item ${isSelected ? 'active' : ''} ${member?.isReading ? 'reading' : ''} ${isMenuOpen ? 'menu-open' : ''} ${isKeyboardHighlighted ? 'keyboard-highlight' : ''}`}
+                    onClick={() => handleSelectCustomer(member)}
+                  >
+                    <div className="member-avatar">
+                      {!hasCustomerName(member) ? (
+                        <Avatar {...getWhatsAppAvatarConfig(getCustomerAvatarSeed(member), 38)}>
+                          <PersonIcon size={16} />
+                        </Avatar>
+                      ) : (
+                        <Avatar {...member.avatarConfig} />
                       )}
                     </div>
-                    <div className="member-message">
-                      <span className={shouldShowUnread ? 'last-message-unread' : 'last-message'}>
-                        <span className="last-message-content">
-                          <span className="last-message-icon">
-                            {getMessageStatusIcon(member)}
-                          </span>
-                          <span className="last-message-text">
-                            {member.lastMessageText ? (
-                              member.lastMessageText !== 'No message' ? (
-                                member.lastMessage
-                              ) : (
-                                <span className="last-message-attachment">{member.lastMessage}</span>
-                              )
-                            ) : (
-                              member.CustomerPhone || ''
-                            )}
-                          </span>
-                        </span>
-                      </span>
-                      <span className="member-trailing">
-                        {shouldShowUnread && (
-                          <Badge
-                            badgeContent={member.unreadCount}
-                            color="primary"
-                            className="unread-badge"
-                          />
-                        )}
 
-                        <div className="member-actions-bar">
-                          {member?.IsPin === 1 && (
-                            <Tooltip title={member?.IsPin === 1 ? 'Unpin' : 'Pin'} arrow>
-                              <IconButton
-                                size="small"
-                                className={`action-btn ${member?.IsPin === 1 ? 'is-on' : ''}`}
-                                onClick={(e) => { e.stopPropagation(); }}
-                              >
-                                <Pin size={17} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {member?.IsStar === 1 && (
-                            <Tooltip title={member?.IsStar === 1 ? 'Unfavourite' : 'favourite'} arrow>
-                              <IconButton
-                                size="small"
-                                className={`action-btn ${member?.IsStar === 1 ? 'is-on' : ''}`}
-                                onClick={(e) => { e.stopPropagation(); }}
-                              >
-                                <Star size={17} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          {member?.CustomerName === '' && (
-                            <Tooltip title="Add to Customer" arrow>
-                              <IconButton
-                                size="small"
-                                className="action-btn add-customer-btn"
-                                onClick={(e) => {
-                                  e.stopPropagation();
-                                  handleOpenAddCustomer(member);
-                                }}
-                              >
-                                <UserPlus size={16} />
-                              </IconButton>
-                            </Tooltip>
-                          )}
-                          <Tooltip title="More" arrow>
-                            <IconButton
-                              className="action-btn more-btn"
-                              size="small"
-                              onClick={(e) => handleOpenMenu(e, member)}
-                            >
-                              <ChevronDown size={17} />
-                            </IconButton>
-                          </Tooltip>
-                        </div>
-                      </span>
-                    </div>
-                    {Array.isArray(member.tags) && member.tags.length > 0 && (
-                      <div className="conversation-tags-row">
-                        {member.tags.slice(0, 3).map((tag) => (
-                          <span key={getTagId(tag)} className="conversation-tag-chip" title={tag.TagName}>
-                            <span
-                              className="conversation-tag-dot"
-                              style={{ backgroundColor: tag.color || '#1daa61' }}
-                            />
-                            {tag.TagName}
-                          </span>
-                        ))}
-                        {member.tags.length > 3 && (
-                          <span className="conversation-tag-chip">+{member.tags.length - 3}</span>
+                    <div className="member-info">
+                      <div className="member-header">
+                        <span className={shouldShowUnread ? 'member-name-unread' : 'member-name'}>
+                          {name}
+                        </span>
+                        {member?.lastMessageText && member?.lastMessageText !== 'No message' && (
+                          <span className="member-time">{member.lastMessageTime}</span>
                         )}
                       </div>
-                    )}
-                  </div>
-                </div>
-              </li>
-            );
-          })}
+                      <div className="member-message">
+                        <span className={shouldShowUnread ? 'last-message-unread' : 'last-message'}>
+                          <span className="last-message-content">
+                            <span className="last-message-icon">
+                              {getMessageStatusIcon(member)}
+                            </span>
+                            <span className="last-message-text">
+                              {member.lastMessageText ? (
+                                member.lastMessageText !== 'No message' ? (
+                                  member.lastMessage
+                                ) : (
+                                  <span className="last-message-attachment">{member.lastMessage}</span>
+                                )
+                              ) : (
+                                member.CustomerPhone || ''
+                              )}
+                            </span>
+                          </span>
+                        </span>
+                        <span className="member-trailing">
+                          {shouldShowUnread && (
+                            <Badge
+                              badgeContent={member.unreadCount}
+                              color="primary"
+                              className="unread-badge"
+                            />
+                          )}
 
-          {isLoadingMore && (
-            <li className="chat-sidebar-loader" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', gap: 8, listStyle: 'none' }}>
-              <CircularProgress size={20} thickness={4} sx={{ color: '#1daa61' }} />
-              <span style={{ fontSize: 12, color: '#888' }}>Loading conversations...</span>
-            </li>
-          )}
-        </ul>
-      </div>
+                          <div className="member-actions-bar">
+                            {member?.IsPin === 1 && (
+                              <Tooltip title={member?.IsPin === 1 ? 'Unpin' : 'Pin'} arrow>
+                                <IconButton
+                                  size="small"
+                                  className={`action-btn ${member?.IsPin === 1 ? 'is-on' : ''}`}
+                                  onClick={(e) => { e.stopPropagation(); }}
+                                >
+                                  <Pin size={17} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {member?.IsStar === 1 && (
+                              <Tooltip title={member?.IsStar === 1 ? 'Unfavourite' : 'favourite'} arrow>
+                                <IconButton
+                                  size="small"
+                                  className={`action-btn ${member?.IsStar === 1 ? 'is-on' : ''}`}
+                                  onClick={(e) => { e.stopPropagation(); }}
+                                >
+                                  <Star size={17} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            {member?.CustomerName === '' && (
+                              <Tooltip title="Add to Customer" arrow>
+                                <IconButton
+                                  size="small"
+                                  className="action-btn add-customer-btn"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleOpenAddCustomer(member);
+                                  }}
+                                >
+                                  <UserPlus size={16} />
+                                </IconButton>
+                              </Tooltip>
+                            )}
+                            <Tooltip title="More" arrow>
+                              <IconButton
+                                className="action-btn more-btn"
+                                size="small"
+                                onClick={(e) => handleOpenMenu(e, member)}
+                              >
+                                <ChevronDown size={17} />
+                              </IconButton>
+                            </Tooltip>
+                          </div>
+                        </span>
+                      </div>
+                      {Array.isArray(member.tags) && member.tags.length > 0 && (
+                        <div className="conversation-tags-row">
+                          {member.tags.slice(0, 3).map((tag) => (
+                            <span key={getTagId(tag)} className="conversation-tag-chip" title={tag.TagName}>
+                              <span
+                                className="conversation-tag-dot"
+                                style={{ backgroundColor: tag.color || '#1daa61' }}
+                              />
+                              {tag.TagName}
+                            </span>
+                          ))}
+                          {member.tags.length > 3 && (
+                            <span className="conversation-tag-chip">+{member.tags.length - 3}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </li>
+              );
+            })}
+
+            {isLoadingMore && (
+              <li className="chat-sidebar-loader" style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', padding: '16px 0', gap: 8, listStyle: 'none' }}>
+                <CircularProgress size={20} thickness={4} sx={{ color: '#1daa61' }} />
+                <span style={{ fontSize: 12, color: '#888' }}>Loading conversations...</span>
+              </li>
+            )}
+          </ul>
+        </div>
       )}
 
       {/* Dropdown Menu */}

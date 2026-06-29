@@ -12,53 +12,56 @@ import {
 const renderDashIfEmpty = (params) => params.value || '-';
 
 const CRM_COLUMNS = [
-  { field: 'SrNo',          headerName: 'Sr #',             width: 60,  type: 'number', headerClassName: 'data-grid-header' },
-  { field: 'CustomerCode',  headerName: 'Customer Code', width: 160, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'CustomerName',  headerName: 'Name',          width: 200, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'CompanyType',   headerName: 'Company Type',  width: 150, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'CustomerEmail', headerName: 'Email',         width: 220, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'CustomerPhone', headerName: 'Phone',         width: 160, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'CountryCode',   headerName: 'Country Code',  width: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'Country',       headerName: 'Country',       width: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'State',         headerName: 'State',         width: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'City',          headerName: 'City',          width: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'SrNo',          headerName: 'Sr #',             width: 60,  minWidth: 50, type: 'number', headerClassName: 'data-grid-header' },
+  { field: 'CustomerCode',  headerName: 'Customer Code', width: 160, minWidth: 110, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'CustomerName',  headerName: 'Name',          width: 200, minWidth: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'CompanyType',   headerName: 'Company Type',  width: 150, minWidth: 110, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'CustomerEmail', headerName: 'Email',         width: 220, minWidth: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'CustomerPhone', headerName: 'Phone',         width: 160, minWidth: 110, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'CountryCode',   headerName: 'Country Code',  width: 120, minWidth: 80, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'Country',       headerName: 'Country',       width: 120, minWidth: 80, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'State',         headerName: 'State',         width: 120, minWidth: 80, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'City',          headerName: 'City',          width: 120, minWidth: 80, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
 ];
 
 const EXCEL_COLUMNS = [
-  { field: 'SrNo',         headerName: '#',             width: 60,  type: 'number', headerClassName: 'data-grid-header' },
-  { field: 'CustomerName', headerName: 'Customer Name', width: 200, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'Email',        headerName: 'Email',         width: 220, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'PhoneNo',      headerName: 'Phone',         width: 160, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'Company',      headerName: 'Company',       width: 220, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'CustomerType', headerName: 'Type',          width: 140, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'Category',     headerName: 'Category',      width: 160, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'Source',       headerName: 'Source',        width: 160, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'PinCode',      headerName: 'Pin Code',      width: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'City',         headerName: 'City',          width: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
-  { field: 'State',        headerName: 'State',         width: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'SrNo',         headerName: '#',             width: 60,  minWidth: 50, type: 'number', headerClassName: 'data-grid-header' },
+  { field: 'CustomerName', headerName: 'Customer Name', width: 200, minWidth: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'Email',        headerName: 'Email',         width: 220, minWidth: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'PhoneNo',      headerName: 'Phone',         width: 160, minWidth: 110, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'Company',      headerName: 'Company',       width: 220, minWidth: 120, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'CustomerType', headerName: 'Type',          width: 140, minWidth: 80, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'Category',     headerName: 'Category',      width: 160, minWidth: 110, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'Source',       headerName: 'Source',        width: 160, minWidth: 110, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'PinCode',      headerName: 'Pin Code',      width: 120, minWidth: 80, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'City',         headerName: 'City',          width: 120, minWidth: 80, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
+  { field: 'State',        headerName: 'State',         width: 120, minWidth: 80, headerClassName: 'data-grid-header', renderCell: renderDashIfEmpty },
 ];
 
 // Unified columns for mixed Excel and CRM data
 const UNIFIED_COLUMNS = [
-  { field: 'SrNo', headerName: '#', width: 60, type: 'number', headerClassName: 'data-grid-header' },
-  { 
-    field: 'CustomerName', 
-    headerName: 'Customer Name', 
-    width: 200, 
+  { field: 'SrNo', headerName: '#', width: 60, minWidth: 50, type: 'number', headerClassName: 'data-grid-header' },
+  {
+    field: 'CustomerName',
+    headerName: 'Customer Name',
+    width: 200,
+    minWidth: 120,
     headerClassName: 'data-grid-header',
     renderCell: (params) => params.row.CustomerName || '—'
   },
-  { 
-    field: 'CountryCode', 
-    headerName: 'Country Code', 
-    width: 120, 
+  {
+    field: 'CountryCode',
+    headerName: 'Country Code',
+    width: 120,
+    minWidth: 80,
     headerClassName: 'data-grid-header',
     renderCell: (params) => params.row.Source === 'Excel' ? '—' : (params.row.CountryCode || '—')
   },
-  { 
-    field: 'Phone', 
-    headerName: 'Phone', 
-    width: 160, 
+  {
+    field: 'Phone',
+    headerName: 'Phone',
+    width: 160,
+    minWidth: 110,
     headerClassName: 'data-grid-header',
     renderCell: (params) => {
       if (params.row.Source === 'Excel') {
@@ -67,10 +70,11 @@ const UNIFIED_COLUMNS = [
       return params.row.CustomerPhone || '—';
     }
   },
-  { 
-    field: 'Email', 
-    headerName: 'Email', 
-    width: 220, 
+  {
+    field: 'Email',
+    headerName: 'Email',
+    width: 220,
+    minWidth: 120,
     headerClassName: 'data-grid-header',
     renderCell: (params) => {
       if (params.row.Source === 'Excel') {
@@ -79,10 +83,11 @@ const UNIFIED_COLUMNS = [
       return params.row.CustomerEmail || '—';
     }
   },
-  { 
-    field: 'Company', 
-    headerName: 'Company', 
-    width: 220, 
+  {
+    field: 'Company',
+    headerName: 'Company',
+    width: 220,
+    minWidth: 120,
     headerClassName: 'data-grid-header',
     renderCell: (params) => {
       if (params.row.Source === 'Excel') {
@@ -91,10 +96,11 @@ const UNIFIED_COLUMNS = [
       return params.row.CustomerCode || '—';
     }
   },
-  { 
-    field: 'Type', 
-    headerName: 'Type', 
-    width: 140, 
+  {
+    field: 'Type',
+    headerName: 'Type',
+    width: 140,
+    minWidth: 80,
     headerClassName: 'data-grid-header',
     renderCell: (params) => {
       if (params.row.Source === 'Excel') {
@@ -103,45 +109,51 @@ const UNIFIED_COLUMNS = [
       return params.row.CompanyType || '—';
     }
   },
-  { 
-    field: 'Source', 
-    headerName: 'Source', 
-    width: 100, 
+  {
+    field: 'Source',
+    headerName: 'Source',
+    width: 100,
+    minWidth: 70,
     headerClassName: 'data-grid-header',
     renderCell: (params) => params.row.Source || 'CRM'
   },
-  { 
-    field: 'Category', 
-    headerName: 'Category', 
-    width: 160, 
+  {
+    field: 'Category',
+    headerName: 'Category',
+    width: 160,
+    minWidth: 110,
     headerClassName: 'data-grid-header',
     renderCell: (params) => params.row.Source === 'Excel' ? (params.row.Category || '—') : '—'
   },
-  { 
-    field: 'City', 
-    headerName: 'City', 
-    width: 120, 
+  {
+    field: 'City',
+    headerName: 'City',
+    width: 120,
+    minWidth: 80,
     headerClassName: 'data-grid-header',
     renderCell: (params) => params.row.City || '—'
   },
-  { 
-    field: 'State', 
-    headerName: 'State', 
-    width: 120, 
+  {
+    field: 'State',
+    headerName: 'State',
+    width: 120,
+    minWidth: 80,
     headerClassName: 'data-grid-header',
     renderCell: (params) => params.row.State || '—'
   },
-  { 
-    field: 'Country', 
-    headerName: 'Country', 
-    width: 120, 
+  {
+    field: 'Country',
+    headerName: 'Country',
+    width: 120,
+    minWidth: 80,
     headerClassName: 'data-grid-header',
     renderCell: (params) => params.row.Source === 'Excel' ? '—' : (params.row.Country || '—')
   },
-  { 
-    field: 'PinCode', 
-    headerName: 'Pin Code', 
-    width: 120, 
+  {
+    field: 'PinCode',
+    headerName: 'Pin Code',
+    width: 120,
+    minWidth: 80,
     headerClassName: 'data-grid-header',
     renderCell: (params) => params.row.Source === 'Excel' ? (params.row.PinCode || '—') : '—'
   },
@@ -155,15 +167,15 @@ const GRID_SX = {
   '& .MuiDataGrid-columnHeaders': { backgroundColor: '#fff', borderBottom: '1px solid var(--sidebar-borderColor)' },
   '& .MuiDataGrid-cell': { borderBottom: '1px solid var(--sidebar-borderColor)' },
   '& .MuiDataGrid-columnHeader': { fontWeight: 600, borderBottom: '1px solid var(--sidebar-borderColor)' },
-  '& .MuiDataGrid-virtualScroller': { minHeight: 300 },
+  '& .MuiDataGrid-virtualScroller': { overflowX: 'auto' },
   '& .MuiDataGrid-cell:focus, & .MuiDataGrid-cell:focus-within': { outline: 'none' },
   '& .MuiDataGrid-row:last-child .MuiDataGrid-cell': { borderBottom: 'none' },
 };
 
 // ── Toolbar — fully memoized, stable prop shape ───────────────────────────────
 const CustomToolbar = React.memo(({ onFilterClick, onSearchChange, searchText, selectedCount, onExportClick }) => (
-  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, gap: 1 }}>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5 }}>
+  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', p: 1, gap: 1, flexWrap: 'wrap' }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, flex: 1, minWidth: 0 }}>
       <TextField
         variant="outlined"
         size="small"
@@ -187,19 +199,19 @@ const CustomToolbar = React.memo(({ onFilterClick, onSearchChange, searchText, s
             },
           },
         }}
-        sx={{ width: 260 }}
+        sx={{ width: { xs: '100%', md: 260 } }}
       />
       <Tooltip title="Filter audience">
         <IconButton
           onClick={onFilterClick}
           size="small"
-          sx={{ border: '1px solid var(--sidebar-borderColor)', borderRadius: '10px', backgroundColor: '#fcfcfd', color: 'var(--secondary-color)', p: 0.75 }}
+          sx={{ border: '1px solid var(--sidebar-borderColor)', borderRadius: '10px', backgroundColor: '#fcfcfd', color: 'var(--secondary-color)', p: 0.75, flexShrink: 0 }}
         >
           <File size={16} />
         </IconButton>
       </Tooltip>
     </Box>
-    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexShrink: 0 }}>
       <Box sx={{ fontSize: '0.8rem', color: 'var(--secondary-color)', mr: 0.5, whiteSpace: 'nowrap' }}>
         Selected: {selectedCount}
       </Box>
@@ -387,13 +399,15 @@ const AudienceGrid = ({
   }), [onFilterClick, handleSearchInputChange, searchText, selectedCount, handleExport]);
 
   return (
-    <Box sx={{ width: '100%', height: '100%', overflow: 'hidden' }}>
-      <Box sx={{ minWidth: 400, height: '100%' }}>
+    <Box sx={{ width: '100%', height: '100%', overflow: 'hidden', minWidth: 0 }}>
+      <Box sx={{ minWidth: 0, height: '100%', overflow: 'hidden' }}>
         <DataGrid
           rows={filteredRows}
           columns={columns}
           checkboxSelection
           disableRowSelectionOnClick
+          disableColumnMenu
+          disableColumnFilter
           keepNonExistentRowsSelected
           loading={loading}
           getRowId={getRowId}

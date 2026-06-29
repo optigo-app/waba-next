@@ -605,6 +605,7 @@ const FilterSelectionDialog = ({
           field: 'SrNo',
           headerName: 'Sr No',
           width: 70,
+          minWidth: 60,
           type: 'number',
           headerClassName: 'data-grid-header',
           renderCell: (params) => getRowSerialNumber(params),
@@ -613,6 +614,7 @@ const FilterSelectionDialog = ({
           field: 'CustomerName',
           headerName: 'Name',
           width: 200,
+          minWidth: 120,
           headerClassName: 'data-grid-header',
           renderCell: (params) => params?.row?.CustomerName || params?.row?.customername || params?.row?.customer_name || '',
         },
@@ -620,6 +622,7 @@ const FilterSelectionDialog = ({
           field: 'Email',
           headerName: 'Email',
           width: 200,
+          minWidth: 120,
           headerClassName: 'data-grid-header',
           renderCell: (params) => params?.row?.Email || params?.row?.email || '',
         },
@@ -627,6 +630,7 @@ const FilterSelectionDialog = ({
           field: 'PhoneNo',
           headerName: 'Phone',
           width: 150,
+          minWidth: 110,
           headerClassName: 'data-grid-header',
           renderCell: (params) => params?.row?.PhoneNo || params?.row?.phoneno || params?.row?.phone_no || '',
         },
@@ -634,6 +638,7 @@ const FilterSelectionDialog = ({
           field: 'Company',
           headerName: 'Company',
           width: 150,
+          minWidth: 110,
           headerClassName: 'data-grid-header',
           renderCell: (params) => params?.row?.Company || params?.row?.company || '',
         },
@@ -641,6 +646,7 @@ const FilterSelectionDialog = ({
           field: 'CustomerType',
           headerName: 'Type',
           width: 120,
+          minWidth: 80,
           headerClassName: 'data-grid-header',
           renderCell: (params) => params?.row?.CustomerType || params?.row?.customertype || params?.row?.customer_type || '',
         },
@@ -648,6 +654,7 @@ const FilterSelectionDialog = ({
           field: 'Category',
           headerName: 'Category',
           width: 150,
+          minWidth: 110,
           headerClassName: 'data-grid-header',
           renderCell: (params) => params?.row?.Category || params?.row?.category || '',
         },
@@ -655,6 +662,7 @@ const FilterSelectionDialog = ({
           field: 'City',
           headerName: 'City',
           width: 120,
+          minWidth: 80,
           headerClassName: 'data-grid-header',
           renderCell: (params) => params?.row?.City || params?.row?.city || '',
         },
@@ -662,6 +670,7 @@ const FilterSelectionDialog = ({
           field: 'State',
           headerName: 'State',
           width: 120,
+          minWidth: 80,
           headerClassName: 'data-grid-header',
           renderCell: (params) => params?.row?.State || params?.row?.state || '',
         },
@@ -674,6 +683,7 @@ const FilterSelectionDialog = ({
         field: 'SrNo',
         headerName: 'Sr No',
         width: 70,
+        minWidth: 60,
         type: 'number',
         headerClassName: 'data-grid-header',
         renderCell: (params) => getRowSerialNumber(params),
@@ -682,30 +692,35 @@ const FilterSelectionDialog = ({
         field: 'CustomerCode',
         headerName: 'Customer Code',
         width: 180,
+        minWidth: 120,
         headerClassName: 'data-grid-header',
       },
       {
         field: 'CustomerName',
         headerName: 'Name',
         width: 200,
+        minWidth: 120,
         headerClassName: 'data-grid-header',
       },
       {
         field: 'CompanyType',
         headerName: 'Company type',
         width: 150,
+        minWidth: 110,
         headerClassName: 'data-grid-header',
       },
       {
         field: 'CustomerEmail',
         headerName: 'Email',
         width: 200,
+        minWidth: 120,
         headerClassName: 'data-grid-header',
       },
       {
         field: 'CustomerPhone',
         headerName: 'Phone',
         width: 200,
+        minWidth: 120,
         headerClassName: 'data-grid-header',
         renderCell: (params) => (
           <span>
@@ -717,18 +732,21 @@ const FilterSelectionDialog = ({
         field: 'Country',
         headerName: 'Country',
         width: 120,
+        minWidth: 80,
         headerClassName: 'data-grid-header',
       },
       {
         field: 'State',
         headerName: 'State',
         width: 120,
+        minWidth: 80,
         headerClassName: 'data-grid-header',
       },
       {
         field: 'City',
         headerName: 'City',
         width: 120,
+        minWidth: 80,
         headerClassName: 'data-grid-header',
       },
     ];
@@ -882,25 +900,27 @@ const FilterSelectionDialog = ({
       maxWidth={false}
       fullWidth
       fullScreen={isMobile}
-      PaperProps={{
-        sx: {
-          borderRadius: isMobile ? 0 : '16px',
-          height: isMobile ? '100%' : '91vh',
-          width: isMobile ? '100%' : '95vw',
-          maxWidth: isMobile ? '100%' : '95vw',
-          m: isMobile ? 0 : undefined,
+      slotProps={{
+        paper: {
+          sx: {
+            borderRadius: isMobile ? 0 : '16px',
+            height: isMobile ? '100%' : '91vh',
+            width: isMobile ? '100%' : '95vw',
+            maxWidth: isMobile ? '100%' : '95vw',
+            m: isMobile ? 0 : undefined,
+          },
         },
       }}
     >
       <DialogTitle sx={{ pb: 1 }}>
-        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 2 }}>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2, flex: 1 }}>
-            <Typography variant="h6" sx={{ fontWeight: 600 }}>
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2, flexDirection: { xs: 'column', md: 'row' } }}>
+          <Box sx={{ display: 'flex', alignItems: { xs: 'flex-start', md: 'center' }, gap: 2, flex: 1, flexWrap: 'wrap', minWidth: 0 }}>
+            <Typography variant="h6" sx={{ fontWeight: 600, fontSize: { xs: '1rem', md: '1.25rem' }, whiteSpace: 'nowrap' }}>
               Filter & Select Audience
             </Typography>
             {/* Applied Filters Display */}
             {hasAppliedFilters && (
-              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center' }}>
+              <Box sx={{ display: 'flex', flexWrap: 'wrap', gap: 1, alignItems: 'center', minWidth: 0 }}>
                 <Chip
                   label="Applied"
                   size="small"
@@ -969,7 +989,7 @@ const FilterSelectionDialog = ({
               </Box>
             )}
           </Box>
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' }, justifyContent: { xs: 'space-between', md: 'flex-end' } }}>
             <ToggleButtonGroup
               value={localSource}
               exclusive
@@ -991,11 +1011,11 @@ const FilterSelectionDialog = ({
               sx={{
                 '& .MuiToggleButton-root': {
                   textTransform: 'none',
-                  px: 2.25,
+                  px: { xs: 1.5, md: 2.25 },
                   py: 0.75,
                   fontSize: '0.8rem',
                   fontWeight: 600,
-                  minWidth: 160,
+                  minWidth: { xs: 0, md: 160 },
                   borderRadius: '8px',
                   border: '1px solid #cbd5e1',
                   color: '#334155',
@@ -1164,21 +1184,24 @@ const FilterSelectionDialog = ({
                     setSearchText(searchInput);
                   }
                 }}
-                InputProps={{
-                  startAdornment: (
-                    <InputAdornment position="start">
-                      <Search size={18} />
-                    </InputAdornment>
-                  ),
-                  endAdornment: searchInput && (
-                    <IconButton size="small" onClick={() => {
-                      setSearchInput('');
-                      setSearchText('');
-                    }}>
-                      <X size={18} />
-                    </IconButton>
-                  ),
-                  sx: {
+                slotProps={{
+                  input: {
+                    startAdornment: (
+                      <InputAdornment position="start">
+                        <Search size={18} />
+                      </InputAdornment>
+                    ),
+                    endAdornment: searchInput && (
+                      <IconButton size="small" onClick={() => {
+                        setSearchInput('');
+                        setSearchText('');
+                      }}>
+                        <X size={18} />
+                      </IconButton>
+                    ),
+                  },
+                }}
+                sx={{
                     borderRadius: 2,
                     backgroundColor: '#ffffff',
                     '& .MuiOutlinedInput-notchedOutline': {
@@ -1191,8 +1214,7 @@ const FilterSelectionDialog = ({
                       borderColor: 'var(--primary-main)',
                       borderWidth: 2,
                     },
-                  }
-                }}
+                  }}
               />
             </Box>
 
@@ -1376,7 +1398,7 @@ const FilterSelectionDialog = ({
         </Box>
 
         {/* Right Side - Grid */}
-        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden' }}>
+        <Box sx={{ flex: 1, display: 'flex', flexDirection: 'column', overflow: 'hidden', minWidth: 0 }}>
           <Box sx={{ px: isMobile ? 1 : 2, py: 1, display: 'flex', borderLeft: isMobile ? 'none' : '1px solid #e0e0e0', alignItems: 'center', justifyContent: 'space-between', gap: 1, flexWrap: 'wrap' }}>
             <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
               Filtered Results ({visibleGridData.length} records)
@@ -1418,12 +1440,14 @@ const FilterSelectionDialog = ({
               </Button>
             </Box>
           </Box>
-          <Box sx={{ flex: 1, overflow: 'hidden' }}>
+          <Box sx={{ flex: 1, overflow: 'auto', minWidth: 0 }}>
             <DataGrid
               rows={visibleGridData}
               columns={columns}
               checkboxSelection
               disableSelectionOnClick
+              disableColumnMenu
+              disableColumnFilter
               getRowId={(row) => row?.CustomerId ?? row?.id ?? row?.PhoneNo ?? row?.CustomerPhone ?? row?.Email ?? row?.CustomerCode}
               loading={loading}
               components={{
@@ -1488,6 +1512,7 @@ const FilterSelectionDialog = ({
                 },
                 '& .MuiDataGrid-virtualScroller': {
                   minHeight: isMobile ? '200px' : '500px',
+                  overflowX: 'auto',
                 },
               }}
             />
@@ -1497,21 +1522,21 @@ const FilterSelectionDialog = ({
 
       <Divider />
 
-      <DialogActions sx={{ p: 2, justifyContent: 'space-between' }}>
-        <Box>
+      <DialogActions sx={{ p: 2, justifyContent: 'space-between', flexDirection: { xs: 'column', sm: 'row' }, gap: { xs: 1, sm: 0 } }}>
+        <Box sx={{ width: { xs: '100%', sm: 'auto' }, textAlign: { xs: 'center', sm: 'left' } }}>
           <Typography variant="caption" color="textSecondary">
             {selectedIds.length} contacts selected
           </Typography>
           {hasPendingChanges && <Typography variant="caption" sx={{ display: 'block', color: 'warning.main' }}>Updating results...</Typography>}
         </Box>
-        <Box sx={{ display: 'flex', gap: 1 }}>
-          <Button className='secondaryBtnClassname' onClick={onClose} variant="contained">
+        <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap', justifyContent: { xs: 'center', sm: 'flex-end' }, width: { xs: '100%', sm: 'auto' } }}>
+          <Button className='secondaryBtnClassname' onClick={onClose} variant="contained" size="small">
             Cancel
           </Button>
-          <Button className='dangerbtnClassName' onClick={() => handleContinue('replace')} variant="contained" disabled={isContinueDisabled}>
+          <Button className='dangerbtnClassName' onClick={() => handleContinue('replace')} variant="contained" disabled={isContinueDisabled} size="small">
             Append & Replace ({selectedIds.length})
           </Button>
-          <Button className='buttonClassname' onClick={() => handleContinue('append')} variant="contained" disabled={isContinueDisabled}>
+          <Button className='buttonClassname' onClick={() => handleContinue('append')} variant="contained" disabled={isContinueDisabled} size="small">
             Append ({selectedIds.length})
           </Button>
         </Box>

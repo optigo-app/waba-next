@@ -789,7 +789,7 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
                                 </Box>
                             )}
                         </Box>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap', width: { xs: '100%', md: 'auto' } }}>
                             {filteredDataFromDialog && filteredDataFromDialog.length > 0 && (
                                 <>
                                     <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
@@ -830,7 +830,7 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
                                                 },
                                             },
                                         }}
-                                        sx={{ width: 220, mr: 1 }}
+                                        sx={{ width: { xs: '100%', md: 220 }, mr: { md: 1 } }}
                                     />
                                 </>
                             )}
@@ -886,7 +886,7 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
                         </Box>
                     </Box>
 
-                    <Box sx={{ flex: 1, minHeight: 0, width: '100%', overflow: 'hidden' }}>
+                    <Box sx={{ width: '100%', overflow: { xs: 'auto', md: 'hidden' }, height: { xs: '340px', sm: '380px', md: '100%' }, maxHeight: { xs: '340px', sm: '380px', md: '520px' }, flex: { md: 1 }, minHeight: 0 }}>
                         {dedupeStats.rows && dedupeStats.rows.length > 0 ? (
                             <AudienceGrid
                                 rows={dedupeStats.rows}
@@ -906,8 +906,8 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
                                     flexDirection: 'column',
                                     alignItems: 'center',
                                     justifyContent: 'center',
-                                    height: '97%',
-                                    minHeight: 300,
+                                    height: '100%',
+                                    minHeight: { xs: 0, md: 300 },
                                     border: '2px dashed var(--sidebar-borderColor)',
                                     borderRadius: '12px',
                                     backgroundColor: '#fcfcfd'
@@ -989,7 +989,7 @@ const Audience = ({ onNext, onBack, onAudienceChange, onDataSourceChange, onFilt
                     fullWidth
                     keepMounted
                     maxWidth="md"
-                    PaperProps={{ className: styles.sourceSelectionDialogPaper }}
+                    slotProps={{ paper: { className: styles.sourceSelectionDialogPaper } }}
                 >
                     <Box className={styles.sourceSelectionDialogBody}>
                         <Typography className={styles.sourceSelectionTitle}>

@@ -672,6 +672,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  gap: 2px;
   font-size: 14px;
   line-height: 1;
   padding: 3px 6px;
@@ -681,8 +682,13 @@
   border: 1.5px solid #ffffff;
   z-index: 5;
   cursor: default;
-  height: 24px;
+  min-height: 24px;
   min-width: 24px;
+}
+
+.message-reaction-emoji {
+  display: inline-flex;
+  align-items: center;
 }
 
 .message-bubble.user .message-reaction-badge {

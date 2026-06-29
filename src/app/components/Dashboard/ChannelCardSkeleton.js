@@ -129,7 +129,7 @@ const ChannelCardSkeleton = ({ count = 1 }) => {
                     <Divider />
 
                     {/* Bottom Actions */}
-                    <Box sx={{ display: 'flex', gap: '0.75rem', width: '100%', position: 'relative', zIndex: 2 }}>
+                    <Box sx={{ display: 'flex', gap: '0.75rem', width: '100%', position: 'relative', zIndex: 2, flexDirection: { xs: 'column', sm: 'row' } }}>
                         <Skeleton
                             variant="rounded"
                             width="100%"

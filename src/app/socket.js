@@ -1,17 +1,30 @@
 import { io } from 'socket.io-client';
 import { getSocketState, setSocketState, removeSocketState } from './utils/storage';
 import { getSocketURL } from './api/Config';
+import { useChatStore } from './store/chatStore';
 
 // Socket state
 let socketInstance = null;
 let isAuthenticated = false;
-let messageHandlers = new Set();
-let messageHandlersFromAssigningUser = new Set();
-let messageReactionHandlers = new Set();
-let statusHandlers = new Set();
-let sessionLogout = new Set();
 let reconnectAttempts = 0;
 const MAX_RECONNECT_ATTEMPTS = 5;
+
+/* ── Window event bus for non-chat concerns (notifications, logout, etc.) ── */
+const dispatch = (type, detail) => {
+    if (typeof window === 'undefined') return;
+    try {
+        window.dispatchEvent(new CustomEvent(type, { detail }));
+    } catch (e) {
+        // ignore
+    }
+};
+
+const on = (type, handler) => {
+    if (typeof window === 'undefined') return () => {};
+    const wrapped = (e) => handler(e.detail);
+    window.addEventListener(type, wrapped);
+    return () => window.removeEventListener(type, wrapped);
+};
 
 // Restore connection state if available
 const restoreConnection = () => {
@@ -83,59 +96,39 @@ export const initializeSocket = (token) => {
     // socketInstance.removeAllListeners('newMessage');
     // socketInstance.removeAllListeners('changeStatus');
 
-    // Handle new messages
+    // Handle new messages — push to store + broadcast for notifications
     socketInstance.on('newMessage', (data) => {
-        messageHandlers.forEach(handler => {
-            try {
-                handler(data);
-            } catch (error) {
-                // console.error('❌ Error in message handler:', error);
-            }
-        });
+        try {
+            useChatStore.getState().handleSocketMessage(data);
+        } catch (e) {
+            console.error('Chat store newMessage error:', e);
+        }
+        dispatch('waba:newMessage', data);
     });
 
     // session logout
     socketInstance.on('sessionLogout', (data) => {
-        sessionLogout.forEach(handler => {
-            try {
-                handler(data);
-            } catch (error) {
-                // console.error('❌ Error in message handler:', error);
-            }
-        });
+        dispatch('waba:sessionLogout', data);
     });
 
-    // Handle new messages from assigning users
+    // Handle new messages from assigning users — push to store + broadcast
     socketInstance.on('sendMessage', (data) => {
-        messageHandlersFromAssigningUser.forEach(handler => {
-            try {
-                handler(data);
-            } catch (error) {
-                console.error('❌ Error in message handler from assigning user:', error);
-            }
-        });
+        try {
+            useChatStore.getState().handleSocketMessage(data);
+        } catch (e) {
+            console.error('Chat store sendMessage error:', e);
+        }
+        dispatch('waba:sendMessage', data);
     });
 
     // Handle message reactions
     socketInstance.on('sendReaction', (data) => {
-        messageReactionHandlers.forEach((handler) => {
-            try {
-                handler(data);
-            } catch (error) {
-                console.error('❌ Error in reaction handler:', error);
-            }
-        });
+        dispatch('waba:sendReaction', data);
     });
 
     // Handle status changes
     socketInstance.on('changeStatus', (data) => {
-        statusHandlers.forEach(handler => {
-            try {
-                handler(data);
-            } catch (error) {
-                console.error('❌ Error in status handler:', error);
-            }
-        });
+        dispatch('waba:changeStatus', data);
     });
     return socketInstance;
 };
@@ -182,33 +175,24 @@ export const isSocketAuthenticated = () => {
 };
 
 /**
- * Add a handler for new messages
+ * Listen for new messages (newMessage only)
  */
 export const addMessageHandler = (handler) => {
-    messageHandlers.add(handler);
-    return () => {
-        messageHandlers.delete(handler);
-    };
+    return on('waba:newMessage', handler);
 };
 
 /**
  * Add a handler for session logout
  */
 export const addSessionLogoutHandler = (handler) => {
-    sessionLogout.add(handler);
-    return () => {
-        sessionLogout.delete(handler);
-    };
+    return on('waba:sessionLogout', handler);
 };
 
 /**
- * Add a handler for new messages coming from assigning users
+ * Add a handler for new messages coming from assigning users (sendMessage only)
  */
 export const addMessageHandlerFromAssigningUser = (handler) => {
-    messageHandlersFromAssigningUser.add(handler);
-    return () => {
-        messageHandlersFromAssigningUser.delete(handler);
-    };
+    return on('waba:sendMessage', handler);
 };
 
 /**
@@ -225,20 +209,16 @@ export const emitReaction = (data) => {
  */
 export const addMessageReactionHandler = (handler) => {
     if (typeof handler === 'function') {
-        messageReactionHandlers.add(handler);
-        return () => messageReactionHandlers.delete(handler);
+        return on('waba:sendReaction', handler);
     }
+    return () => {};
 };
-
 
 /**
  * Add a handler for status changes
  */
 export const addStatusHandler = (handler) => {
-    statusHandlers.add(handler);
-    return () => {
-        statusHandlers.delete(handler);
-    };
+    return on('waba:changeStatus', handler);
 };
 
 const BROADCAST_CHANNEL = 'waba-session-logout';
@@ -266,12 +246,6 @@ export const disconnectSocket = (permanent = false) => {
         socketInstance.disconnect();
         socketInstance = null;
         isAuthenticated = false;
-        messageHandlers.clear();
-        sessionLogout.clear();
-        messageHandlersFromAssigningUser.clear();
-        messageReactionHandlers.clear();
-        statusHandlers.clear();
-
         if (permanent) {
             removeSocketState();
         }

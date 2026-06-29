@@ -173,7 +173,9 @@ const EmbeddedSignupStep = ({ onSuccess, onBack }) => {
 
                 const credentials = {
                     companycode: auth?.companycode || auth?.CompanyCode || '',
-                    UserPhone: signupData.phoneNumberId,
+                    verified_name:signupData.verified_name,
+                    UserPhone: signupData.display_phone_number,
+                    is_official_business_account:signupData.is_official_business_account,
                     WabaId: signupData.wabaId,
                     WabaPhoneNo: signupData.phoneNumberId,
                     AppId: process.env.NEXT_PUBLIC_WABA_APP_ID || '',

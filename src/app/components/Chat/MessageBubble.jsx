@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef, memo } from 'react';
+import { useState, useRef, memo, useEffect, useMemo } from 'react';
 import { Avatar, Skeleton, Tooltip, Box, Typography } from '@mui/material';
 import { MoreVertical, ChevronDown, Paperclip, Download, AlertCircle, Clock3, Check, CheckCheck, Play, Pause } from 'lucide-react';
 import DynamicTemplate from './DynamicTemplate';
@@ -17,6 +17,16 @@ const charToUnified = (char) => {
 };
 
 const imageDimsCache = new Map();
+const MAX_DIMS_CACHE_SIZE = 200;
+
+const setImageDimsCached = (key, dims) => {
+  if (!key) return;
+  if (imageDimsCache.size >= MAX_DIMS_CACHE_SIZE) {
+    const first = imageDimsCache.keys().next().value;
+    if (first) imageDimsCache.delete(first);
+  }
+  imageDimsCache.set(key, dims);
+};
 
 const calculateImageDimensions = (naturalWidth, naturalHeight) => {
   const MAX_W = 300;   // WhatsApp max image width
@@ -40,6 +50,7 @@ const MessageBubble = memo(function MessageBubble({
   loadedMedia,
   setLoadedMedia,
   mediaCache,
+  requestMediaFetch,
   setMediaViewer,
   reactionPickerMessageId,
   setReactionPickerMessageId,
@@ -52,6 +63,9 @@ const MessageBubble = memo(function MessageBubble({
   const msgType = msg?.type || msg?.MessageType || 'text';
   const rawImageSrc = msg?.mediaUrl || msg?.imageUrl || msg?.MediaUrl;
   const resolveMediaUrl = (val) => {
+    // If the message itself has a direct FileUrl, use it
+    const directUrl = msg?.FileUrl;
+    if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('http')) return directUrl;
     if (!val || typeof val !== 'string') return val;
     if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) return val;
     return mediaCache?.[val] || val;
@@ -68,9 +82,61 @@ const MessageBubble = memo(function MessageBubble({
   const [isAudioPlaying, setIsAudioPlaying] = useState(false);
   const videoRef = useRef(null);
   const audioRef = useRef(null);
+  const messageRef = useRef(null);
 
   const isAudio = msgType?.toLowerCase() === 'audio' || msg?.audioUrl || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp3|ogg|wav|m4a|aac|opus|webm)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp3|ogg|wav|m4a|aac|opus|webm)$/i));
   const hasMedia = msgType?.toLowerCase() === 'image' || msgType?.toLowerCase() === 'video' || msgType?.toLowerCase() === 'document' || isAudio || msg?.mediaUrl || msg?.imageUrl || msg?.documentUrl || msg?.MediaUrl;
+
+  // Compute mediaId that needs lazy fetching — only recomputes when relevant fields change
+  const mediaIdToFetch = useMemo(() => {
+    if (!hasMedia || !requestMediaFetch) return null;
+    const directUrl = msg?.FileUrl;
+    if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('http')) return null;
+    const candidates = [
+      msg?.mediaUrl,
+      msg?.MediaUrl,
+      msg?.mediaId,
+      msg?.imageUrl,
+      msg?.documentUrl,
+      msg?.videoUrl,
+      msg?.audioUrl,
+    ];
+    for (const val of candidates) {
+      if (!val || typeof val !== 'string') continue;
+      if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) continue;
+      if (mediaCache?.[val]) continue;
+      return val;
+    }
+    return null;
+  }, [
+    hasMedia, requestMediaFetch,
+    msg?.FileUrl,
+    msg?.mediaUrl, msg?.MediaUrl, msg?.mediaId,
+    msg?.imageUrl, msg?.documentUrl, msg?.videoUrl, msg?.audioUrl,
+    mediaCache,
+  ]);
+
+  // Lazy load media when message bubble enters viewport
+  useEffect(() => {
+    if (!mediaIdToFetch) return;
+    const el = messageRef.current;
+    if (!el) return;
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            requestMediaFetch(mediaIdToFetch);
+            observer.disconnect();
+          }
+        });
+      },
+      { root: null, rootMargin: '200px', threshold: 0 }
+    );
+
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [mediaIdToFetch, requestMediaFetch]);
   const replyData = msg?.ContextType === 2 ? msg?.ReplyContext || msg?.replyTo : null;
   const isPickerOpen = reactionPickerMessageId === messageId;
   const isBlinking = blinkMessageId === messageId;
@@ -85,6 +151,7 @@ const MessageBubble = memo(function MessageBubble({
 
   return (
     <div
+      ref={messageRef}
       className={`message-item ${isOutgoing ? 'user-message' : 'customer-message'} ${isBlinking ? 'blink-message' : ''} ${messageReactions[messageId] ? 'has-reaction' : ''}`}
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
@@ -103,7 +170,7 @@ const MessageBubble = memo(function MessageBubble({
             <QuickReactionMenu
               isOpen={isPickerOpen}
               onToggle={() => setReactionPickerMessageId((prev) => (prev === messageId ? null : messageId))}
-              onSelect={(emoji) => onReactionSelect(messageId, emoji)}
+              onSelect={(emoji) => onReactionSelect(msg, emoji)}
             />
             {msgType !== 'template' && (
               <button
@@ -241,12 +308,13 @@ const MessageBubble = memo(function MessageBubble({
                           if (w > 0 && h > 0) {
                             const dims = calculateImageDimensions(w, h);
                             setImageDims(dims);
-                            if (rawImageSrc) imageDimsCache.set(rawImageSrc, dims);
+                            if (rawImageSrc) setImageDimsCached(rawImageSrc, dims);
                           }
                           setLoadedMedia((prev) => ({ ...prev, [messageId]: true }));
                         }}
                         onError={(e) => {
-                          e.target.style.display = 'none';
+                          // Keep element in DOM (opacity:0) so it can load the real URL
+                          // once the lazy cache populates with the server/blob URL
                           setLoadedMedia((prev) => ({ ...prev, [messageId]: true }));
                         }}
                       />
@@ -255,7 +323,7 @@ const MessageBubble = memo(function MessageBubble({
                 ) : msgType?.toLowerCase() === 'video' || (msg?.mediaUrl && msg?.mediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) || (msg?.MediaUrl && msg?.MediaUrl.match(/\.(mp4|webm|ogg|mov)$/i)) ? (
                   <div
                     className="message-video-wrapper"
-                    style={preVideoDims ? { width: preVideoDims.width, height: preVideoDims.height, maxWidth: '100%' } : {}}
+                    style={preVideoDims ? { width: preVideoDims.width, height: preVideoDims.height, maxWidth: '100%' } : { width: 260, height: 200, maxWidth: '100%' }}
                   >
                     <div
                       className="message-video-inner"
@@ -425,18 +493,46 @@ const MessageBubble = memo(function MessageBubble({
             <div className="message-sender-info">@{msg.SenderInfo}</div>
           )}
 
-          {/* Reaction display */}
-          {messageReactions[messageId] && (
-            <div className="message-reaction-badge">
-              {(() => {
-                const unified = charToUnified(messageReactions[messageId]);
-                if (unified) {
-                  return <Emoji unified={unified} size={18} emojiStyle="apple" />;
-                }
-                return messageReactions[messageId];
-              })()}
-            </div>
-          )}
+          {/* Reaction display — merge API ReactionEmojis + real-time messageReactions */}
+          {(() => {
+            const apiReactions = (() => {
+              const raw = msg?.ReactionEmojis || msg?.reactionEmojis;
+              if (!raw) return [];
+              try {
+                const parsed = JSON.parse(raw);
+                return Array.isArray(parsed) ? parsed : [];
+              } catch {
+                return [];
+              }
+            })();
+
+            const realtimeEmoji = messageReactions?.[messageId];
+            const allReactions = [...apiReactions];
+            if (realtimeEmoji) {
+              // Overwrite or append real-time reaction from current user (Direction: 1)
+              const existing = allReactions.find((r) => r.Reaction === realtimeEmoji);
+              if (!existing) {
+                allReactions.push({ Reaction: realtimeEmoji, Direction: 1 });
+              }
+            }
+
+            if (allReactions.length === 0) return null;
+
+            return (
+              <div className="message-reaction-badge">
+                {allReactions.map((r, idx) => {
+                  const emoji = r.Reaction || r.reaction;
+                  if (!emoji) return null;
+                  const unified = charToUnified(emoji);
+                  return (
+                    <span key={`${emoji}-${idx}`} className="message-reaction-emoji">
+                      {unified ? <Emoji unified={unified} size={18} emojiStyle="apple" /> : emoji}
+                    </span>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       </div>
     </div>
@@ -459,6 +555,8 @@ function DocumentCard({ msg, setMediaViewer, mediaCache }) {
   const fileName = msg?.fileName || msg?.content || msg?.Message || 'Document';
   const ext = (fileName.split('.').pop() || '').toUpperCase();
   const resolveMediaUrl = (val) => {
+    const directUrl = msg?.FileUrl;
+    if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('http')) return directUrl;
     if (!val || typeof val !== 'string') return val;
     if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) return val;
     return mediaCache?.[val] || val;
@@ -510,6 +608,8 @@ function BrokenMediaCard({ msg, setMediaViewer, mediaCache }) {
   const fileName = msg?.fileName || msg?.content || msg?.Message || 'Media';
   const ext = (fileName.split('.').pop() || '').toUpperCase() || 'IMAGE';
   const resolveMediaUrl = (val) => {
+    const directUrl = msg?.FileUrl;
+    if (directUrl && typeof directUrl === 'string' && directUrl.startsWith('http')) return directUrl;
     if (!val || typeof val !== 'string') return val;
     if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) return val;
     return mediaCache?.[val] || val;

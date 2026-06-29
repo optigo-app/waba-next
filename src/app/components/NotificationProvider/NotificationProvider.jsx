@@ -35,6 +35,19 @@ export const NotificationProvider = ({ children }) => {
         }
     }, []);
 
+    // Register service worker for reliable background notifications
+    useEffect(() => {
+        if (typeof window === 'undefined' || !('serviceWorker' in navigator)) return;
+        navigator.serviceWorker
+            .register('/sw.js', { scope: '/', updateViaCache: 'none' })
+            .then((reg) => {
+                console.log('[SW] Service Worker registered:', reg.scope);
+            })
+            .catch((err) => {
+                console.warn('[SW] Service Worker registration failed:', err);
+            });
+    }, []);
+
     const requestPermission = useCallback(async () => {
         if (typeof window === 'undefined' || !('Notification' in window)) return 'unsupported';
 
@@ -61,7 +74,6 @@ export const NotificationProvider = ({ children }) => {
 
             if (status === 'granted') {
                 setShowGuide(false);
-                toast.success('Notifications enabled!');
             } else if (status === 'denied') {
                 if (!fromModal) {
                     toast(

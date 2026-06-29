@@ -400,16 +400,13 @@
 
 @keyframes addCustomerPulse {
   0% {
-    filter: brightness(1);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35), 0 0 0 0 rgba(59, 130, 246, 0.65);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.30), 0 0 0 0 rgba(59, 130, 246, 0.45);
   }
-  50% {
-    filter: brightness(1.35);
-    box-shadow: 0 8px 28px rgba(59, 130, 246, 0.55), 0 0 0 20px rgba(59, 130, 246, 0.3);
+  60% {
+    box-shadow: 0 4px 14px rgba(59, 130, 246, 0.40), 0 0 0 10px rgba(59, 130, 246, 0);
   }
   100% {
-    filter: brightness(1);
-    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35), 0 0 0 0 rgba(59, 130, 246, 0);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.30), 0 0 0 0 rgba(59, 130, 246, 0);
   }
 }
 
@@ -423,22 +420,21 @@
   padding: 4px !important;
   width: 28px !important;
   height: 28px !important;
-  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.35) !important;
-  transition: transform 0.25s ease !important;
-  animation: addCustomerPulse 1.8s infinite;
+  box-shadow: 0 2px 8px rgba(59, 130, 246, 0.30) !important;
+  transition: box-shadow 0.25s ease, background 0.25s ease !important;
+  animation: addCustomerPulse 2.4s ease-in-out infinite;
 }
 .action-btn.add-customer-btn svg {
   stroke-width: 2.2;
 }
 .action-btn.add-customer-btn:hover {
+  animation-play-state: paused;
   background: linear-gradient(135deg, #2563eb 0%, #4f46e5 100%) !important;
-  transform: scale(1.12) translateY(-2px);
-  box-shadow: 0 6px 18px rgba(59, 130, 246, 0.35) !important;
-  filter: brightness(1.05);
+  box-shadow: 0 6px 20px rgba(37, 99, 235, 0.40) !important;
 }
 .action-btn.add-customer-btn:active {
-  transform: scale(0.96) translateY(0px);
-  box-shadow: 0 2px 6px rgba(59, 130, 246, 0.25) !important;
+  box-shadow: 0 2px 6px rgba(37, 99, 235, 0.30) !important;
+  transition-duration: 0.08s;
 }
 
 /* ─── Tag filter chips ──────────────────────────────────────────────────── */

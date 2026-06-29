@@ -196,7 +196,7 @@ const TemplateGrid = ({ items, onView, onSend, onClone, onEdit, onDelete, onPubl
 
             <Grid size={{ xs: 12 }}>
                 <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', borderTop: '1px solid #e4e8ee', pt: 2, mt: 'auto', borderRadius: '0 0 12px 12px' }}>
-                    <Typography variant="body2" sx={{ color: 'var(--text-2nd-color)', fontSize: '0.875rem', mb: 1 }}>
+                    <Typography variant="body2" sx={{ color: 'var(--text-2nd-color)', fontSize: '0.9rem', mb: 1 }}>
                         Showing {page * rowsPerPage + 1} to {Math.min((page + 1) * rowsPerPage, count)} of {count} entries
                     </Typography>
                     <Pagination
@@ -205,7 +205,7 @@ const TemplateGrid = ({ items, onView, onSend, onClone, onEdit, onDelete, onPubl
                         onChange={(event, newPage) => onPageChange(event, newPage - 1)}
                         shape="rounded"
                         color="primary"
-                        size="small"
+                        size="medium"
                     />
                 </Box>
             </Grid>

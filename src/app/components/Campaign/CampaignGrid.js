@@ -5,11 +5,12 @@ import { Paper, Chip, Box, Typography, Button, ToggleButtonGroup, ToggleButton, 
 import { BarChart3, Copy, Rocket, Edit2, Plus, RefreshCw, Megaphone, LayoutGrid, List, AlertTriangle, Trash2 } from 'lucide-react';
 import FilterBar from '../Common/FilterBar/FilterBar';
 import IconButton from '../Common/IconButton';
+import Pagination from '../Common/Pagination/Pagination';
 import CountdownButton from './CountdownButton';
 import { fetchCampaignLists } from '../../api/CampaignList';
 import { deleteCampaign } from '../../api/DeleteCampaign';
 import { getCampaignTimers, setCampaignTimers, setCampaignDraft } from '../../utils/storage';
-import { fetchCampaignDetails } from '../../api/FetchCampaignDetails';  
+import { fetchCampaignDetails } from '../../api/FetchCampaignDetails';
 import { sendBulk } from '../../api/SendBulk';
 import { useAuthToken } from '../../hooks/useAuthToken';
 import styles from './CampaignGrid.module.scss';
@@ -24,7 +25,7 @@ const getStatusConfig = (status) => {
   switch (status?.toLowerCase()) {
     case 'completed': return { label: 'Completed', color: 'var(--success-main)', bg: 'rgba(40,199,111,0.16)' };
     case 'pending': return { label: 'Pending', color: 'var(--warning-main)', bg: 'rgba(245,124,0,0.16)' };
-    case 'active': return { label: 'Active', color: 'var(--primary-main)', bg: 'rgba(29,170,97,0.16)' };
+    case 'active': return { label: 'Active', color: '#2196f3', bg: 'rgba(33,150,243,0.14)' };
     case 'failed': return { label: 'Failed', color: 'var(--error-main)', bg: 'rgba(211,47,47,0.16)' };
     default: return { label: status || 'Unknown', color: 'var(--secondary-color)', bg: '#f3f4f6' };
   }
@@ -33,8 +34,8 @@ const getStatusConfig = (status) => {
 const getTypeConfig = (type) => {
   switch (type?.toLowerCase()) {
     case 'schedule': return { label: 'Schedule', color: 'var(--info-main)', bg: 'rgba(0,207,232,0.16)' };
-    case 'immediate': return { label: 'Immediate', color: 'var(--success-main)', bg: 'rgba(40,199,111,0.16)' };
-    case 'recurring': return { label: 'Recurring', color: 'var(--primary-main)', bg: 'rgba(29,170,97,0.16)' };
+    case 'immediate': return { label: 'Immediate', color: '#8b85a5', bg: 'rgba(139,133,165,0.12)' };
+    case 'recurring': return { label: 'Recurring', color: 'var(--warning-main)', bg: 'rgba(245,124,0,0.16)' };
     default: return { label: type || 'Unknown', color: 'var(--secondary-color)', bg: '#f3f4f6' };
   }
 };
@@ -210,6 +211,8 @@ const CampaignGrid = () => {
   const sendingCampaignIdsRef = useRef(new Set());
   const [showConfetti, setShowConfetti] = useState(false);
   const [paginationModel, setPaginationModel] = useState({ page: 0, pageSize: 100 });
+  const [cardPage, setCardPage] = useState(0);
+  const [cardRowsPerPage, setCardRowsPerPage] = useState(15);
 
   const [activeTimers, setActiveTimers] = useState(() => {
     try {
@@ -532,6 +535,11 @@ const CampaignGrid = () => {
     [filteredData, paginationModel.page, paginationModel.pageSize]
   );
 
+  const cardPaginatedData = useMemo(() =>
+    filteredData.slice(cardPage * cardRowsPerPage, (cardPage + 1) * cardRowsPerPage),
+    [filteredData, cardPage, cardRowsPerPage]
+  );
+
   const getRowClassNameMemo = useCallback((params) =>
     activeTimersRef.current[String(params.row.Id)] ? styles.stoppingRow : '',
     []
@@ -597,7 +605,7 @@ const CampaignGrid = () => {
       {/* Grid */}
       <div className={styles.contentArea}>
         {viewMode === 'grid' ? (
-          <Paper sx={{ borderRadius: '12px', boxShadow: 'none', border: '1px solid #e4e8ee', overflow: 'hidden', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+          <Paper sx={{ borderRadius: '12px', boxShadow: 'none', border: '1px solid #e4e8ee', overflow: 'auto', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
             <Box sx={{ flex: 1, minHeight: 0 }}>
               <DataGrid
                 rows={paginatedRows}
@@ -606,6 +614,8 @@ const CampaignGrid = () => {
                 getRowId={(row) => row.Id}
                 rowHeight={60}
                 disableRowSelectionOnClick
+                disableColumnMenu
+                disableColumnFilter
                 getRowClassName={getRowClassNameMemo}
                 sx={{
                   height: '100%',
@@ -630,106 +640,167 @@ const CampaignGrid = () => {
             </Box>
           </Paper>
         ) : (
-          <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0 }}>
-            <Grid container spacing={2}>
-              {filteredData.map((campaign) => (
-                <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={campaign.Id}>
-                  <Card
-                    className={activeTimers[String(campaign.Id)] ? styles.stoppingCard : ''}
-                    sx={{
-                      borderRadius: '12px',
-                      boxShadow: '0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1)',
-                      border: '1px solid #e4e8ee',
-                      height: '100%',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      justifyContent: 'space-between',
-                      '&:hover': { boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)' },
-                      transition: 'box-shadow 0.2s'
-                    }}
-                  >
-                  <CardContent sx={{ p: 2, flex: 1, '&:last-child': { pb: 2 } }}>
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 1.5 }}>
-                      <Typography variant="h6" sx={{ fontWeight: 600, fontSize: '0.95rem', color: 'var(--title-color)', flex: 1 }}>
-                        {campaign.Name || '—'}
+          <Box sx={{ flex: 1, overflow: 'auto', minHeight: 0, position: 'relative' }}>
+            <Box sx={{ pb: 16 }}>
+              <Grid container spacing={2}>
+                {cardPaginatedData.map((campaign) => (
+                  <Grid size={{ xs: 12, sm: 6, md: 4, lg: 3 }} key={campaign.Id}>
+                    <Card
+                      className={activeTimers[String(campaign.Id)] ? styles.stoppingCard : ''}
+                      sx={{
+                        height: '100%',
+                        borderRadius: '16px',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        justifyContent: 'space-between',
+                        border: '1px solid #eef0f4',
+                        boxShadow: '0 1px 3px rgba(0,0,0,0.04), 0 4px 12px rgba(0,0,0,0.02)',
+                        transition: 'box-shadow 0.3s ease, transform 0.25s ease',
+                        '&:hover': {
+                          boxShadow: '0 12px 32px rgba(0,0,0,0.08), 0 4px 8px rgba(0,0,0,0.04)',
+                          transform: 'translateY(-3px)',
+                        },
+                        overflow: 'hidden',
+                        position: 'relative',
+                      }}
+                    >
+                    <CardContent sx={{ p: '18px 20px 16px', flex: 1, '&:last-child': { pb: '16px' } }}>
+                      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: 1, mb: 1.5 }}>
+                        <Typography
+                          sx={{
+                            fontFamily: 'Poppins, sans-serif',
+                            fontWeight: 600,
+                            fontSize: '1rem',
+                            lineHeight: 1.35,
+                            wordBreak: 'break-word',
+                            flex: 1,
+                          }}
+                        >
+                          {campaign.Name || '—'}
+                        </Typography>
+                        <Box sx={{ display: 'flex', gap: 0.5, alignItems: 'center' }}>
+                          {(() => {
+                            const statusLabel = campaign.Status === 1 ? 'Pending' : campaign.Status === 2 ? 'Active' : campaign.Status === 3 ? 'Completed' : campaign.Status === 4 ? 'Failed' : String(campaign.Status || '');
+                            const statusCfg = getStatusConfig(statusLabel);
+                            return <Chip label={statusCfg.label} size="small" sx={{ backgroundColor: statusCfg.bg, color: statusCfg.color, fontSize: '0.7rem', fontWeight: 500, fontFamily: 'Poppins, sans-serif', height: 20, borderRadius: '4px' }} />;
+                          })()}
+                          {Number(campaign.Status) === 1 && (
+                            <>
+                              <IconButton icon={Edit2} color="secondary" tooltip="Edit" onClick={() => handlers.onEdit(campaign)} />
+                              <IconButton icon={Trash2} color="error" tooltip="Delete" onClick={() => handlers.onDelete(campaign)} />
+                            </>
+                          )}
+                        </Box>
+                      </Box>
+
+                      <Box
+                        sx={{
+                          background: '#f8f9fb',
+                          borderRadius: '10px',
+                          p: '10px 12px',
+                          mb: 1.5,
+                          display: 'flex',
+                          justifyContent: 'space-between',
+                          alignItems: 'center',
+                          gap: 1,
+                        }}
+                      >
+                        <Typography
+                          sx={{
+                            color: '#3d3b47',
+                            fontSize: '0.85rem',
+                            lineHeight: 1.6,
+                            fontFamily: 'Poppins, sans-serif',
+                          }}
+                        >
+                          Receivers: {campaign.Receiver ?? 0} &nbsp;·&nbsp; Messages: {campaign.Message ?? 0}
+                        </Typography>
+                        {(() => {
+                          const typeLabel = campaign.Type === 1 ? 'Immediate' : campaign.Type === 2 ? 'Schedule' : campaign.Type === 3 ? 'Recurring' : String(campaign.Type || '');
+                          const typeCfg = getTypeConfig(typeLabel);
+                          return <Chip label={typeCfg.label} size="small" sx={{ backgroundColor: typeCfg.bg, color: typeCfg.color, fontSize: '0.7rem', fontWeight: 500, fontFamily: 'Poppins, sans-serif', height: 20, borderRadius: '4px', flexShrink: 0 }} />;
+                        })()}
+                      </Box>
+                    </CardContent>
+
+                    <Box
+                      sx={{
+                        display: 'flex',
+                        justifyContent: 'space-between',
+                        alignItems: 'center',
+                        px: '20px',
+                        pb: '14px',
+                        pt: 0,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          color: '#c5c8ce',
+                          fontSize: '0.68rem',
+                          fontFamily: 'Poppins, sans-serif',
+                          fontWeight: 500,
+                          letterSpacing: '0.3px',
+                        }}
+                      >
+                        {formatDate(campaign.EntryDate) || '—'}
                       </Typography>
-                      <Box sx={{ display: 'flex', gap: 0.5 }}>
-                        {Number(campaign.Status) === 1 && (
-                          <>
-                            <IconButton icon={Edit2} color="secondary" tooltip="Edit" onClick={() => handlers.onEdit(campaign)} />
-                            <IconButton icon={Trash2} color="error" tooltip="Delete" onClick={() => handlers.onDelete(campaign)} />
-                          </>
-                        )}
+
+                      <Box sx={{ display: 'flex', gap: 0.2, alignItems: 'center' }}>
+                        {(() => {
+                          const timers = activeTimers;
+                          const hasActiveTimer = Object.keys(timers).length > 0;
+                          const rowTimer = timers[String(campaign.Id)];
+                          return (
+                            <>
+                              <IconButton
+                                icon={BarChart3}
+                                color="primary"
+                                tooltip={Number(campaign.Status) === 1 ? "Analytics not available for pending campaigns" : "Analytics"}
+                                onClick={() => handlers.onAnalytics(campaign)}
+                                disabled={Number(campaign.Status) === 1}
+                              />
+                              <IconButton icon={Copy} color="info" tooltip="Quick Clone" onClick={() => handlers.onDuplicate(campaign)} />
+                              {(Number(campaign.Type) === 1 && Number(campaign.Status) === 1) && (
+                                rowTimer ? (
+                                  <CountdownButton
+                                    expiry={rowTimer}
+                                    onStop={handlers.onStop}
+                                    row={campaign}
+                                  />
+                                ) : (
+                                  <IconButton
+                                    icon={Rocket}
+                                    color="primary"
+                                    tooltip={hasActiveTimer ? "Another launch in progress" : "Launch"}
+                                    onClick={() => handlers.onLaunch(campaign)}
+                                    disabled={hasActiveTimer}
+                                    iconClassName={launchingCampaignIds.has(String(campaign.Id)) ? styles.spinning : ''}
+                                    className={styles.rocketHighlight}
+                                  />
+                                )
+                              )}
+                              <IconButton icon={Copy} color="secondary" tooltip="Copy ID" onClick={() => handlers.onCopyId(campaign.Id)} />
+                            </>
+                          );
+                        })()}
                       </Box>
                     </Box>
-
-                    <Box sx={{ display: 'flex', gap: 1, mb: 2 }}>
-                      {(() => {
-                        const typeLabel = campaign.Type === 1 ? 'Immediate' : campaign.Type === 2 ? 'Schedule' : campaign.Type === 3 ? 'Recurring' : String(campaign.Type || '');
-                        const typeCfg = getTypeConfig(typeLabel);
-                        return <Chip label={typeCfg.label} size="small" sx={{ backgroundColor: typeCfg.bg, color: typeCfg.color, fontSize: '0.7rem', height: 20 }} />;
-                      })()}
-                      {(() => {
-                        const statusLabel = campaign.Status === 1 ? 'Pending' : campaign.Status === 2 ? 'Active' : campaign.Status === 3 ? 'Completed' : campaign.Status === 4 ? 'Failed' : String(campaign.Status || '');
-                        const statusCfg = getStatusConfig(statusLabel);
-                        return <Chip label={statusCfg.label} size="small" sx={{ backgroundColor: statusCfg.bg, color: statusCfg.color, fontSize: '0.7rem', height: 20 }} />;
-                      })()}
-                    </Box>
-
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.8rem', color: 'var(--text-2nd-color)', mb: 1 }}>
-                      <span>Receivers: {campaign.Receiver ?? 0}</span>
-                      <span>Messages: {campaign.Message ?? 0}</span>
-                    </Box>
-
-                    <Typography variant="caption" sx={{ color: 'var(--text-2nd-color)', fontSize: '0.75rem', display: 'block', mb: 2 }}>
-                      Created: {formatDate(campaign.EntryDate) || '—'}
-                    </Typography>
-
-                    <Box sx={{ display: 'flex', gap: 0.5, justifyContent: 'flex-end' }}>
-                      {(() => {
-                        const timers = activeTimers;
-                        const hasActiveTimer = Object.keys(timers).length > 0;
-                        const rowTimer = timers[String(campaign.Id)];
-                        return (
-                          <>
-                            <IconButton
-                              icon={BarChart3}
-                              color="primary"
-                              tooltip={Number(campaign.Status) === 1 ? "Analytics not available for pending campaigns" : "Analytics"}
-                              onClick={() => handlers.onAnalytics(campaign)}
-                              disabled={Number(campaign.Status) === 1}
-                            />
-                            <IconButton icon={Copy} color="info" tooltip="Quick Clone" onClick={() => handlers.onDuplicate(campaign)} />
-                            {/* <IconButton icon={Download} color="success" tooltip="Download" onClick={() => handlers.onDownload(campaign)} /> */}
-                            {(Number(campaign.Type) === 1 && Number(campaign.Status) === 1) && (
-                              rowTimer ? (
-                                <CountdownButton
-                                  expiry={rowTimer}
-                                  onStop={handlers.onStop}
-                                  row={campaign}
-                                />
-                              ) : (
-                                <IconButton
-                                  icon={Rocket}
-                                  color="primary"
-                                  tooltip={hasActiveTimer ? "Another launch in progress" : "Launch"}
-                                  onClick={() => handlers.onLaunch(campaign)}
-                                  disabled={hasActiveTimer}
-                                  iconClassName={launchingCampaignIds.has(String(campaign.Id)) ? styles.spinning : ''}
-                                  className={styles.rocketHighlight}
-                                />
-                              )
-                            )}
-                            <IconButton icon={Copy} color="secondary" tooltip="Copy ID" onClick={() => handlers.onCopyId(campaign.Id)} />
-                          </>
-                        );
-                      })()}
-                    </Box>
-                  </CardContent>
-                </Card>
+                  </Card>
               </Grid>
             ))}
-          </Grid>
+            </Grid>
+            </Box>
+
+            {/* Pagination - Sticky at bottom */}
+            {filteredData.length > cardRowsPerPage && (
+              <Pagination
+                count={filteredData.length}
+                page={cardPage}
+                rowsPerPage={cardRowsPerPage}
+                onPageChange={(_, p) => setCardPage(p)}
+                onRowsPerPageChange={(val) => { setCardRowsPerPage(val); setCardPage(0); }}
+              />
+            )}
           </Box>
         )}
       </div>

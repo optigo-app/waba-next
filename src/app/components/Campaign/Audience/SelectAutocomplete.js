@@ -1,6 +1,4 @@
-import { Autocomplete, TextField, Box, Checkbox, ListItemText, Chip } from '@mui/material';
-import { getChipStyles } from '../../../utils/chipStyles';
-import { X } from 'lucide-react';
+import { Autocomplete, TextField, Box, Checkbox, ListItemText } from '@mui/material';
 
 const SelectAutocomplete = ({
   value,
@@ -73,28 +71,6 @@ const SelectAutocomplete = ({
     return <li {...props}>{getOptionLabel ? getOptionLabel(option) : option?.name || option?.label || option}</li>;
   };
 
-  const renderTags = (tagValue, getTagProps) => {
-    if (showCheckbox) {
-      // Show chip when exactly 2 branches are selected
-      if (tagValue.length === 2) {
-        return tagValue.map((option, index) => (
-          <Chip
-            {...getTagProps({ index })}
-            label={getOptionLabel ? getOptionLabel(option) : option?.name || option?.label || option}
-            deleteIcon={<X />}
-            size="small"
-            sx={getChipStyles()}
-          />
-        ));
-      }
-      // Hide chips when 0 or 2+ branches selected
-      return tagValue.map((option, index) => (
-        <span {...getTagProps({ index })} style={{ display: 'none' }} />
-      ));
-    }
-    return undefined;
-  };
-
   return (
     <Autocomplete
       value={value}
@@ -106,7 +82,6 @@ const SelectAutocomplete = ({
       limitTags={limitTags}
       disableCloseOnSelect={showCheckbox}
       renderOption={showCheckbox ? renderOption : undefined}
-      renderTags={showCheckbox ? renderTags : undefined}
       size='small'
       sx={{
         flex: 1,

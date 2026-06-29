@@ -2,13 +2,20 @@
 
 .page {
     padding: 0.75rem 1rem;
-    height: 100vh;
     background: #f8fafc;
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
+    flex: 1;
+    min-height: 0;
     overflow: hidden;
     box-sizing: border-box;
+
+    @media (max-width: 640px) {
+        padding: 0.5rem;
+        gap: 0.5rem;
+        overflow: hidden;
+    }
 }
 
 // ── Top Header ─────────────────────────────────────────────────────────────
@@ -16,20 +23,37 @@
     display: flex;
     align-items: center;
     justify-content: space-between;
-    gap: 1.5rem;
+    gap: 1rem;
     padding: 0.75rem 1.5rem;
     background: #fff;
     border-bottom: 1px solid var(--sidebar-borderColor);
     border-radius: 12px;
     flex-shrink: 0;
-    flex-wrap: wrap;
+    flex-wrap: nowrap;
     box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+
+    @media (max-width: 768px) {
+        flex-wrap: wrap;
+        gap: 0.75rem;
+        padding: 0.65rem 0.85rem;
+    }
+
+    @media (max-width: 480px) {
+        flex-direction: column;
+        align-items: flex-start;
+    }
 }
 
 .headerLeft {
     display: flex;
     align-items: center;
     gap: 0.75rem;
+    min-width: 0;
+
+    > div:last-child {
+        min-width: 0;
+        overflow: hidden;
+    }
 }
 
 .backBtn {
@@ -71,6 +95,9 @@
     margin: 0;
     font-family: $font-family;
     line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .pageSubtitle {
@@ -86,6 +113,23 @@
     display: flex;
     align-items: center;
     gap: 0;
+    flex-shrink: 0;
+    overflow-x: auto;
+    max-width: 100%;
+
+    &::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    &::-webkit-scrollbar-thumb {
+        background: #e2e8f0;
+        border-radius: 99px;
+    }
+
+    @media (max-width: 480px) {
+        width: 100%;
+        padding-bottom: 4px;
+    }
 }
 
 .stepPill {
@@ -156,6 +200,10 @@
     color: $secondaryColor;
     white-space: nowrap;
     transition: color 0.2s;
+
+    @media (max-width: 640px) {
+        display: none;
+    }
 }
 
 .stepConnector {
@@ -178,6 +226,11 @@
     min-width: 0;
     min-height: 0;
     overflow: hidden;
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+        overflow: hidden;
+    }
 }
 
 // ── Left Sidebar ────────────────────────────────────────────────────────────
@@ -198,6 +251,12 @@
         background: #e2e8f0;
         border-radius: 99px;
     }
+
+    @media (max-width: 768px) {
+        flex: 0 0 auto;
+        max-width: 100%;
+        overflow-y: visible;
+    }
 }
 
 .stepperCard {
@@ -208,12 +267,32 @@
     display: flex;
     flex-direction: column;
     gap: 1.5rem;
+
+    @media (max-width: 768px) {
+        padding: 0.75rem 1rem;
+    }
 }
 
 .stepperMenu {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
+
+    @media (max-width: 768px) {
+        flex-direction: row;
+        gap: 0.4rem;
+        overflow-x: auto;
+        padding-bottom: 4px;
+
+        &::-webkit-scrollbar {
+            height: 4px;
+        }
+
+        &::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 99px;
+        }
+    }
 }
 
 .menuItem {
@@ -229,6 +308,8 @@
     font-weight: 500;
     font-family: $font-family;
     position: relative;
+    white-space: nowrap;
+    flex-shrink: 0;
 
     .menuIcon {
         color: var(--text-2nd-color);
@@ -336,6 +417,10 @@
     overflow-y: auto;
     overflow-x: hidden;
 
+    @media (max-width: 768px) {
+        overflow: hidden;
+    }
+
     &::-webkit-scrollbar {
         width: 4px;
     }
@@ -358,10 +443,13 @@
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    // margin-bottom: 40px;
     overflow: auto;
     flex: 1;
     min-height: 0;
+
+    @media (max-width: 640px) {
+        padding: 0.75rem;
+    }
 }
 
 .formTitle {
@@ -397,6 +485,10 @@
     gap: 0.75rem;
     margin-block: 0.5rem;
     flex-wrap: wrap;
+
+    @media (max-width: 480px) {
+        gap: 0.5rem;
+    }
 }
 
 .chipButton {
@@ -463,6 +555,14 @@
     padding: 1rem 1.2rem;
     border-radius: 0 0 12px 12px;
     flex-shrink: 0;
+    flex-wrap: wrap;
+
+    @media (max-width: 480px) {
+        flex-direction: column;
+        gap: 0.75rem;
+        margin: 0 -0.75rem -0.75rem;
+        padding: 0.75rem;
+    }
 }
 
 .nextButton {
@@ -628,6 +728,11 @@
     display: flex;
     gap: 1.5rem;
     align-items: flex-start;
+
+    @media (max-width: 640px) {
+        flex-direction: column;
+        gap: 1rem;
+    }
 }
 
 .recurrenceRangeField {
@@ -667,6 +772,11 @@
     display: flex;
     gap: 1rem;
     align-items: flex-start;
+
+    @media (max-width: 640px) {
+        flex-direction: column;
+        gap: 0.75rem;
+    }
 
     .formField {
         flex: 1;
@@ -769,6 +879,13 @@
     border-radius: 8px;
     border: 1px solid var(--sidebar-borderColor);
     flex-wrap: wrap;
+
+    @media (max-width: 768px) {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.65rem;
+    }
 }
 
 .gridTitle {
@@ -786,6 +903,10 @@
 .sourceSelectionDialogBody {
     padding: 2.5rem;
     position: relative;
+
+    @media (max-width: 640px) {
+        padding: 1.5rem;
+    }
 }
 
 .sourceSelectionTitle {
@@ -794,6 +915,10 @@
     color: $titleColor;
     margin-bottom: 0.5rem;
     font-family: $font-family;
+
+    @media (max-width: 640px) {
+        font-size: 1.15rem;
+    }
 }
 
 .sourceSelectionSubtitle {
@@ -808,6 +933,12 @@
     grid-template-columns: repeat(2, 1fr);
     gap: 2rem;
     margin-top: 2rem;
+
+    @media (max-width: 640px) {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+        margin-top: 1rem;
+    }
 }
 
 .sourceCard {
@@ -823,6 +954,11 @@
     gap: 1.25rem;
     position: relative;
     overflow: hidden;
+
+    @media (max-width: 640px) {
+        padding: 1.5rem;
+        gap: 0.75rem;
+    }
 
     &:hover {
         transform: translateY(-6px) scale(1.02);
@@ -948,6 +1084,11 @@
     display: flex;
     gap: 1.5rem;
     margin-bottom: 0.75rem;
+    flex-wrap: wrap;
+
+    @media (max-width: 480px) {
+        gap: 0.75rem;
+    }
 }
 
 .radioLabel {
@@ -1019,6 +1160,10 @@
 
     &.fourColumns {
         grid-template-columns: repeat(4, 1fr);
+    }
+
+    @media (max-width: 768px) {
+        grid-template-columns: 1fr !important;
     }
 }
 

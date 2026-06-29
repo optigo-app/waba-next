@@ -42,8 +42,8 @@ export default function CustomerModal({
       maxWidth={maxWidth}
       fullWidth={fullWidth}
       disableScrollLock
-      TransitionProps={{ timeout: { enter: 150, exit: 100 } }}
       slotProps={{
+        transition: { timeout: { enter: 150, exit: 100 } },
         backdrop: {
           sx: { ...defaultBackdropSx, ...(backdropSx || {}) },
         },

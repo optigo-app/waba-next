@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import './Sidebar.scss'
-import { HomeIcon, MessageCircle, ChevronLeft, LogOut, RefreshCw, User, LayoutGrid } from 'lucide-react'
+import { HomeIcon, MessageCircle, ChevronLeft, LogOut, RefreshCw, User, LayoutGrid, X } from 'lucide-react'
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import { disconnectSocket, broadcastLogout } from '../../socket'
@@ -9,7 +9,7 @@ import { getWhatsAppAvatarConfig } from '@/app/utils/globalFunc'
 import { useAuth } from '../../hooks/useAuth'
 import { useWallet } from '../../contexts/WalletContext'
 
-const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
+const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { }, mobileOpen = false, onMobileClose = () => { } }) => {
     const pathname = usePathname();
     const [activePath, setActivePath] = useState(pathname);
     const { auth, logout, setIsSyncing } = useAuth();
@@ -64,15 +64,13 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
     const handleHeaderIconClick = () => {
         if (isCollapsed) {
             onCollapsedChange(false);
+        } else {
+            router.push("/");
         }
-        router.push("/");
     };
 
     return (
-        <div
-            className={`sidebar_mainDiv ${isCollapsed ? 'collapsed' : ''}`}
-            style={{ width: isCollapsed ? 76 : 260, minWidth: isCollapsed ? 76 : 260 }}
-        >
+        <div className={`sidebar_mainDiv ${isCollapsed ? 'collapsed' : ''}`}>
             <div className="sidebar-content">
                 <div className="sidebar-sections">
                     <div className="agentic-chat-header">
@@ -83,7 +81,16 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
                             {!isCollapsed && <h1 className="title">Agentic chat</h1>}
                         </div>
 
-                        {!isCollapsed && (
+                        {mobileOpen ? (
+                            <IconButton
+                                className="sidebar-mobile-close"
+                                size="small"
+                                onClick={onMobileClose}
+                                sx={{ color: '#444050' }}
+                            >
+                                <X size={20} />
+                            </IconButton>
+                        ) : !isCollapsed && (
                             <Tooltip title="Collapse sidebar" placement="right" arrow>
                                 <IconButton
                                     className="sidebar-toggle"
@@ -127,6 +134,7 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
                                                     onClick={() => {
                                                         const perms = sessionStorage.getItem('userPermissions');
                                                         if (perms) localStorage.setItem('userPermissions', perms);
+                                                        onMobileClose();
                                                     }}
                                                 >
                                                     {content}
@@ -134,7 +142,10 @@ const Sidebar = ({isCollapsed = false, onCollapsedChange = () => { } }) => {
                                             ) : (
                                                 <Link
                                                     href={item.path}
-                                                    onClick={() => setActivePath(item.path)}
+                                                    onClick={() => {
+                                                        setActivePath(item.path);
+                                                        onMobileClose();
+                                                    }}
                                                     className={`sidebar_main_link ${isActive ? "active" : ""}`}
                                                 >
                                                     {content}

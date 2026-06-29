@@ -7,7 +7,7 @@ import {ChevronLeft, Plus, ArrowLeft, FileText,
     Megaphone, Bell, Key,
     MessageSquare, Layout, Clock, BookOpen, Package, Save, Slash, Type
 } from 'lucide-react';
-import { Box, Typography, Button, TextField, CircularProgress, Grid, Paper, IconButton } from '@mui/material';
+import { Box, Typography, Button, TextField, CircularProgress, Grid, Paper, IconButton, Drawer } from '@mui/material';
 import { useRouter, useSearchParams } from 'next/navigation';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../../hooks/useAuth';
@@ -95,6 +95,7 @@ const CreateTemplatePage = () => {
     const [templateNameError, setTemplateNameError] = useState('');
     const [isMainButtonMenuOpen, setIsMainButtonMenuOpen] = useState(false);
     const [isCardButtonMenuOpen, setIsCardButtonMenuOpen] = useState(false);
+    const [mobilePreviewOpen, setMobilePreviewOpen] = useState(false);
     const templateNameDebounceRef = useRef(null);
 
     // Edit / Clone state from URL
@@ -1552,7 +1553,7 @@ const CreateTemplatePage = () => {
                             </Grid>
 
                             {/* Right: preview */}
-                            <Grid size={{ lg: 4, md: 4, sm: 12, xs: 12 }}>
+                            <Grid size={{ lg: 4, md: 4, sm: 12, xs: 12 }} sx={{ display: { xs: 'none', sm: 'block' } }}>
                                 <Box className={styles.previewShell}>
                                     <MessagePreview
                                         headerType={builderData.headerType}
@@ -1580,6 +1581,23 @@ const CreateTemplatePage = () => {
                                     <span className={styles.saveErrorText}>{saveError}</span>
                                 )}
                                 <Box className={styles.stickyBottomBarActions}>
+                                    <Button
+                                        variant="outlined"
+                                        onClick={() => setMobilePreviewOpen(true)}
+                                        sx={{
+                                            display: { xs: 'inline-flex', sm: 'none' },
+                                            textTransform: 'none',
+                                            borderRadius: '10px',
+                                            fontFamily: 'Poppins, sans-serif',
+                                            fontWeight: 600,
+                                            fontSize: '0.8rem',
+                                            color: '#444050',
+                                            borderColor: '#e4e8ee',
+                                            '&:hover': { borderColor: '#1daa61', color: '#1daa61' },
+                                        }}
+                                    >
+                                        Preview
+                                    </Button>
                                     {!isEditMode && (
                                         <Button
                                             variant="outlined"
@@ -1603,6 +1621,38 @@ const CreateTemplatePage = () => {
                                 </Box>
                             </Box>
                         </Box>
+
+                        {/* Mobile Preview Drawer */}
+                        <Drawer
+                            anchor="right"
+                            open={mobilePreviewOpen}
+                            onClose={() => setMobilePreviewOpen(false)}
+                            PaperProps={{ sx: { width: { xs: '100%', sm: 420 }, background: '#f8fafc', p: 2 } }}
+                        >
+                            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                                <Typography sx={{ fontFamily: 'Poppins, sans-serif', fontWeight: 600, fontSize: '1rem', color: '#444050' }}>
+                                    Preview
+                                </Typography>
+                                <IconButton onClick={() => setMobilePreviewOpen(false)} sx={{ width: 32, height: 32, borderRadius: '50%', color: '#475569' }}>
+                                    <ChevronLeft size={18} />
+                                </IconButton>
+                            </Box>
+                            <MessagePreview
+                                headerType={builderData.headerType}
+                                headerText={builderData.headerText}
+                                headerTextExample={builderData.headerTextExample}
+                                headerMedia={headerMedia}
+                                previewImageUrl={previewImageUrl}
+                                previewVideoUrl={previewVideoUrl}
+                                body={builderData.body}
+                                footer={builderData.footer}
+                                buttons={builderData.buttons}
+                                templateType={builderData.templateType}
+                                carouselCards={carouselCards}
+                                variableValues={variableValues}
+                                showEmptyHint={true}
+                            />
+                        </Drawer>
                     </Box>
                 )}
 

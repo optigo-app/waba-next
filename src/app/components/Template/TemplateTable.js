@@ -236,27 +236,30 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
     ];
 
     return (
-        <Paper sx={{ borderRadius: '12px', boxShadow: 'none', border: '1px solid #e4e8ee', overflow: 'hidden', backgroundColor: '#fff' }}>
-            <DataGrid
-                rows={rows}
-                columns={columns}
-                paginationMode="server"
-                rowCount={count}
-                pageSizeOptions={[5, 10, 20, 50, 100]}
-                paginationModel={{ page, pageSize: rowsPerPage }}
-                onPaginationModelChange={(model) => {
-                    if (model.page !== page && onPageChange) {
-                        onPageChange(null, model.page);
-                    }
-                    if (model.pageSize !== rowsPerPage && onRowsPerPageChange) {
-                        onRowsPerPageChange({ target: { value: model.pageSize } });
-                    }
-                }}
-                disableRowSelectionOnClick
-                hideFooterSelectedRowCount
-                sx={{
-                    border: 'none',
-                    minHeight: { xs: 300, sm: 400, md: 520 },
+        <Paper sx={{ borderRadius: '12px', boxShadow: 'none', border: '1px solid #e4e8ee', overflow: 'hidden', backgroundColor: '#fff', flex: 1, minHeight: 0, display: 'flex', flexDirection: 'column' }}>
+            <Box sx={{ flex: 1, minHeight: 0, overflow: 'auto' }}>
+                <DataGrid
+                    rows={rows}
+                    columns={columns}
+                    disableColumnMenu
+                    disableColumnFilter
+                    paginationMode="server"
+                    rowCount={count}
+                    pageSizeOptions={[5, 10, 20, 50, 100]}
+                    paginationModel={{ page, pageSize: rowsPerPage }}
+                    onPaginationModelChange={(model) => {
+                        if (model.page !== page && onPageChange) {
+                            onPageChange(null, model.page);
+                        }
+                        if (model.pageSize !== rowsPerPage && onRowsPerPageChange) {
+                            onRowsPerPageChange({ target: { value: model.pageSize } });
+                        }
+                    }}
+                    disableRowSelectionOnClick
+                    hideFooterSelectedRowCount
+                    sx={{
+                        border: 'none',
+                        height: '100%',
 
                     '& .MuiDataGrid-columnHeaders': {
                         backgroundColor: '#f8fafc',
@@ -301,6 +304,7 @@ const TemplateTable = ({ items, onView, onSend, onClone, onEdit, onDelete, onPub
                     '& .MuiDataGrid-main': { backgroundColor: '#fff' },
                 }}
             />
+            </Box>
         </Paper>
     );
 };

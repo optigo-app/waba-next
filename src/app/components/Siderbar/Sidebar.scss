@@ -3,22 +3,40 @@
 .sidebar_mainDiv {
     min-width: 260px;
     width: 260px;
-    height: 100vh;
+    height: calc(100vh - 20px);
     background: $sidebar-Bgcolor;
-    padding: 0px 16px 16px 16px;
-    border-right: 1px solid $sidebar-borderColor;
+    padding: 0px 12px 12px 12px;
+    border: 1px solid $sidebar-borderColor;
+    border-radius: 16px;
+    box-shadow: $side-bar-boxShadow;
     position: fixed;
-    top: 0;
-    left: 0;
+    top: 10px;
+    left: 10px;
     z-index: 1000;
     display: flex;
     flex-direction: column;
     overflow-x: hidden;
+    will-change: width, min-width, padding;
+    transition: width 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                min-width 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94),
+                padding 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+
+    @media (max-width: 768px) {
+        position: relative;
+        top: auto;
+        left: auto;
+        height: 100%;
+        min-height: 100vh;
+        z-index: auto;
+        border: none;
+        border-radius: 0;
+        box-shadow: none;
+    }
 
     &.collapsed {
-        min-width: 76px;
-        width: 76px;
-        padding: 0 10px 10px 10px;
+        min-width: 70px;
+        width: 70px;
+        padding: 10px 0px 10px 0px;
 
         .agentic-chat-header {
             justify-content: center;
@@ -191,7 +209,6 @@
         min-height: 0;
         overflow-y: hidden;
         overflow-x: hidden;
-        padding-right: 0.25rem;
     }
 
     .sidebar-sections {
@@ -547,10 +564,33 @@
         }
     }
 
+    .sidebar-mobile-close {
+        width: 32px;
+        height: 32px;
+        border-radius: 12px;
+        border: 1px solid $sidebar-borderColor;
+        background: #fff;
+        transition: all 0.2s ease;
+
+        &:hover {
+            background: rgba($error-main, 0.06);
+            border-color: rgba($error-main, 0.3);
+            color: $error-main !important;
+        }
+    }
+
     &:hover {
         background-color: rgba(255, 255, 255, 0.7);
         opacity: 0.95;
         transform: translateY(-1px);
         transition: all 0.2s ease-in-out;
+    }
+
+    @media (max-width: 768px) {
+        padding-block: 0.85rem;
+
+        .title {
+            font-size: 1.15rem;
+        }
     }
 }

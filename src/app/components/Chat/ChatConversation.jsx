@@ -1,13 +1,11 @@
 'use client';
 
-import { useState, useEffect, useRef, useCallback } from 'react';
-import { CircularProgress, Tooltip, useMediaQuery } from '@mui/material';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { useMediaQuery } from '@mui/material';
 import { useTheme } from '@mui/material/styles';
-import {
-  Check, CheckCheck, Clock3, AlertCircle,
-} from 'lucide-react';
 import { getCustomerDisplayName, getCustomerAvatarSeed, getWhatsAppAvatarConfig } from './utils/chatUtils';
-import { fetchConversationView, sendChatText, sendChatMedia, sendReplyMessage, sendForwardMessage, fetchCustomerTags, fetchAgentLists, uploadChatMedia, deleteAssignedTags, fetchChatMediaBlob } from '../../api/chat/conversationApi';
+import { fetchConversationView, sendChatText, sendChatMedia, sendReplyMessage, sendForwardMessage, fetchCustomerTags, fetchAgentLists, uploadChatMedia, deleteAssignedTags, sendMessageReaction, readMessage } from '../../api/chat/conversationApi';
+import { fetchAndCacheMedia, preloadCacheIntoState, setCachedMediaUrl, setCachedMediaUrls } from '../../utils/mediaCacheService';
 import ChatHeader from './ChatHeader';
 import ChatMessagesArea from './ChatMessagesArea';
 import ChatInputArea from './ChatInputArea';
@@ -15,12 +13,15 @@ import MessageContextMenu from './MessageContextMenu';
 import ForwardMessageModal from './ForwardMessageModal';
 import { useAuth } from '../../hooks/useAuth';
 import { useAuthStore } from '../../store/authStore';
-import { addMessageHandler, emitReaction, addMessageReactionHandler } from '../../socket';
+import { useChatStore } from '../../store/chatStore';
+import { emitReaction, addMessageReactionHandler } from '../../socket';
 import TagsModal from './TagsModal';
 import CustomerDetails from './CustomerDetails';
 import MediaViewer from './MediaViewer';
 import RedirectionModal from './RedirectionModal';
 import toast from 'react-hot-toast';
+
+const EMPTY_MESSAGES = [];
 
 export default function ChatConversation({
   selectedCustomer,
@@ -33,7 +34,6 @@ export default function ChatConversation({
   setIsConversationRead,
   onToggleDetailsPanel,
 }) {
-  const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
   const [input, setInput] = useState('');
   const [sending, setSending] = useState(false);
@@ -120,19 +120,26 @@ export default function ChatConversation({
       };
     }
   }, [tagsList, isMobile, checkScroll]);
-  const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const containerRef = useRef(null);
   const messagesListRef = useRef(null);
   const tagsScrollRef = useRef(null);
   const dragCounterRef = useRef(0);
-  const isPrependingRef = useRef(false);
-  const initialScrollDoneRef = useRef(false);
   const fetchingMediaRef = useRef(new Set());
-  const processedMediaIdsRef = useRef(new Set());
   const { auth } = useAuth();
 
   const conversationId = selectedCustomer?.ConversationId ?? selectedCustomer?.Id ?? selectedCustomer?.autoid;
+
+  /* ── messages from store ── */
+  const messages = useChatStore((s) => s.messagesByConversationId[conversationId] || EMPTY_MESSAGES);
+  const setMessages = useCallback((updater) => {
+    const store = useChatStore.getState();
+    if (typeof updater === 'function') {
+      store.setMessagesFn(conversationId, updater);
+    } else {
+      store.setMessages(conversationId, updater);
+    }
+  }, [conversationId]);
 
   // Refs for debounce / abort controller pattern (matches original waba-chat)
   const debounceTimerRef = useRef(null);
@@ -176,14 +183,8 @@ export default function ChatConversation({
         setReplyToMessage(null);
         setLoadedMedia({});
         fetchingMediaRef.current.clear();
-        processedMediaIdsRef.current.clear();
-        // Revoke any cached blob URLs before switching conversations
-        Object.values(mediaCache).forEach((url) => {
-          if (url?.startsWith('blob:')) {
-            try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
-          }
-        });
-        setMediaCache({});
+        // Pre-populate media cache from persistent service instead of clearing
+        setMediaCache(preloadCacheIntoState());
         setUnreadCount(0);
         setForwardMessage(null);
         setMediaPreview([]);
@@ -195,7 +196,8 @@ export default function ChatConversation({
           setMessages(cached);
         } else {
           setLoading(true);
-          setMessages([]);
+          const existing = useChatStore.getState().messagesByConversationId[conversationId] || [];
+          setMessages(existing);
         }
 
         try {
@@ -207,12 +209,40 @@ export default function ChatConversation({
             const getTime = (m) => new Date(m?.DateTime || m?.sentAt || m?.sent_at || 0).getTime();
             return getTime(a) - getTime(b);
           });
+
+          // Pre-populate media cache with FileUrl from API so media loads instantly
+          const FileUrlCache = {};
+          list.forEach((msg) => {
+            const FileUrl = msg?.FileUrl;
+            const mediaId = msg?.mediaUrl || msg?.MediaUrl || msg?.mediaId;
+            if (FileUrl && mediaId && typeof mediaId === 'string' && !mediaId.startsWith('http')) {
+              FileUrlCache[mediaId] = FileUrl;
+            }
+          });
+          if (Object.keys(FileUrlCache).length > 0) {
+            setCachedMediaUrls(FileUrlCache);
+            setMediaCache((prev) => ({ ...prev, ...FileUrlCache }));
+          }
+
           if (requestId === latestRequestRef.current) {
-            setMessages(list);
+            // Merge with any real-time socket messages already in the store
+            const existing = useChatStore.getState().messagesByConversationId[conversationId] || [];
+            const apiIds = new Set(list.map((m) => String(m.id ?? m.Id ?? m.autoid ?? m.MessageId)));
+            const extras = existing.filter((m) => {
+              const id = String(m.id ?? m.Id ?? m.autoid ?? m.MessageId);
+              return id && !apiIds.has(id);
+            });
+            const merged = extras.length > 0 ? [...list, ...extras] : list;
+            merged.sort((a, b) => {
+              const tA = new Date(a?.DateTime || a?.sentAt || 0).getTime();
+              const tB = new Date(b?.DateTime || b?.sentAt || 0).getTime();
+              return tA - tB;
+            });
+            setMessages(merged);
             setHasMore(response?.hasMore ?? (list.length === 30));
             setPage(1);
             // Cache messages for quick restore on conversation switch
-            messagesCacheRef.current.set(cacheKey, list);
+            messagesCacheRef.current.set(cacheKey, merged);
             if (messagesCacheRef.current.size > 20) {
               const firstKey = messagesCacheRef.current.keys().next().value;
               messagesCacheRef.current.delete(firstKey);
@@ -269,47 +299,28 @@ export default function ChatConversation({
     };
   }, [conversationId, auth?.userId, selectedCustomer?.autoid]);
 
+  // In column-reverse mode, new messages naturally appear at the bottom.
+  // No manual scroll management needed.
+
+  // Keep store's selectedConversationId in sync with current open conversation
   useEffect(() => {
-    initialScrollDoneRef.current = false;
+    if (conversationId) {
+      useChatStore.getState().setSelectedConversationId(String(conversationId));
+    }
   }, [conversationId]);
 
+  // Call readMessage API when store signals a socket message arrived for open conversation
   useEffect(() => {
-    if (isPrependingRef.current) {
-      isPrependingRef.current = false;
-      return;
-    }
-    if (!messages.length) return;
-
-    if (!initialScrollDoneRef.current) {
-      initialScrollDoneRef.current = true;
-      const timer = setTimeout(() => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
-
-  // Listen for real-time incoming messages via socket
-  useEffect(() => {
-    if (!conversationId) return;
-
-    const removeHandler = addMessageHandler((data) => {
-      const msgConversationId = data?.conversationId || data?.customerId || data?.autoid;
-      const currentId = conversationId;
-      if (String(msgConversationId) === String(currentId)) {
-        setMessages((prev) => {
-          // Avoid duplicates
-          const exists = prev.some((m) => m.id === data.id || m.autoid === data.autoid);
-          if (exists) return prev;
-          return [...prev, data];
-        });
+    if (!conversationId || !auth?.userId) return;
+    const handler = (e) => {
+      const cid = e?.detail?.conversationId;
+      if (cid && String(cid) === String(conversationId)) {
+        readMessage(cid, auth.userId).catch(() => {});
       }
-    });
-
-    return () => removeHandler();
-  }, [conversationId]);
+    };
+    window.addEventListener('waba:markConversationRead', handler);
+    return () => window.removeEventListener('waba:markConversationRead', handler);
+  }, [conversationId, auth?.userId]);
 
   // Media preview helpers (must be before handleSend)
   const ALLOWED_EXTS = ['.pdf', '.doc', '.docx', '.txt', '.ppt', '.pptx', '.xls', '.xlsx'];
@@ -524,8 +535,7 @@ export default function ChatConversation({
           // Retrieve final media URL in background for this uploaded ID only
           (async () => {
             try {
-              const result = await fetchChatMediaBlob(uploadedId);
-              const mediaUrl = result?.url || (result?.blob ? URL.createObjectURL(result.blob) : null);
+              const mediaUrl = await fetchAndCacheMedia(uploadedId, conversationId);
               if (mediaUrl) {
                 setMediaCache((prev) => ({ ...prev, [uploadedId]: mediaUrl }));
                 setMessages((prev) =>
@@ -592,7 +602,7 @@ export default function ChatConversation({
           phoneNo: selectedCustomer?.CustomerPhone || selectedCustomer?.Sender || '',
           message: text,
           userId: auth.userId,
-          customerId: conversationId,
+          customerId: auth.id,
         });
       }
 
@@ -727,16 +737,34 @@ export default function ChatConversation({
     [selectedCustomer, addMediaFiles]
   );
 
-  const handleReactionSelect = useCallback((messageId, emoji) => {
-    setMessageReactions((prev) => ({ ...prev, [messageId]: emoji }));
+  const handleReactionSelect = useCallback((msg, emoji) => {
+    // msgId for local React state key
+    const msgId = msg?.id || msg?.Id || msg?.autoid || msg?.MessageId;
+    // waMessageId for WhatsApp API — must be the wamid, not internal DB Id
+    const waMessageId = msg?.MessageId || msg?.id || msg?.Id || msgId;
+
+    setMessageReactions((prev) => ({ ...prev, [msgId]: emoji }));
     setReactionPickerMessageId(null);
+
+    // Real-time socket broadcast
     emitReaction({
       conversationId,
-      messageId,
+      messageId: msgId,
       emoji,
       userId: auth?.userId,
     });
-  }, [conversationId, auth?.userId]);
+
+    // Send reaction via WhatsApp API
+    sendMessageReaction({
+      userId: auth?.userId,
+      customerId: 0,
+      phoneNo: selectedCustomer?.CustomerPhone || selectedCustomer?.Sender || '',
+      messageId: waMessageId,
+      emoji,
+    }).catch((err) => {
+      console.error('Reaction API error:', err);
+    });
+  }, [conversationId, auth?.userId, selectedCustomer]);
 
   // Listen for incoming reactions via socket
   useEffect(() => {
@@ -750,12 +778,14 @@ export default function ChatConversation({
     return () => removeHandler();
   }, []);
 
-  // Scroll handling for showScrollToBottom
+  // Scroll handling for showScrollToBottom (column-reverse mode)
   const handleScroll = useCallback(() => {
     const container = messagesListRef.current;
     if (!container) return;
     const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    // In column-reverse, scrollTop=0 is the bottom (newest messages).
+    // scrollTop increases as user scrolls UP towards older messages.
+    const isNearBottom = scrollTop < 150;
     setShowScrollToBottom(!isNearBottom);
     if (isNearBottom) {
       setUnreadCount(0);
@@ -769,10 +799,6 @@ export default function ChatConversation({
     const nextPage = page + 1;
     setIsLoadingMore(true);
 
-    // Preserve scroll position
-    const listEl = messagesListRef.current;
-    const prevScrollHeight = listEl?.scrollHeight || 0;
-
     try {
       const response = await fetchConversationView(conversationId, nextPage, 30, auth?.userId);
       let list = response?.data?.rd || [];
@@ -782,7 +808,20 @@ export default function ChatConversation({
       });
 
       if (list.length > 0) {
-        isPrependingRef.current = true;
+        // Pre-populate media cache with FileUrl for newly loaded older messages
+        const FileUrlCache = {};
+        list.forEach((msg) => {
+          const FileUrl = msg?.FileUrl;
+          const mediaId = msg?.mediaUrl || msg?.MediaUrl || msg?.mediaId;
+          if (FileUrl && mediaId && typeof mediaId === 'string' && !mediaId.startsWith('http')) {
+            FileUrlCache[mediaId] = FileUrl;
+          }
+        });
+        if (Object.keys(FileUrlCache).length > 0) {
+          setCachedMediaUrls(FileUrlCache);
+          setMediaCache((prev) => ({ ...prev, ...FileUrlCache }));
+        }
+
         setMessages((prev) => {
           const existingIds = new Set(prev.map((m) => m.id || m.Id || m.autoid));
           const newItems = list.filter((m) => !existingIds.has(m.id || m.Id || m.autoid));
@@ -796,14 +835,6 @@ export default function ChatConversation({
       console.error('Failed to load older messages:', err);
     } finally {
       setIsLoadingMore(false);
-      // Restore scroll position after prepend
-      requestAnimationFrame(() => {
-        const el = messagesListRef.current;
-        if (el) {
-          const newScrollHeight = el.scrollHeight;
-          el.scrollTop = newScrollHeight - prevScrollHeight;
-        }
-      });
     }
   }, [isLoadingMore, hasMore, conversationId, auth?.userId, page]);
 
@@ -846,8 +877,9 @@ export default function ChatConversation({
   useEffect(() => {
     const container = messagesListRef.current;
     if (!container) return;
-    const { scrollTop, scrollHeight, clientHeight } = container;
-    const isNearBottom = scrollHeight - scrollTop - clientHeight < 150;
+    const { scrollTop } = container;
+    // In column-reverse, scrollTop > 150 means user scrolled up (away from bottom)
+    const isNearBottom = scrollTop < 150;
     if (!isNearBottom && messages.length > lastMessageCountRef.current) {
       const newMessages = messages.length - lastMessageCountRef.current;
       setUnreadCount((prev) => prev + newMessages);
@@ -876,66 +908,30 @@ export default function ChatConversation({
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, [emojiPickerOpen]);
 
-  // Fetch media blobs for messages that only have a media ID (not a direct URL)
-  useEffect(() => {
-    const idsToFetch = [];
-    messages.forEach((msg) => {
-      // Collect all possible media ID fields (images, videos, documents, audio)
-      const candidates = [
-        msg?.MediaUrl,
-        msg?.mediaUrl,
-        msg?.mediaId,
-        msg?.imageUrl,
-        msg?.documentUrl,
-        msg?.DocumentUrl,
-        msg?.videoUrl,
-        msg?.audioUrl,
-      ];
-      candidates.forEach((val) => {
-        if (!val || typeof val !== 'string') return;
-        // Skip if already a direct URL or blob
-        if (val.startsWith('http') || val.startsWith('blob:') || val.startsWith('data:')) return;
-        // Skip if already cached or already processed in this conversation
-        if (mediaCache[val]) return;
-        if (processedMediaIdsRef.current.has(val)) return;
-        idsToFetch.push(val);
-      });
-    });
-
-    const uniqueIds = [...new Set(idsToFetch)];
-    uniqueIds.forEach(async (id) => {
-      if (fetchingMediaRef.current.has(id)) return;
-      if (processedMediaIdsRef.current.has(id)) return;
-      fetchingMediaRef.current.add(id);
-      try {
-        const result = await fetchChatMediaBlob(id);
-        const url = result?.url || (result?.blob ? URL.createObjectURL(result.blob) : null);
-        if (url) {
-          processedMediaIdsRef.current.add(id);
-          setMediaCache((prev) => ({ ...prev, [id]: url }));
-        }
-      } catch (err) {
-        console.error('Failed to fetch media blob for', id, err);
-      } finally {
-        fetchingMediaRef.current.delete(id);
+  // Lazy media fetch — called by MessageBubble when media enters viewport
+  const requestMediaFetch = useCallback(async (mediaId) => {
+    if (!mediaId || typeof mediaId !== 'string') return;
+    if (fetchingMediaRef.current.has(mediaId)) return;
+    fetchingMediaRef.current.add(mediaId);
+    try {
+      const url = await fetchAndCacheMedia(mediaId, conversationId);
+      if (url) {
+        setMediaCache((prev) => ({ ...prev, [mediaId]: url }));
       }
-    });
-  }, [messages]);
+    } catch (err) {
+      console.error('Failed to fetch media', mediaId, err);
+    } finally {
+      fetchingMediaRef.current.delete(mediaId);
+    }
+  }, [conversationId]);
 
-  // Cleanup blob URLs on unmount
-  useEffect(() => {
-    return () => {
-      Object.values(mediaCache).forEach((url) => {
-        if (url?.startsWith('blob:')) {
-          try { URL.revokeObjectURL(url); } catch (e) { /* ignore */ }
-        }
-      });
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  // NOTE: Blob URL cleanup is handled by mediaCacheService when blob URLs
+  // are replaced with server URLs after upload. No manual cleanup needed here.
 
   const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const container = messagesListRef.current;
+    if (!container) return;
+    container.scrollTop = 0;
   }, []);
 
   if (!selectedCustomer) {
@@ -983,7 +979,6 @@ export default function ChatConversation({
         isDragOver={isDragOver}
         containerRef={containerRef}
         messagesListRef={messagesListRef}
-        messagesEndRef={messagesEndRef}
         handleDragEnter={handleDragEnter}
         handleDragOver={handleDragOver}
         handleDragLeave={handleDragLeave}
@@ -1005,6 +1000,7 @@ export default function ChatConversation({
         loadedMedia={loadedMedia}
         setLoadedMedia={setLoadedMedia}
         mediaCache={mediaCache}
+        requestMediaFetch={requestMediaFetch}
         setMediaViewer={setMediaViewer}
         reactionPickerMessageId={reactionPickerMessageId}
         setReactionPickerMessageId={setReactionPickerMessageId}

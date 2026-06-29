@@ -274,30 +274,77 @@ const TemplatesPage = () => {
     return (
         <div className={styles.page}>
             {/* Top Bar */}
-            <div className={styles.topBar}>
-                <div className={styles.topBarLeft}>
-                    <button className={styles.backBtn} onClick={() => router.push('/')}>
-                        <ArrowLeft size={16} />
-                    </button>
-                    <div className={styles.headerIconWrap}>
-                        <FileText size={18} />
+            <div className={styles.topBarWrapper}>
+                <div className={styles.topBar}>
+                    <div className={styles.topBarLeft}>
+                        <button className={styles.backBtn} onClick={() => router.push('/')}>
+                            <ArrowLeft size={16} />
+                        </button>
+                        <div className={styles.headerIconWrap}>
+                            <FileText size={18} />
+                        </div>
+                        <div>
+                            <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
+                                <h2 className={styles.pageTitle}>Templates</h2>
+                            </Box>
+                            <p className={styles.pageSubtitle}>
+                                {templates.length} template{templates.length !== 1 ? 's' : ''} total
+                            </p>
+                        </div>
+                        {walletInfo?.wabaId && (
+                            <Box sx={SX_WABA_CHIP}>
+                                <Hash size={10} />
+                                {walletInfo.wabaId}
+                            </Box>
+                        )}
                     </div>
-                    <div>
-                        <Box sx={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap' }}>
-                            <h2 className={styles.pageTitle}>Templates</h2>
-                        </Box>
-                        <p className={styles.pageSubtitle}>
-                            {templates.length} template{templates.length !== 1 ? 's' : ''} total
-                        </p>
+                    <div className={styles.topBarRight}>
+                        <div className={styles.desktopActions}>
+                            <ToggleButtonGroup
+                                value={viewMode}
+                                exclusive
+                                onChange={(_, v) => v && setViewMode(v)}
+                                size="small"
+                            >
+                                <Tooltip title="Grid View" arrow>
+                                    <ToggleButton value="grid"><LayoutGrid size={16} /></ToggleButton>
+                                </Tooltip>
+                                <Tooltip title="List View" arrow>
+                                    <ToggleButton value="list"><List size={16} /></ToggleButton>
+                                </Tooltip>
+                            </ToggleButtonGroup>
+                            <Button
+                                variant="outlined"
+                                startIcon={loading ? <CircularProgress size={15} thickness={5} /> : <RefreshCw size={15} />}
+                                onClick={() => refresh()}
+                                disabled={loading || syncLoading}
+                                sx={SX_BTN_OUTLINE}
+                            >
+                                Refresh
+                            </Button>
+                            <Button
+                                variant="outlined"
+                                startIcon={syncLoading ? <CircularProgress size={15} thickness={5} /> : <RefreshCw size={15} />}
+                                onClick={sync}
+                                disabled={loading || syncLoading}
+                                sx={SX_BTN_OUTLINE}
+                            >
+                                Sync
+                            </Button>
+                        </div>
+                        <Button
+                            variant="contained"
+                            startIcon={<Plus size={16} />}
+                            onClick={() => router.push('/templates/create')}
+                            sx={SX_BTN_CONTAINED}
+                        >
+                            Create Template
+                        </Button>
                     </div>
-                    {walletInfo?.wabaId && (
-                        <Box sx={SX_WABA_CHIP}>
-                            <Hash size={10} />
-                            {walletInfo.wabaId}
-                        </Box>
-                    )}
                 </div>
-                <div className={styles.topActions}>
+
+                {/* Toolbar Row */}
+                <div className={styles.toolbarRow}>
                     <ToggleButtonGroup
                         value={viewMode}
                         exclusive
@@ -312,32 +359,26 @@ const TemplatesPage = () => {
                         </Tooltip>
                     </ToggleButtonGroup>
 
-                    <Button
-                        variant="outlined"
-                        startIcon={loading ? <CircularProgress size={15} thickness={5} /> : <RefreshCw size={15} />}
-                        onClick={() => refresh()}
-                        disabled={loading || syncLoading}
-                        sx={SX_BTN_OUTLINE}
-                    >
-                        Refresh
-                    </Button>
-                    <Button
-                        variant="outlined"
-                        startIcon={syncLoading ? <CircularProgress size={15} thickness={5} /> : <RefreshCw size={15} />}
-                        onClick={sync}
-                        disabled={loading || syncLoading}
-                        sx={SX_BTN_OUTLINE}
-                    >
-                        Sync
-                    </Button>
-                    <Button
-                        variant="contained"
-                        startIcon={<Plus size={16} />}
-                        onClick={() => router.push('/templates/create')}
-                        sx={SX_BTN_CONTAINED}
-                    >
-                        Create Template
-                    </Button>
+                    <div className={styles.toolbarActions}>
+                        <Button
+                            variant="outlined"
+                            startIcon={loading ? <CircularProgress size={15} thickness={5} /> : <RefreshCw size={15} />}
+                            onClick={() => refresh()}
+                            disabled={loading || syncLoading}
+                            sx={SX_BTN_OUTLINE}
+                        >
+                            Refresh
+                        </Button>
+                        <Button
+                            variant="outlined"
+                            startIcon={syncLoading ? <CircularProgress size={15} thickness={5} /> : <RefreshCw size={15} />}
+                            onClick={sync}
+                            disabled={loading || syncLoading}
+                            sx={SX_BTN_OUTLINE}
+                        >
+                            Sync
+                        </Button>
+                    </div>
                 </div>
             </div>
 
